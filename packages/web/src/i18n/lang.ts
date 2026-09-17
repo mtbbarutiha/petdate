@@ -41,12 +41,14 @@ export function langHtmlLang(lang: Lang): string {
   return lang === 'en' ? 'en' : 'fa';
 }
 
-/** Apply language to <html> (lang + dir). */
+/** Apply language to <html> (lang + dir). Skip no-op writes to avoid CLS on html. */
 export function applyLang(lang: Lang): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.setAttribute('lang', langHtmlLang(lang));
-  root.setAttribute('dir', langDir(lang));
+  const nextLang = langHtmlLang(lang);
+  const nextDir = langDir(lang);
+  if (root.getAttribute('lang') !== nextLang) root.setAttribute('lang', nextLang);
+  if (root.getAttribute('dir') !== nextDir) root.setAttribute('dir', nextDir);
 }
 
 export function initLang(): Lang {

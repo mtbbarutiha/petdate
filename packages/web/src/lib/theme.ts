@@ -63,6 +63,14 @@ export function getDocumentTheme(): ThemeMode {
 export function applyTheme(mode: ThemeMode): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
+  const already =
+    root.getAttribute('data-theme') === mode &&
+    root.classList.contains(mode === 'dark' ? 'theme-dark' : 'theme-light') &&
+    !root.classList.contains(mode === 'dark' ? 'theme-light' : 'theme-dark');
+  if (already) {
+    if (root.style.colorScheme !== mode) root.style.colorScheme = mode;
+    return;
+  }
   root.setAttribute('data-theme', mode);
   root.classList.toggle('theme-dark', mode === 'dark');
   root.classList.toggle('theme-light', mode === 'light');

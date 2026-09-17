@@ -33,7 +33,8 @@ html[data-theme='dark'] {
 
   /* Pepito brand remap — soft charcoal / navy, not pure black */
   --pepito-base: #a89ad4;
-  --pepito-dark: #e8e6f2;
+  /* Brighter ink (#f4f3f8) so FAQ/nav copy stays ≥4.5:1 on --pepito-white surfaces. */
+  --pepito-dark: #f4f3f8;
   --pepito-muted: #d8d4e6;
   --pepito-pink: #e5a8d8;
   /* Pills keep the same AA fills as light — lightened accents fail white-on-pink/lavender. */
@@ -3820,7 +3821,8 @@ html[data-theme='dark'] .pepito-help-topic-q,
 html[data-theme='dark'] .pepito-help-card h3,
 html[data-theme='dark'] .pepito-help-block h2,
 html[data-theme='dark'] .pepito-help-section h3 {
-  color: var(--pd-ink);
+  /* Hard AA ink — do not fall through to light :root --pepito-dark if tokens race. */
+  color: #f4f3f8;
 }
 html[data-theme='dark'] .pepito-faq-a,
 html[data-theme='dark'] .pepito-help-block-lead,

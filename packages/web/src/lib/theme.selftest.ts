@@ -357,8 +357,8 @@ assert.match(
 );
 assert.match(
   darkCss,
-  /html\[data-theme=['"]dark['"]\][\s\S]{0,200}\.pepito-faq-q[\s\S]{0,280}var\(--pd-ink\)/,
-  'dark FAQ questions use --pd-ink',
+  /html\[data-theme=['"]dark['"]\]\s*\.pepito-faq-q[\s\S]{0,480}#f4f3f8/,
+  'dark FAQ questions use hard AA ink #f4f3f8',
 );
 assert.doesNotMatch(
   darkCss,

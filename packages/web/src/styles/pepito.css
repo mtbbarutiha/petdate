@@ -93,6 +93,7 @@ body {
   color: var(--pepito-muted);
   font-size: 17px;
   line-height: 1.75;
+  scrollbar-gutter: stable;
 }
 
 h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
@@ -572,6 +573,14 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-weight: 600;
   font-size: 0.95rem;
   white-space: nowrap;
+  /* ≥44×44 CSS px hit area (Lighthouse touch-targets / WCAG 2.5.8). */
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.55rem 0.4rem;
+  line-height: 1.2;
 }
 .pepito-nav-links a:hover,
 .pepito-nav-section-link:hover { color: var(--pepito-base); }
@@ -623,9 +632,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   /* Fixed-nav offset only when nav is fixed — see @media (min-width: 860px) below */
   margin-top: 0;
   min-height: var(--pepito-hero-h);
+  height: var(--pepito-hero-h);
+  max-height: var(--pepito-hero-h);
   display: grid;
   align-items: center;
   overflow: hidden;
+  contain: layout paint;
   /* Solid fill only — never a second photo under the slide <img> (dual-source flash).
      Boot LCP + React media own the visible image; admin /api/hero is the SoT. */
   background: #14161e;
@@ -756,19 +768,19 @@ body > #pd-boot-lcp.is-parked,
   display: flex;
   justify-content: center;
   align-items: center;
-  /* ~half a 10px circle between visual dots (not 44px hit-box edges). */
-  gap: 0.35rem;
+  /* Positive gap between 44px hit boxes — negative margins overlapped and failed a11y. */
+  gap: 0.75rem;
 }
-/* Visual box = the 10px ::after. Padding grows the tap target; negative
-   margin keeps flex gap as the clear space between circle edges. */
+/* Visual box = the 10px ::after. Padding grows the tap target to 44×44;
+   no negative margin so adjacent targets do not intersect. */
 .pepito-hero-dot {
   box-sizing: content-box;
   width: 10px;
   height: 10px;
   min-width: 10px;
   min-height: 10px;
-  padding: 17px 4px;
-  margin: -17px -4px;
+  padding: 17px;
+  margin: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -2673,11 +2685,16 @@ body > #pd-boot-lcp.is-parked,
   padding: 1rem 1.15rem;
   text-align: start;
   font-weight: 800;
-  color: var(--pd-ink, var(--pepito-dark));
+  /* Light fallback keeps AA if pepito.css loads before theme-dark remaps tokens. */
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   background: none;
   border: 0;
   font: inherit;
   cursor: pointer;
+}
+html.theme-dark .pepito-faq-q,
+html[data-theme='dark'] .pepito-faq-q {
+  color: #f4f3f8;
 }
 .pepito-faq-a {
   margin: 0;
@@ -10232,7 +10249,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   /* All section extras stay in the row — no «بیشتر» overflow menu. */
   .pepito-nav-links.pepito-nav-section-inline {
     display: flex;
-    gap: 0.95rem;
+    gap: 1.1rem;
     margin-inline-start: 0;
     flex-wrap: nowrap;
   }

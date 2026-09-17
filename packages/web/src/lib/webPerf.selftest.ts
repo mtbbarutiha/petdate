@@ -101,8 +101,17 @@ assert.match(
   /pepito-hero-dot\{box-sizing:content-box;width:10px/,
   'critical CSS uses 10px visual hero dots (padding expands the tap box)'
 );
-assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.35rem/, 'critical CSS keeps a half-dot gap between circles');
+assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.75rem/, 'critical CSS keeps non-overlapping gap between hit boxes');
+assert.match(indexHtml, /pepito-hero-dot\{[^}]*padding:17px;margin:0/, 'critical hero dots use 44px pads without negative margin');
 assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
+assert.match(indexHtml, /scrollbar-gutter:stable/, 'critical CSS reserves scrollbar gutter (CLS)');
+assert.match(indexHtml, /id="pd-lock-hero-h"/, 'hero height re-locks after critical CSS');
+assert.match(indexHtml, /pepito-nav-section-link\{[^}]*min-height:44px/, 'critical CSS sizes nav section links for touch');
+assert.match(
+  indexHtml,
+  /html\.theme-dark \.pepito-faq-q[^}]*#f4f3f8/,
+  'critical dark FAQ questions use AA ink #f4f3f8'
+);
 assert.match(indexHtml, /rel="preload"[\s\S]*Vazirmatn-Variable\.woff2/, 'font preload remains in HTML');
 assert.match(
   indexHtml,
@@ -153,7 +162,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v49-defer-shop/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v50-cls-a11y/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -258,6 +267,17 @@ assert.match(welcome, /i !== 0 \|\| bootHandedOff/, 'slide 0 uses #pd-boot-lcp u
 assert.match(welcome, /data-pd-hero-h-locked/, 'React must not re-lock hero height after head script');
 assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (smaller index entry)');
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
+assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/AppDialog'\)/, 'AppDialogHost is lazy off landing entry');
+assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/FaceVerifyRewardToast'\)/, 'FaceVerify toast is lazy off landing entry');
+assert.doesNotMatch(appTsx, /import \{ AppDialogHost \}/, 'AppDialogHost must not be a static App import');
+assert.doesNotMatch(appTsx, /import \{ FaceVerifyRewardToast \}/, 'FaceVerify must not be a static App import');
+assert.match(appTsx, /import \{ VetConsultRoute \}/, 'VetConsultRoute shell stays eager (old-SW /vet-consult)');
+assert.doesNotMatch(appTsx, /const VetConsultRoute = lazy/, 'VetConsultRoute must not be a lazy App import');
+assert.match(
+  readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
+  /import\('\.\/theme-dark\.css'\)[\s\S]*?import\('\.\/pepito\.css'\)/,
+  'theme-dark CSS loads before pepito so FAQ tokens are dark'
+);
 assert.doesNotMatch(main, /styles\/app-landing\.css/, 'app-landing CSS is not on the landing entry');
 assert.doesNotMatch(main, /styles\/mobile-app-strip\.css/, 'app-strip CSS is not on the landing entry');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'deep-link boot script parks LCP before React');
@@ -364,9 +384,20 @@ assert.match(
 );
 assert.match(pepitoCss, /\.pepito-hero-dot \{\s*box-sizing: content-box/, 'hero-dot tap padding is outside the 10px visual box');
 assert.match(pepitoCss, /\.pepito-hero-dot \{\s*box-sizing: content-box;\s*width: 10px/, 'hero visual dots are 10px (not 44px boxes)');
-assert.match(pepitoCss, /\.pepito-hero-dots \{[\s\S]*?gap:\s*0\.35rem/, 'hero dots sit a half-circle apart');
+assert.match(pepitoCss, /\.pepito-hero-dots \{[\s\S]*?gap:\s*0\.75rem/, 'hero dots keep positive gap between 44px hit boxes');
+assert.match(pepitoCss, /\.pepito-hero-dot \{[\s\S]*?padding:\s*17px;\s*margin:\s*0/, 'hero dots do not use overlapping negative margins');
 assert.match(pepitoCss, /\.pepito-hero-dot\.is-active::after \{[\s\S]*?background:\s*#c9bde8/, 'active hero dot is lavender');
 assert.doesNotMatch(pepitoCss, /\.pepito-hero-dot::before/, 'hero dots do not use overlapping ::before hit layers');
+assert.match(
+  pepitoCss,
+  /\.pepito-nav-section-link \{[\s\S]*?min-height:\s*44px/,
+  'nav section links meet 44px touch target height'
+);
+assert.match(
+  pepitoCss,
+  /html\.theme-dark \.pepito-faq-q[\s\S]*?#f4f3f8/,
+  'pepito.css hardcodes AA FAQ ink for dark before theme-dark loads'
+);
 assert.match(
   pepitoCss,
   /\.pepito-nav-logo img \{[\s\S]*?aspect-ratio:\s*390\s*\/\s*114/,

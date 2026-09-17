@@ -6,8 +6,6 @@ import { PersistTagAssistantParams } from './components/PersistTagAssistantParam
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
-import { AppDialogHost } from './components/AppDialog';
-import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
@@ -20,6 +18,13 @@ const Layout = lazy(() => import('./components/Layout').then((m) => ({ default: 
 const WelcomePage = lazy(() => import('./pages/WelcomePage').then((m) => ({ default: m.WelcomePage })));
 const LandingMobileDock = lazy(() =>
   import('./components/LandingMobileDock').then((m) => ({ default: m.LandingMobileDock })),
+);
+/** Dialog + face-verify toast stay off the landing critical JS path. */
+const AppDialogHost = lazy(() =>
+  import('./components/AppDialog').then((m) => ({ default: m.AppDialogHost })),
+);
+const FaceVerifyRewardToast = lazy(() =>
+  import('./components/FaceVerifyRewardToast').then((m) => ({ default: m.FaceVerifyRewardToast })),
 );
 
 /** First input or 10s — keeps /api/analytics/collect + GTM helpers off LCP. */
@@ -454,8 +459,10 @@ export default function App() {
   return (
     <AppGuards>
       <AppToastProvider>
-      <AppDialogHost />
-      <FaceVerifyRewardToast />
+      <Suspense fallback={null}>
+        <AppDialogHost />
+        <FaceVerifyRewardToast />
+      </Suspense>
       <ShopCartProvider>
         <ScrollToTop />
         <LegacyAdoptionHashRedirect />
