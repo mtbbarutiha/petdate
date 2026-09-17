@@ -1,0 +1,241 @@
+/* Full-shop dark overrides — lazy-loaded with pepito-shop.css */
+/* 14) Shop categories cream container */
+html[data-theme='dark'] .pd-shop-top-brands-head h2 {
+  color: #f3f0ff;
+}
+html[data-theme='dark'] .pd-shop-top-brand-tile {
+  background: #f3f4f7;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-shop-top-brand:hover .pd-shop-top-brand-tile {
+  background: #ffffff;
+  border-color: rgba(216, 201, 255, 0.35);
+}
+html[data-theme='dark'] .pd-shop-top-brand-name {
+  color: #f0ecff;
+}
+html[data-theme='dark'] .pd-shop-top-brand-logo img {
+  filter: none;
+}
+html[data-theme='dark'] .pd-shop-top-brand-fallback {
+  background: rgba(92, 77, 145, 0.12);
+  color: #5c4d91;
+}
+html[data-theme='dark'] .pd-shop-top-brands-arrow {
+  background: #f4f5f8;
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #1c1a24;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+html[data-theme='dark'] .pd-shop-top-brands-arrow:hover {
+  background: #ffffff;
+  color: #5c4d91;
+  border-color: #d8c9ff;
+}
+
+
+html[data-theme='dark'] .pd-shop-dk-cats {
+  background: linear-gradient(180deg, #2a2f3d 0%, #1e2230 100%);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-title h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-title p {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-all {
+  color: #e0b07a;
+}
+html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip {
+  background: #1a1d27;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip.is-active {
+  background: #6b5cad;
+  border-color: #6b5cad;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pd-shop-dk-label {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pd-shop-dk-tile--art,
+html[data-theme='dark'] .pd-shop-dk-tile--photo {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+html[data-theme='dark'] .pd-shop-dk-item:hover .pd-shop-dk-tile--art,
+html[data-theme='dark'] .pd-shop-dk-item:hover .pd-shop-dk-tile--photo {
+  border-color: rgba(219, 137, 202, 0.35);
+}
+html[data-theme='dark'] .pd-shop-promo-banner {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-shop-home-rail {
+  background: var(--pd-surface, #1c1f2a);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-shop-home-rail-title {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-shop-home-rail-all {
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-shop-home-rail-pill {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-shop-home-rail-pill.is-active {
+  background: #f3f0ff;
+  border-color: #f3f0ff;
+  color: #1c1a24;
+}
+html[data-theme='dark'] .pd-shop-home-rail-next,
+html[data-theme='dark'] .pd-shop-rail-btn {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-shop-filter-acc {
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-shop-filter-acc-btn {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-shop-filter-select select {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-shop-breadcrumb {
+  color: var(--pepito-muted);
+  border-top-color: var(--pd-border);
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-shop-breadcrumb-link,
+html[data-theme='dark'] .pd-shop-breadcrumb-current,
+html[data-theme='dark'] .pd-shop-breadcrumb-sep {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pd-shop-breadcrumb-link:hover {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pd-shop-card-media--similar {
+  background: #fff;
+}
+html[data-theme='dark'] .pd-shop-card--similar h3 {
+  color: var(--pd-ink, #f3f4f6);
+}
+html[data-theme='dark'] .pd-shop-similar-ship {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+}
+html[data-theme='dark'] .pd-shop-card--similar .pd-shop-price-now {
+  color: var(--pd-ink, #f3f4f6);
+}
+html[data-theme='dark'] .pd-shop-card--similar .pd-shop-price-was {
+  color: #9ca3af;
+}
+
+/* Shop purchase invoice — keep paper-white with dark ink in dark mode
+ * (global --pepito-dark remap was making text invisible on white card). */
+html[data-theme='dark'] .pd-shop-invoice {
+  background: #fff;
+  border-color: rgba(92, 77, 145, 0.18);
+  color: #1a2b4a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-name,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-id,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-parties h3,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-parties p,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table th,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table td,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-totals,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-totals strong,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-kind,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-date,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-tag,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-hint,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-muted {
+  color: #1a2b4a;
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-tag,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-kind,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-date,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-hint,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table th,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-muted {
+  opacity: 0.78;
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-status {
+  background: rgba(92, 77, 145, 0.12);
+  color: #3d2f6b;
+}
+html[data-theme='dark'] .pd-shop-invoice-actions .pepito-btn {
+  color: inherit;
+}
+
+/* Shop card-to-card deposit panel — was a frozen light gradient while
+ * --pepito-dark/--pepito-muted remap to light ink → unreadable in dark.
+ * Shared by ShopCartPage + ShopCardPayPage (`/shop/card-pay/:id`). */
+html[data-theme='dark'] .pd-shop-card-deposit,
+html[data-theme='dark'] .pd-shop-card-deposit--inline {
+  background: linear-gradient(
+    165deg,
+    var(--pd-surface-2),
+    color-mix(in srgb, var(--pd-surface-muted) 78%, var(--pepito-base) 22%)
+  );
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: none;
+}
+html[data-theme='dark'] .pd-shop-card-deposit-title,
+html[data-theme='dark'] .pd-shop-card-deposit-hint {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-shop-card-deposit-number,
+html[data-theme='dark'] .pd-shop-card-deposit-holder,
+html[data-theme='dark'] .pd-shop-card-deposit-number strong,
+html[data-theme='dark'] .pd-shop-card-deposit-holder strong {
+  color: var(--pd-ink);
+}
+
+/* Shop product search — readable pill + dropdown in dark mode */
+html[data-theme='dark'] .pd-shop-search-bar {
+  background: color-mix(in srgb, var(--pepito-soft) 88%, transparent);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme='dark'] .pd-shop-search-pill {
+  background: color-mix(in srgb, var(--pepito-white) 70%, #2a2d38);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+html[data-theme='dark'] .pd-shop-search-pill:focus-within {
+  background: color-mix(in srgb, var(--pepito-white) 78%, #323644);
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-base) 18%, transparent);
+}
+html[data-theme='dark'] .pd-shop-search-icon,
+html[data-theme='dark'] .pd-shop-search-input::placeholder {
+  color: color-mix(in srgb, var(--pepito-muted) 88%, #a8aab4);
+}
+html[data-theme='dark'] .pd-shop-search-input {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-search-dropdown {
+  background: var(--pepito-white);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.45);
+}
+html[data-theme='dark'] .pd-shop-search-hit img {
+  background: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+html[data-theme='dark'] .pd-shop-search-all {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}

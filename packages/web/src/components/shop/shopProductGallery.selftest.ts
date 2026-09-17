@@ -23,7 +23,7 @@ const gallery = readFileSync(join(here, 'ShopProductGallery.tsx'), 'utf8');
 const page = readFileSync(join(here, '../../pages/shop/ShopProductPage.tsx'), 'utf8');
 const app = readFileSync(join(here, '../../App.tsx'), 'utf8');
 const chrome = readFileSync(join(here, 'ShopChrome.tsx'), 'utf8');
-const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
+const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../../styles/pepito-shop.css'), 'utf8');
 
 assert.match(page, /ShopProductGallery/, 'PDP uses gallery component');
 assert.match(page, /ShopProductAliasRedirect/, 'short /shop/:slug aliases the PDP');

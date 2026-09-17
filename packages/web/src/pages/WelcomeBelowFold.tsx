@@ -23,6 +23,7 @@ import {
   formatToman,
   getFeaturedProducts,
 } from '../data/shopCatalog';
+import { hydrateShopCatalogOnce } from '../hooks/useShopCatalogSync';
 import { resolvePublicMediaUrl } from '../lib/mediaUrl';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { fetchMagazineFeatured, fetchMagazineList, type MagazineCard } from '../lib/magazineApi';
@@ -37,6 +38,7 @@ import {
 import { productTitleForLang } from '../lib/shopLocale';
 import { GatedLink, PawIcon } from './landingGatedLink';
 import { LANDING_TEAM_AGENT_SLUGS, TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
+import { scheduleLandingAppCss } from '../styles/loadAppCss';
 
 const P = '/pepito/uploads';
 
@@ -208,9 +210,10 @@ function newsFallback(t: (key: string) => string): MagazineCard[] {
 
 export function WelcomeBelowFold() {
   const { t, lang } = useI18n();
+  const [catalogTick, setCatalogTick] = useState(0);
   const featuredProducts = useMemo(
     () => getFeaturedProducts().slice(0, LANDING_FEATURED_LIMIT),
-    []
+    [catalogTick]
   );
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [svcIndex, setSvcIndex] = useState(0);
@@ -226,6 +229,33 @@ export function WelcomeBelowFold() {
   const [newsPages, setNewsPages] = useState(1);
   const newsTrackRef = useRef<HTMLDivElement>(null);
   const [newsItems, setNewsItems] = useState<MagazineCard[]>(() => newsFallback(t));
+  const shopSectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    scheduleLandingAppCss();
+  }, []);
+
+  /* Live catalog only when #shop nears the viewport — never on first paint / LCP. */
+  useEffect(() => {
+    const el = shopSectionRef.current ?? document.getElementById('shop');
+    if (!el) return;
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      void hydrateShopCatalogOnce().then((ok) => {
+        if (ok) setCatalogTick((n) => n + 1);
+      });
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) run();
+      },
+      { root: null, rootMargin: '200px 0px', threshold: 0.01 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     setNewsItems((prev) => (prev.some((n) => n.id < 0) ? newsFallback(t) : prev));
@@ -726,7 +756,7 @@ export function WelcomeBelowFold() {
       </section>
 
       {/* Pepito “Our featured products” — after reviews / before FAQ */}
-      <section className="pepito-section pepito-shop" id="shop">
+      <section className="pepito-section pepito-shop" id="shop" ref={shopSectionRef}>
         <div className="pepito-section-head pepito-section-head--center">
           <p className="pepito-eyebrow">
             <span className="pepito-eyebrow-icon" aria-hidden>

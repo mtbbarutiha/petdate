@@ -32,7 +32,13 @@ assert.doesNotMatch(
   'must not count raw lines for badge'
 );
 
-assert.match(src, /hydrateShopCatalogOnce/, 'cart provider hydrates catalog on every route');
+assert.match(src, /hydrateShopCatalogOnce/, 'cart provider can hydrate catalog on shop routes');
+assert.match(src, /isShopPath|isLandingHomePath/, 'cart skips homepage catalog hydrate');
+assert.match(sync, /isLandingHomePath/, 'sync exports landing-home guard');
+assert.match(sync, /isShopPath/, 'sync exports shop-path guard');
+assert.doesNotMatch(sync, /scheduleAfterLoadIdle|setTimeout\(run,\s*2500\)/, 'catalog hydrate is not timer-deferred from cart');
+assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydrate export');
+
 assert.match(src, /applyFetchedServerLines|mergeCartLinesKeepLocal/, 'boot/focus GET merges in-flight local adds');
 assert.match(src, /userClearedRef/, 'explicit clear is not restored by stale GET /cart');
 assert.match(src, /shopCartMerge/, 'client merge helper is wired');
@@ -49,8 +55,6 @@ assert.match(
   /removeShopCartItem\(token, productId, \{ userIntent: true \}\)/,
   'user remove sends intent header'
 );
-
-assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydrate export');
 
 assert.match(api, /\/api\/shop\/cart\/merge/, 'merge endpoint client');
 assert.match(api, /export async function fetchShopCart/, 'fetchShopCart client');

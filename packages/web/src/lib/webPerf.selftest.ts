@@ -153,7 +153,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v48-cwv-seo/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v49-defer-shop/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -206,6 +206,25 @@ assert.match(vite, /onload="this.media='all'"/, 'hashed CSS applies as soon as i
 assert.doesNotMatch(vite, /setTimeout\(inject,\s*8000\)/, 'must not wait 8s before painting CSS');
 
 assert.doesNotMatch(main, /styles\/chat\.css/, 'chat.css is not on the landing CSS graph');
+assert.doesNotMatch(main, /styles\/pepito\.css/, 'pepito CSS is not a static main import (route-lazy)');
+assert.doesNotMatch(main, /styles\/global\.css/, 'global CSS is not a static main import (route-lazy)');
+assert.doesNotMatch(main, /styles\/theme-dark\.css/, 'theme-dark CSS is not a static main import (route-lazy)');
+assert.match(appTsx, /loadAppCss|EnsureAppCss/, 'non-landing routes load app CSS');
+assert.match(
+  readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
+  /scheduleLandingAppCss/,
+  'landing schedules chrome CSS after input/idle'
+);
+assert.match(
+  readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
+  /pepito-shop\.css/,
+  'full shop CSS is a separate lazy chunk'
+);
+assert.match(
+  readFileSync(join(webSrc, 'components/shop/ShopChrome.tsx'), 'utf8'),
+  /loadShopCss/,
+  'ShopChrome loads shop CSS on mount'
+);
 assert.match(analytics, /scheduleAfterLoadIdle/, 'third-party tags wait for load+idle');
 assert.match(analytics, /timeoutMs = 10000/, 'Clarity/GA4 wait for input or 10s (not first idle)');
 assert.doesNotMatch(analytics, /requestIdleCallback/, 'analytics must not use requestIdleCallback');
@@ -224,6 +243,7 @@ assert.match(welcome, /width=\{1600\}/, 'hero img has intrinsic dimensions (CLS)
 assert.match(welcome, /heroReady/, 'React gates slide photos on hero readiness');
 assert.match(welcome, /readBootHeroOverlay|pd-hero-boot-json/, 'React seeds hero from HTML boot snapshot');
 assert.match(welcome, /scheduleAfterLoadIdle/, 'React defers /api/hero until after load+idle');
+assert.match(welcome, /setTimeout\(go,\s*10000\)/, 'React hero refresh waits 10s or input (not +2s)');
 assert.match(welcome, /hero-playmate-800\.webp/, 'offline fallback still knows the default 800w WebP');
 assert.match(welcome, /WelcomeBelowFold/, 'below-fold is code-split off the TBT path');
 assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/input (lucide off critical path)');
@@ -238,7 +258,6 @@ assert.match(welcome, /i !== 0 \|\| bootHandedOff/, 'slide 0 uses #pd-boot-lcp u
 assert.match(welcome, /data-pd-hero-h-locked/, 'React must not re-lock hero height after head script');
 assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (smaller index entry)');
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
-assert.match(main, /styles\/pepito\.css/, 'core pepito CSS stays on the entry graph');
 assert.doesNotMatch(main, /styles\/app-landing\.css/, 'app-landing CSS is not on the landing entry');
 assert.doesNotMatch(main, /styles\/mobile-app-strip\.css/, 'app-strip CSS is not on the landing entry');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'deep-link boot script parks LCP before React');
@@ -251,6 +270,9 @@ assert.match(
   'critical CSS keeps the HTML LCP in document flow above #root fill'
 );
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
+assert.match(below, /hydrateShopCatalogOnce/, 'landing hydrates shop catalog from below-fold only');
+assert.match(below, /IntersectionObserver/, 'landing shop catalog waits for #shop intersection');
+assert.match(below, /scheduleLandingAppCss/, 'below-fold arms deferred chrome CSS');
 assert.doesNotMatch(below, /if \(newsIndex === 0\) return/, 'news arrows must scroll back to page 0');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');

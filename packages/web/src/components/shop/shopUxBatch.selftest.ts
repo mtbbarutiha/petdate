@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const home = readFileSync(join(here, '../../pages/shop/ShopHomePage.tsx'), 'utf8');
 const category = readFileSync(join(here, '../../pages/shop/ShopCategoryPage.tsx'), 'utf8');
 const rail = readFileSync(join(here, 'ShopHomeRail.tsx'), 'utf8');
-const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
+const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../../styles/pepito-shop.css'), 'utf8');
 const ci = readFileSync(join(here, '../../../../../scripts/ci-selftest.sh'), 'utf8');
 
 assert.match(home, /ShopTopBrands/, 'top brands before rails');

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const badges = readFileSync(join(here, 'ShopTrustBadges.tsx'), 'utf8');
 const page = readFileSync(join(here, '../../pages/shop/ShopProductPage.tsx'), 'utf8');
-const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
+const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../../styles/pepito-shop.css'), 'utf8');
 
 assert.match(page, /ShopTrustBadges/, 'PDP imports and renders trust badges');
 assert.match(page, /<ShopTrustBadges\s*\/>/, 'PDP mounts trust badges strip');

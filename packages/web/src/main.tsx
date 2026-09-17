@@ -4,15 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { registerPetdateSW } from './lib/swRegister';
-import './styles/global.css';
-import './styles/pepito.css';
-import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
 import { I18nProvider, useI18n } from './i18n/I18nProvider';
 import { initLang } from './i18n/lang';
 
 initTheme();
 initLang();
+
+/* App CSS (global/pepito/theme-dark) is route-lazy via loadAppCss — landing
+ * first paint uses the inlined critical block in index.html only. */
 
 /**
  * Product UX: block iOS Safari pinch-zoom gesture.

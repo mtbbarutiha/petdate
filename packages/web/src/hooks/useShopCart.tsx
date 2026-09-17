@@ -13,8 +13,9 @@ import { isRetiredShopProduct } from '../data/retired-shop-products';
 import { getProduct, type ShopProduct } from '../data/shopCatalog';
 import type { ShopCartApiLine } from '../lib/api';
 import { useAuthStore } from './useAuthStore';
-import { hydrateShopCatalogOnce } from './useShopCatalogSync';
+import { hydrateShopCatalogOnce, isLandingHomePath, isShopPath } from './useShopCatalogSync';
 import { localCartIsAhead, mergeCartLinesKeepLocal } from './shopCartMerge';
+import { useLocation } from 'react-router-dom';
 
 /** Guest / offline draft. When logged in, localStorage mirrors the server cart. */
 const STORAGE_KEY = 'petdate.shop.cart.v1';
@@ -175,6 +176,7 @@ const ShopCartContext = createContext<ShopCartContextValue | null>(null);
 
 export function ShopCartProvider({ children }: { children: ReactNode }) {
   const { isLoggedIn, token } = useAuthStore();
+  const { pathname } = useLocation();
   const [lines, setLines] = useState<CartLine[]>(() =>
     typeof window === 'undefined' ? [] : readLines()
   );
@@ -238,8 +240,10 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     [token, applyServerLines]
   );
 
-  /** Cart provider mounts on every route — hydrate catalog here, not only under ShopChrome. */
+  /** Hydrate live catalog on /shop only — never on guest homepage critical path.
+   *  Landing #shop section triggers hydrate via WelcomeBelowFold intersection. */
   useEffect(() => {
+    if (isLandingHomePath(pathname) || !isShopPath(pathname)) return;
     let cancelled = false;
     void hydrateShopCatalogOnce().then((ok) => {
       if (!cancelled && ok) setCatalogEpoch((n) => n + 1);
@@ -247,7 +251,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname]);
 
   const refreshFromServer = useCallback(async () => {
     if (!token) return;
