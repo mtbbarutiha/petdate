@@ -42,6 +42,7 @@ import { supportRouter } from './routes/support';
 import { analyticsRouter } from './routes/analytics';
 import { magazineRouter } from './routes/magazine';
 import { heroRouter } from './routes/hero';
+import { syncHeroBootSnapshotOnStartup } from './services/hero-slides';
 import { platformRouter } from './routes/platform';
 import {
   expressErrorHandler,
@@ -282,6 +283,11 @@ server.listen(PORT, () => {
     console.log(`👥 team agents ready: ${agents.map((a) => a.name).join(' · ')}`);
   } catch (err) {
     console.warn('team agents boot failed:', (err as Error).message);
+  }
+  try {
+    syncHeroBootSnapshotOnStartup();
+  } catch (err) {
+    console.warn('hero boot snapshot sync failed:', (err as Error).message);
   }
   // Sweep stale pending playmate / vet requests + idle active consults
   const sweep = () => {

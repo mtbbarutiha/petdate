@@ -43,11 +43,18 @@ export type TeamAgentDef = {
   staffUsername: string;
 };
 
-/** Query on /agents/*.jpg so browsers drop pepito lookalikes + the YS/yalda-v1 files. */
-export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v3';
+/** Query on /agents/* so browsers drop pepito lookalikes + oversized JPG persona files. */
+export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v4';
 
+/** Display size on landing cards is ~240 CSS px; ship 480w WebP (@2x). */
 function agentAvatar(slug: string): string {
-  return `/agents/${slug}.jpg?v=${TEAM_AGENT_AVATAR_CACHE_BUST}`;
+  return `/agents/${slug}-480.webp?v=${TEAM_AGENT_AVATAR_CACHE_BUST}`;
+}
+
+/** Responsive srcset for landing team photos (240 + 480). */
+export function agentAvatarSrcSet(slug: string): string {
+  const v = TEAM_AGENT_AVATAR_CACHE_BUST;
+  return `/agents/${slug}-240.webp?v=${v} 240w, /agents/${slug}-480.webp?v=${v} 480w`;
 }
 
 /** Homepage `#team` cards — the four public faces. */

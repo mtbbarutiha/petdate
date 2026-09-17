@@ -555,7 +555,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-nav-logo img {
   height: 42px;
-  width: auto;
+  width: 144px;
+  aspect-ratio: 390 / 114;
+  object-fit: contain;
   display: block;
 }
 .pepito-nav-links {

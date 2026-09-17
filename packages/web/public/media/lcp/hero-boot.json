@@ -1,0 +1,9 @@
+{
+  "webp": "/media/lcp/hero-playmate-800.webp",
+  "srcSet": "/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w",
+  "fallback": "/pepito/uploads/1-hero.jpg",
+  "posX": 50,
+  "posY": 0,
+  "scale": 1,
+  "updatedAt": "2026-09-17T18:36:54.930Z"
+}

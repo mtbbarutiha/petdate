@@ -99,7 +99,11 @@ assert.equal(getTeamAgentByTelegramId('petdate_ai_assistant')?.kind, 'finance');
 assert.ok(listTeamAgentTelegramIds(getTeamAgentBySlug('sara-noori')!).includes('petdate_ai_sara_nozi'));
 
 for (const a of TEAM_AGENTS) {
-  assert.match(a.avatarUrl, new RegExp(`/agents/${a.slug}\\.jpg\\?v=persona-v3$`), `${a.slug} avatar path`);
+  assert.match(
+    a.avatarUrl,
+    new RegExp(`/agents/${a.slug}-480\\.webp\\?v=persona-v4$`),
+    `${a.slug} avatar path`,
+  );
   assert.equal(a.cardImage, a.avatarUrl, `${a.slug} card matches avatar`);
   assert.ok(a.staffUsername, `${a.slug} staffUsername`);
   assert.ok(a.telegramId.startsWith('petdate_ai_'), `${a.slug} synthetic telegram id`);

@@ -37,12 +37,15 @@ assert.match(startPage, /teamAgentChatPath\(canonicalSlug\)/, 'legacy slugs redi
 assert.match(startPage, /agent\.kind === 'support'/, 'support kind redirects to support hub');
 assert.match(supportPage, /AI_SUPPORT_AVATAR_URL/, 'support chat shows Sanaz photo');
 assert.match(supportPage, /AI_ASSISTANT_DISPLAY_NAME/, 'support chat shows Sanaz name');
-assert.match(supportAgent, /sanaz-ghaffari\.jpg\?v=persona-v3/, 'support agent avatar path is cache-busted');
+assert.match(supportAgent, /sanaz-ghaffari-480\.webp\?v=persona-v4/, 'support agent avatar path is cache-busted');
 assert.match(supportAgent, /ساناز غفاری/, 'support agent display name');
 assert.match(welcome, /LANDING_TEAM_AGENT_SLUGS\.map/, 'landing team cards come from LANDING_TEAM_AGENT_SLUGS');
 assert.match(welcome, /TEAM_AGENTS\.find/, 'landing cards resolve each slug from TEAM_AGENTS');
 assert.match(shared, /teamAgentChatPath/, 'shared exports chat paths');
-assert.match(shared, /TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v3'/, 'shared cache-bust token is persona-v3');
+assert.match(shared, /TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v4'/, 'shared cache-bust token is persona-v4');
+assert.match(shared, /agentAvatarSrcSet/, 'shared exports responsive avatar srcset helper');
+assert.match(welcome, /-480\.webp\?v=persona-v4/, 'landing team cards use 480w WebP');
+assert.match(welcome, /sizes="\(max-width: 859px\) 42vw, 240px"/, 'landing team cards declare display sizes');
 assert.match(shared, /'faranak-ahmadi'/, 'faranak slug');
 assert.match(shared, /'leila-kiani'/, 'leila slug');
 assert.match(shared, /'sanaz-ghaffari'/, 'sanaz slug');
@@ -78,6 +81,13 @@ for (const [slug, expect] of Object.entries(AVATAR_SHA256)) {
   );
   assert.ok(!/Yalda/i.test(bytes.toString('latin1')), `${slug} is not the YS initials placeholder`);
   assert.ok(!/made with ai/i.test(bytes.toString('latin1')), `${slug} has no Made with AI watermark`);
+  if (slug !== 'yalda-shabani') {
+    const webp480 = join(webRoot, 'public/agents', `${slug}-480.webp`);
+    const webp240 = join(webRoot, 'public/agents', `${slug}-240.webp`);
+    assert.ok(existsSync(webp480), `missing ${slug}-480.webp for Lighthouse-sized delivery`);
+    assert.ok(existsSync(webp240), `missing ${slug}-240.webp for Lighthouse-sized delivery`);
+    assert.ok(readFileSync(webp480).length < 40_000, `${slug}-480.webp should stay small`);
+  }
 }
 
 /** Ops-only staff portraits — HR/admin roster, not landing cards. Designer finals are 720×720. */
@@ -118,7 +128,8 @@ assert.match(yaldaReadme, /staff-designer\.jpg/, 'ops designer portrait document
 assert.match(yaldaReadme, /staff-social\.jpg/, 'ops social portrait documented');
 assert.match(yaldaReadme, /staff-shop\.jpg/, 'ops shop portrait documented');
 assert.match(yaldaReadme, /staff-content\.jpg/, 'ops content portrait documented');
-assert.match(yaldaReadme, /persona-v3/, 'README documents v3 cache-bust');
+assert.match(yaldaReadme, /persona-v4/, 'README documents v4 cache-bust + WebP sizes');
+assert.match(yaldaReadme, /-480\.webp/, 'README documents 480w WebP delivery');
 assert.doesNotMatch(yaldaReadme, /Placeholder/, 'Yalda is no longer marked as a placeholder');
 assert.doesNotMatch(yaldaReadme, /pepito\/uploads/, 'README no longer claims pepito lookalike portraits');
 

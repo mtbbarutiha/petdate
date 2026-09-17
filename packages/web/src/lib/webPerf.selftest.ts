@@ -57,7 +57,7 @@ assert.doesNotMatch(
 );
 assert.match(indexHtml, /Vazirmatn Fallback/, 'critical CSS ships font fallback metrics (CLS)');
 assert.match(indexHtml, /Vazirmatn-Variable\.woff2/, 'critical CSS self-hosts Vazirmatn woff2');
-assert.match(indexHtml, /font-display:swap/, 'self-hosted face uses font-display:swap');
+assert.match(indexHtml, /font-display:optional/, 'self-hosted face uses font-display:optional (CLS)');
 assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/, 'no Google Fonts on the public shell');
 assert.doesNotMatch(indexHtml, /Urbanist/, 'Urbanist is not a competing UI face');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
@@ -99,18 +99,36 @@ assert.match(
 assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.35rem/, 'critical CSS keeps a half-dot gap between circles');
 assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
 assert.match(indexHtml, /rel="preload"[\s\S]*Vazirmatn-Variable\.woff2/, 'font preload remains in HTML');
-assert.doesNotMatch(
+assert.match(
   indexHtml,
-  /rel="preload"[^>]*as="image"[^>]*hero-playmate/,
-  'must not hardcode hero-playmate image preload (admin /api/hero is SoT)'
+  /<!--pd-lcp-boot-->[\s\S]*?data-pd-lcp="hero"[\s\S]*?<!--\/pd-lcp-boot-->/,
+  'initial HTML embeds LCP preload snapshot (admin mutations rewrite the markers)'
+);
+assert.match(
+  indexHtml,
+  /id="pd-boot-lcp"[\s\S]*?data-pd-boot-hero="snapshot"/,
+  'boot LCP ships a snapshot src so discovery does not wait on /api/hero'
 );
 assert.doesNotMatch(
   indexHtml,
   /id="pd-boot-lcp"[^>]*src="\/media\/lcp\/hero-/,
-  'boot LCP must not ship a hardcoded /media/lcp/hero src'
+  'boot LCP must not ship a hardcoded /media/lcp/hero src (admin SoT URLs)'
 );
-assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'boot script hydrates LCP from /api/hero');
+assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'boot script refreshes LCP from /api/hero');
 assert.match(indexHtml, /fetch\('\/api\/hero'/, 'boot hero script calls the admin-resolved hero API');
+assert.doesNotMatch(indexHtml, /cache:\s*['"]no-store['"]/, 'boot hero fetch must allow HTTP cache');
+assert.match(indexHtml, /id="pd-hero-boot-json"/, 'inlined hero boot JSON for zero-RTT apply');
+assert.match(indexHtml, /class="theme-dark"/, 'html defaults to theme-dark before paint (CLS)');
+assert.match(
+  indexHtml,
+  /charset="UTF-8"[\s\S]*?Prevent flash of wrong theme[\s\S]*?Google Tag Manager/,
+  'theme script runs before GTM so dark class applies before paint'
+);
+assert.match(
+  indexHtml,
+  /\.pepito-nav-logo img\{[^}]*aspect-ratio:390\/114/,
+  'critical CSS sizes the logo with aspect-ratio (unsized-image CLS)'
+);
 assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-inner/, 'static hero copy shell is in #root for FCP');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*id="root"/, 'LCP img precedes #root so React cannot replace it');
 assert.match(indexHtml, /rel="alternate" type="text\/plain" href="https:\/\/petdate\.ir\/llms\.txt"/, 'HTML advertises llms.txt');
@@ -120,7 +138,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v45-shop-rail-click/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v46-lcp-boot-snapshot/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -128,17 +146,6 @@ assert.match(
 );
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
-assert.match(indexHtml, /data-pd-boot-hero="pending"/, 'boot LCP starts pending until /api/hero fills it');
-assert.doesNotMatch(
-  indexHtml,
-  /<link[^>]*data-pd-lcp="hero"[^>]*>/,
-  'static HTML must not embed a marked hero preload link (API injects it)'
-);
-assert.equal(
-  (indexHtml.match(/<link[^>]*data-pd-lcp="hero"[^>]*>/g) || []).length,
-  0,
-  'index.html ships zero hardcoded LCP image preload links'
-);
 assert.match(
   indexHtml,
   /rel="preload"[^>]+href="\/fonts\/Vazirmatn-Variable\.woff2"[^>]+as="font"/,
@@ -229,6 +236,16 @@ assert.match(
 );
 assert.match(nginx, /location = \/\.well-known\/llms\.txt/, 'well-known/llms.txt aliases the same file');
 assert.match(nginx, /location \^~ \/media\/lcp\//, 'LCP media has its own long-cache location');
+assert.match(nginx, /location = \/api\/hero/, 'nginx serves /api/hero without blanket no-store');
+assert.match(
+  nginx,
+  /location \^~ \/api\/hero\/images\//,
+  'nginx serves hero images without blanket no-store'
+);
+{
+  const heroExact = (nginx.match(/location = \/api\/hero \{/g) || []).length;
+  assert.equal(heroExact, 2, `exact /api/hero once per server (got ${heroExact})`);
+}
 assert.match(llms, /Roles/, 'llms.txt documents product roles for agents');
 assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
@@ -274,7 +291,11 @@ assert.match(pepitoCss, /\.pepito-hero-dot \{\s*box-sizing: content-box;\s*width
 assert.match(pepitoCss, /\.pepito-hero-dots \{[\s\S]*?gap:\s*0\.35rem/, 'hero dots sit a half-circle apart');
 assert.match(pepitoCss, /\.pepito-hero-dot\.is-active::after \{[\s\S]*?background:\s*#c9bde8/, 'active hero dot is lavender');
 assert.doesNotMatch(pepitoCss, /\.pepito-hero-dot::before/, 'hero dots do not use overlapping ::before hit layers');
-assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
+assert.match(
+  pepitoCss,
+  /\.pepito-nav-logo img \{[\s\S]*?aspect-ratio:\s*390\s*\/\s*114/,
+  'hydrated logo CSS reserves aspect-ratio (unsized-image CLS)'
+);
 
 const reviewFrameBlock = pepitoCss.match(/\.pepito-review-img-frame \{[^}]+\}/)?.[0] || '';
 assert.match(reviewFrameBlock, /aspect-ratio:\s*1\s*\/\s*1/, 'review photos use short 1:1 crop');
@@ -288,7 +309,8 @@ assert.doesNotMatch(reviewImgBlock, /aspect-ratio:\s*900/, 'review imgs must not
 const memberImgBlock = pepitoCss.match(/\.pepito-member img \{[^}]+\}/)?.[0] || '';
 assert.match(memberImgBlock, /object-fit:\s*cover/, 'team imgs cover the short frame');
 assert.doesNotMatch(memberImgBlock, /aspect-ratio:\s*600/, 'team imgs must not keep the 6:7 poster crop');
-assert.match(below, /width=\{600\} height=\{600\}/, 'below-fold photo attrs match 1:1 reserve');
+assert.match(below, /width=\{480\}[\s\S]*?height=\{480\}/, 'below-fold team photo attrs match 480 WebP reserve');
+assert.match(below, /width=\{600\} height=\{600\}/, 'below-fold review photo attrs match 1:1 reserve');
 const newsImgBlock = pepitoCss.match(/\.pepito-news-img \{[^}]+\}/)?.[0] || '';
 assert.match(newsImgBlock, /aspect-ratio:\s*2\s*\/\s*1/, 'news/magazine covers use short 2:1 crop');
 assert.doesNotMatch(newsImgBlock, /max-height/, 'news frames stay full-width (no thumb cap)');
