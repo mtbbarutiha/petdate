@@ -32,7 +32,7 @@ const delayMs = Number(process.env.POST_DELAY_MS || 2500);
 const dryRun = process.env.DRY_RUN === '1';
 
 const CTA = {
-  inline_keyboard: [[{ text: '🐶 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
+  inline_keyboard: [[{ text: '🐾 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
 };
 
 /** @type {{ file: string, topic: string, caption: string }[]} */
