@@ -290,7 +290,21 @@ gamesRouter.post('/', (req, res) => {
     return;
   }
 
-  res.status(201).json(presentGame(result.game, hostId));
+  const gamePayload = presentGame(result.game, hostId);
+  void (async () => {
+    try {
+      const { issueEventTicketForJoin } = await import('../services/event-tickets');
+      const issued = await issueEventTicketForJoin({
+        userId: hostId,
+        gameId: result.game.id,
+        sendSms: true,
+      });
+      res.status(201).json({ ...gamePayload, ticket: issued.ticket });
+    } catch (err) {
+      console.warn('event ticket issue after create failed:', (err as Error).message);
+      res.status(201).json(gamePayload);
+    }
+  })();
 });
 
 gamesRouter.post('/:id/join', (req, res) => {
@@ -326,5 +340,29 @@ gamesRouter.post('/:id/join', (req, res) => {
     });
     return;
   }
-  res.json(presentGame(result.game, uid));
+
+  const gamePayload = presentGame(result.game, uid);
+  void (async () => {
+    try {
+      const { issueEventTicketForJoin } = await import('../services/event-tickets');
+      const issued = await issueEventTicketForJoin({
+        userId: uid!,
+        gameId,
+        sendSms: true,
+      });
+      res.json({
+        ...gamePayload,
+        ticket: issued.ticket,
+        joined: true,
+        joinMessage: 'شما به این ایونت جوین شدید',
+      });
+    } catch (err) {
+      console.warn('event ticket issue after join failed:', (err as Error).message);
+      res.json({
+        ...gamePayload,
+        joined: true,
+        joinMessage: 'شما به این ایونت جوین شدید',
+      });
+    }
+  })();
 });

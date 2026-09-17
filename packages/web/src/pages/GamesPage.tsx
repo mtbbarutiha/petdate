@@ -27,7 +27,7 @@ import { PageHelpLink } from '../components/PageHelpLink';
 import { useAppToast } from '../hooks/useAppToast';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { gameStatusKey, gameTypeKey, useI18n } from '../i18n';
-import { createGame, joinGame, listGames, uploadEventPhoto } from '../lib/api';
+import { createGame, fetchMyEventTickets, joinGame, listGames, uploadEventPhoto, type EventTicketPublic } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 
 const GAME_TYPES: GameType[] = [...EVENT_GAME_TYPES];
@@ -83,6 +83,13 @@ export function GamesPage() {
   const [organizerFilter, setOrganizerFilter] = useState('');
   const organizerQuery = useDebouncedValue(organizerFilter, 300);
   const [joiningId, setJoiningId] = useState<number | null>(null);
+  const [joinSuccess, setJoinSuccess] = useState<{
+    gameTitle: string;
+    ticketCode?: string;
+    ticketPath?: string;
+  } | null>(null);
+  const [myTickets, setMyTickets] = useState<EventTicketPublic[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -105,9 +112,32 @@ export function GamesPage() {
     }
   }, [statusFilter, provinceFilter, organizerQuery]);
 
+  const loadTickets = useCallback(async () => {
+    if (!isLoggedIn || !user?.id) {
+      setMyTickets([]);
+      return;
+    }
+    setTicketsLoading(true);
+    try {
+      const res = await fetchMyEventTickets({ includeExpired: true });
+      setMyTickets(Array.isArray(res.tickets) ? res.tickets : []);
+    } catch {
+      setMyTickets([]);
+    } finally {
+      setTicketsLoading(false);
+    }
+  }, [isLoggedIn, user?.id]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void loadTickets();
+  }, [loadTickets]);
+
+  const validTickets = useMemo(() => myTickets.filter((t) => t.isValid), [myTickets]);
+  const expiredTickets = useMemo(() => myTickets.filter((t) => !t.isValid), [myTickets]);
 
   const typeLabel = useMemo(() => (gt: GameType) => t(gameTypeKey(gt)), [t]);
   const statusLabel = useMemo(() => (st: GameStatus) => t(gameStatusKey(st)), [t]);
@@ -136,9 +166,16 @@ export function GamesPage() {
     }
     setJoiningId(game.id);
     try {
-      await joinGame(game.id, user.id);
-      toastSuccess(t('games.joinOk'));
+      const joined = await joinGame(game.id, user.id);
+      const msg = joined.joinMessage || t('games.joinSuccessBanner') || t('games.joinOk');
+      toastSuccess(msg);
+      setJoinSuccess({
+        gameTitle: game.title,
+        ticketCode: joined.ticket?.ticketCode,
+        ticketPath: joined.ticket?.publicPath || joined.ticket?.publicUrl,
+      });
       await load();
+      await loadTickets();
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('games.joinFail');
       toastError(msg);
@@ -236,6 +273,92 @@ export function GamesPage() {
           <p className="pepito-games-lead">{t('games.lead')}</p>
           <PageHelpLink section="games" />
         </div>
+
+        {joinSuccess ? (
+          <div className="pepito-games-join-success" role="status" data-testid="games-join-success">
+            <div className="pepito-games-join-success-text">
+              <strong>{t('games.joinSuccessBanner')}</strong>
+              <span>{joinSuccess.gameTitle}</span>
+            </div>
+            <div className="pepito-games-join-success-actions">
+              {joinSuccess.ticketPath ? (
+                <a
+                  className="pepito-btn button-1"
+                  href={joinSuccess.ticketPath}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="games-view-ticket"
+                >
+                  {t('games.viewTicket')}
+                </a>
+              ) : null}
+              <button
+                type="button"
+                className="pepito-btn"
+                onClick={() => setJoinSuccess(null)}
+              >
+                {t('games.hideForm')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {isLoggedIn ? (
+          <section className="pepito-games-my-tickets" data-testid="games-my-tickets">
+            <div className="pepito-games-my-tickets-head">
+              <h2>{t('games.myTickets')}</h2>
+              <p>{t('games.myTicketsLead')}</p>
+            </div>
+            {ticketsLoading ? (
+              <p className="pepito-games-empty">{t('games.loading')}</p>
+            ) : validTickets.length === 0 && expiredTickets.length === 0 ? (
+              <p className="pepito-games-empty">{t('games.myTicketsEmpty')}</p>
+            ) : (
+              <ul className="pepito-games-ticket-list">
+                {validTickets.map((tk) => (
+                  <li key={tk.ticketCode} className="pepito-games-ticket-card">
+                    <div>
+                      <strong>{tk.eventTitle}</strong>
+                      <span className="pepito-games-ticket-meta">
+                        {tk.ticketCode} · {t('games.ticketValid')}
+                      </span>
+                    </div>
+                    <a
+                      className="pepito-btn button-1"
+                      href={tk.publicPath || `/t/${encodeURIComponent(tk.ticketCode)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid={`games-ticket-${tk.ticketCode}`}
+                    >
+                      {t('games.openTicket')}
+                    </a>
+                  </li>
+                ))}
+                {expiredTickets.map((tk) => (
+                  <li
+                    key={tk.ticketCode}
+                    className="pepito-games-ticket-card pepito-games-ticket-card--expired"
+                  >
+                    <div>
+                      <strong>{tk.eventTitle}</strong>
+                      <span className="pepito-games-ticket-meta">
+                        {tk.ticketCode} · {t('games.ticketExpired')}
+                      </span>
+                    </div>
+                    <a
+                      className="pepito-btn"
+                      href={tk.publicPath || `/t/${encodeURIComponent(tk.ticketCode)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t('games.openTicket')}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
 
         <div className="pepito-games-toolbar">
           <div className="pepito-games-filters">

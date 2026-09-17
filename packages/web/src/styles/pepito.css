@@ -17335,6 +17335,77 @@ select.pepito-wallet-convert-control {
   }
 }
 
+.pepito-games-join-success {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #fdf2f8, #f3e8ff);
+  border: 1px solid color-mix(in srgb, #e91e8c 28%, transparent);
+}
+.pepito-games-join-success-text {
+  display: grid;
+  gap: 4px;
+}
+.pepito-games-join-success-text strong {
+  color: #5b2d8e;
+  font-size: 1.05rem;
+}
+.pepito-games-join-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pepito-games-my-tickets {
+  margin: 0 0 22px;
+  padding: 16px;
+  border-radius: 18px;
+  background: color-mix(in srgb, #5b2d8e 6%, #fff);
+  border: 1px solid color-mix(in srgb, #5b2d8e 14%, transparent);
+}
+.pepito-games-my-tickets-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  color: #5b2d8e;
+}
+.pepito-games-my-tickets-head p {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #5b6472);
+}
+.pepito-games-ticket-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.pepito-games-ticket-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, #e91e8c 18%, transparent);
+}
+.pepito-games-ticket-card--expired {
+  opacity: 0.62;
+  filter: grayscale(0.25);
+}
+.pepito-games-ticket-meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #5b6472);
+}
+
 .pepito-photo-pending {
   margin: 0 0 12px;
   padding: 12px 14px;

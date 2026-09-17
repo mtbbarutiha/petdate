@@ -19,6 +19,10 @@ import {
 } from './routes/consultations';
 import path from 'path';
 import { gamesRouter } from './routes/games';
+import {
+  eventTicketsApiRouter,
+  eventTicketWebRouter,
+} from './routes/event-tickets';
 import { parsePositiveIntId } from './routes/parse-positive-int-id';
 import { petsRouter } from './routes/pets';
 import { mediaRouter } from './routes/media';
@@ -181,7 +185,9 @@ app.use('/api/consultations', consultationsRouter);
 app.use('/api/prescriptions', prescriptionsFileRouter);
 app.use('/rx', prescriptionWebRouter);
 app.use('/inv', shopInvoiceWebRouter);
+app.use('/t', eventTicketWebRouter);
 app.use('/api/games', gamesRouter);
+app.use('/api/tickets', eventTicketsApiRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/playdate-requests', playdatesRouter);

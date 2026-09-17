@@ -1714,6 +1714,16 @@ function migrateSchema() {
 
   seedFinanceDefaults();
 
+  // Event join tickets — CREATE IF NOT EXISTS only
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureEventTicketsSchema } =
+      require('./services/event-tickets') as typeof import('./services/event-tickets');
+    ensureEventTicketsSchema();
+  } catch (err) {
+    console.warn('event tickets schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // پیوند (HR) — CREATE IF NOT EXISTS only; never wipe
   try {
     // Lazy require avoids circular import with getDb()
@@ -3645,6 +3655,11 @@ export const dbService = {
       }
       try {
         db.prepare('DELETE FROM game_players WHERE user_id = ?').run(userId);
+      } catch {
+        /* ignore */
+      }
+      try {
+        db.prepare('DELETE FROM event_tickets WHERE user_id = ?').run(userId);
       } catch {
         /* ignore */
       }
