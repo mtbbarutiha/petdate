@@ -16,6 +16,7 @@ import { adminFetch } from '../api';
 import { resolvePublicMediaUrl } from '../../lib/api';
 import { appConfirm } from '../../components/AppDialog';
 import { useI18n } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import './AdminHeroPage.css';
 
 type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
@@ -506,7 +507,7 @@ export function AdminHeroPage() {
       </div>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading ? <p className="admin-muted">{t('admin.heroLoading')}</p> : null}
+      {loading ? <AdminBrandLoader size="card" /> : null}
       {!loading && slides.length === 0 ? (
         <p className="admin-muted">{t('admin.heroEmpty')}</p>
       ) : null}

@@ -30,6 +30,7 @@ import type {
 } from './financeAllocationPayload';
 import { appAlert, appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 
 type Tab = 'offices' | 'people' | 'equipment' | 'allocation' | 'invoices' | 'bank';
 
@@ -714,7 +715,7 @@ export function AdminFinanceAllocationPage() {
         ]}
       />
 
-      {!data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {!data ? <AdminBrandLoader size="page" /> : null}
 
       {data && tab === 'offices' ? (
         <div style={{ display: 'grid', gap: 16 }}>

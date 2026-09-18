@@ -8,6 +8,7 @@ import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
 import { appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 
 type Tab = 'accounts' | 'snappay' | 'income' | 'expense' | 'people';
 
@@ -353,7 +354,7 @@ export function AdminFinanceAccountsPage() {
         ]}
       />
 
-      {!data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {!data ? <AdminBrandLoader size="page" /> : null}
 
       {data && tab === 'accounts' ? (
         <div className="admin-table-wrap admin-card">

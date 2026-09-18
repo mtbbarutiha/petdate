@@ -20,6 +20,7 @@ import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 /** Default: finance approval queue (pending + stuck receipt rows). */
 const REVIEW_QUEUE = 'review_queue';
@@ -168,7 +169,7 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
   }, [order.id, order.receiptFileId, order.receiptUrl]);
 
   if (state.status === 'loading') {
-    return <p className="admin-payment-receipt-status">{tr('در حال بارگذاری رسید…')}</p>;
+    return <AdminBrandLoader size="card" />;
   }
   if (state.status === 'error') {
     return <p className="admin-payment-receipt-status admin-payment-receipt-status--error">{tr(state.message)}</p>;

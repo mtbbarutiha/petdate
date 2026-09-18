@@ -3,6 +3,7 @@ import { Check, FileText, ImageOff, RefreshCw, X } from 'lucide-react';
 import { API_BASE, adminFetch } from '../api';
 import { petPublicIdOf, userPublicIdOf, type User } from '@petdate/shared';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 type PetRow = {
   id: number;
@@ -364,7 +365,7 @@ export function AdminMarketplaceModerationPage() {
       </div>
 
       {loading ? (
-        <ModEmpty>{tr('در حال بارگذاری…')}</ModEmpty>
+        <AdminBrandLoader size="page" />
       ) : tab === 'photos' ? (
         photos.length === 0 ? (
           <ModEmpty>{tr('صف عکس پت خالی است.')}</ModEmpty>

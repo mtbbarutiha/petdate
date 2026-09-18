@@ -16,6 +16,7 @@ import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import { tr } from '../../../i18n';
 
 function Err({ error }: { error: string | null }) {
@@ -190,7 +191,7 @@ export function AdminCrmCustomerDetailPage() {
   }, [id]);
 
   if (error) return <div className="admin-page"><Err error={error} /></div>;
-  if (!data) return <div className="admin-page"><p>{tr('در حال بارگذاری…')}</p></div>;
+  if (!data) return <div className="admin-page"><AdminBrandLoader size="page" /></div>;
   const c = data.customer;
   return (
     <div className="admin-page">

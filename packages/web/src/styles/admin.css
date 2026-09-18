@@ -5655,51 +5655,11 @@ body:has(.admin-app) {
 .admin-app .wdg-persist[data-status='error'] { color: #c77810; }
 .admin-app .wdg-chart { display: grid; gap: 6px; }
 .admin-app .wdg-chart-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  width: 100%;
   min-height: 148px;
-  padding: 16px 12px;
+  padding: 12px 8px;
   box-sizing: border-box;
 }
-.admin-app .wdg-chart-loading-spin {
-  width: 28px;
-  height: 28px;
-  border: 3px solid color-mix(in srgb, var(--admin-ink) 22%, var(--admin-surface));
-  border-block-start-color: var(--admin-accent);
-  border-radius: 50%;
-  animation: admin-route-spin 0.7s linear infinite;
-}
-.admin-app .wdg-chart-loading-label {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 650;
-  color: var(--admin-ink);
-}
-.admin-app .wdg-chart-skeleton {
-  width: min(100%, 220px);
-  display: grid;
-  gap: 8px;
-}
-.admin-app .wdg-chart-skeleton-bar {
-  height: 12px;
-  width: 86%;
-  justify-self: center;
-  border-radius: 8px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--admin-ink) 16%, var(--admin-surface)),
-    color-mix(in srgb, var(--admin-accent) 52%, var(--admin-surface)),
-    color-mix(in srgb, var(--admin-ink) 16%, var(--admin-surface))
-  );
-  background-size: 200% 100%;
-  animation: admin-route-shimmer 1.25s ease-in-out infinite;
-}
-.admin-app .wdg-chart-skeleton-bar--lg { width: 100%; height: 16px; }
-.admin-app .wdg-chart-skeleton-bar--md { width: 68%; }
-.admin-app .wdg-chart-skeleton-bar--sm { width: 42%; }
 .admin-app .wdg-chart-empty {
   margin: 8px 0 0;
   padding: 12px 8px;
@@ -7862,73 +7822,96 @@ body:has(.admin-app) {
   background: color-mix(in srgb, var(--admin-bg) 88%, transparent);
 }
 
-.admin-app .admin-route-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--admin-border);
-  border-block-start-color: var(--admin-accent);
-  border-radius: 50%;
-  animation: admin-route-spin 0.7s linear infinite;
+.admin-app .admin-brand-loader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.admin-app .admin-route-loading-label {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--admin-muted);
+.admin-app .admin-brand-loader--page {
+  gap: 16px;
+  padding-block: 8px;
 }
 
-.admin-app .admin-route-skeleton {
-  width: min(100%, 560px);
+.admin-app .admin-brand-loader--card {
+  gap: 8px;
+  min-height: 120px;
+  padding-block: 8px;
+}
+
+.admin-app .admin-brand-loader-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-app .admin-brand-loader-stage {
+  position: relative;
   display: grid;
-  gap: 10px;
+  place-items: center;
 }
 
-.admin-app .admin-route-skeleton-bar {
-  height: 12px;
-  border-radius: 8px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface)),
-    color-mix(in srgb, var(--admin-accent-soft) 75%, var(--admin-surface)),
-    color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface))
-  );
-  background-size: 200% 100%;
-  animation: admin-route-shimmer 1.25s ease-in-out infinite;
+.admin-app .admin-brand-loader--page .admin-brand-loader-stage {
+  width: 128px;
+  height: 128px;
 }
 
-.admin-app .admin-route-skeleton-bar--lg { width: 100%; height: 18px; }
-.admin-app .admin-route-skeleton-bar--md { width: 72%; }
-.admin-app .admin-route-skeleton-bar--sm { width: 48%; }
+.admin-app .admin-brand-loader--card .admin-brand-loader-stage {
+  width: 76px;
+  height: 76px;
+}
 
-@keyframes admin-route-spin {
+.admin-app .admin-brand-loader-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--admin-accent) 28%, transparent);
+  border-block-start-color: #7c6cf0;
+  animation: admin-brand-loader-spin 1.15s linear infinite;
+}
+
+.admin-app .admin-brand-loader-mark {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  animation: admin-brand-loader-pulse 1.8s ease-in-out infinite;
+}
+
+.admin-app .admin-brand-loader-word {
+  margin: 0;
+  font-family: var(--admin-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #7c6cf0;
+}
+
+.admin-app .admin-brand-loader--page .admin-brand-loader-word {
+  font-size: 1.05rem;
+}
+
+.admin-app .admin-brand-loader--card .admin-brand-loader-word {
+  font-size: 0.78rem;
+}
+
+@keyframes admin-brand-loader-spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes admin-route-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
-
-.admin-app .admin-route-loading-mark {
-  position: relative;
-  width: 52px;
-  height: 52px;
-}
-.admin-app .admin-route-spinner--inner {
-  position: absolute;
-  inset: 8px;
-  width: auto;
-  height: auto;
-  border-width: 2px;
-  animation-duration: 1.1s;
-  animation-direction: reverse;
-}
-.admin-app .admin-route-loading-brand {
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--admin-ink);
+@keyframes admin-brand-loader-pulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.72; }
+  50% { transform: scale(1); opacity: 1; }
 }
 .admin-app .admin-route-timeout {
   margin: 0 0 12px;
@@ -7976,11 +7959,13 @@ body:has(.admin-app) {
   .admin-app .admin-topbar-end { flex-wrap: wrap; max-width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .admin-app .admin-route-spinner,
-  .admin-app .admin-route-skeleton-bar,
-  .admin-app .wdg-chart-loading-spin,
-  .admin-app .wdg-chart-skeleton-bar {
+  .admin-app .admin-brand-loader-ring,
+  .admin-app .admin-brand-loader-mark {
     animation: none;
+  }
+  .admin-app .admin-brand-loader-mark {
+    opacity: 1;
+    transform: none;
   }
 }
 

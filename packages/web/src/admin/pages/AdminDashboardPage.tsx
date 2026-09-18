@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -51,6 +51,7 @@ import {
   AdminModuleGrid,
   type AdminKpiItem,
 } from '../dash';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import { tr } from '../../i18n';
 
 type ChartPoint = { label: string; value: number };
@@ -309,8 +310,8 @@ function filtersToQs(f: DashFilters): string {
   return s ? `?${s}` : '';
 }
 
-function boardListLabel(loading: boolean, error: string | null, empty: string): string {
-  if (loading) return tr('در حال بارگذاری…');
+function boardListLabel(loading: boolean, error: string | null, empty: string): ReactNode {
+  if (loading) return <AdminBrandLoader size="card" />;
   if (error) return tr('خطا در بارگذاری');
   return tr(empty);
 }

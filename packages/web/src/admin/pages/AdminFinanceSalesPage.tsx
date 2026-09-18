@@ -7,12 +7,14 @@ import {
   CategoryDonutWidget,
   FINANCE_SALES_WIDGET_CATALOG,
   TimeLineWidget,
+  WidgetChartLoading,
   WidgetDashboard,
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
 import { appAlert } from '../../components/AppDialog';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 type Sales = {
   period: FinancePeriod;
@@ -41,7 +43,7 @@ export function AdminFinanceSalesPage() {
   useEffect(() => { void load(); }, [load]);
 
   const renderSalesWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (!data) return <WidgetEmpty />;
+    if (!data) return <WidgetChartLoading />;
     switch (id) {
       case 'dailyOrMonthly':
         return data.dailyOrMonthly.length ? (
@@ -104,6 +106,7 @@ export function AdminFinanceSalesPage() {
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
+      {!data && !error ? <AdminBrandLoader size="page" /> : null}
 
       {data ? (
         <>

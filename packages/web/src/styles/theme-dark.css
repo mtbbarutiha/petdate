@@ -308,18 +308,13 @@ html[data-theme='dark'] .admin-app .admin-dash-chart-empty {
   background: var(--admin-accent-soft);
 }
 
-html[data-theme='dark'] .admin-app .wdg-chart-loading-spin {
-  border-color: #4a5168;
-  border-block-start-color: #c4b6ee;
+html[data-theme='dark'] .admin-app .admin-brand-loader-ring {
+  border-color: color-mix(in srgb, #7c6cf0 32%, transparent);
+  border-block-start-color: #7c6cf0;
 }
 
-html[data-theme='dark'] .admin-app .wdg-chart-loading-label {
-  color: #f4f2fb;
-}
-
-html[data-theme='dark'] .admin-app .wdg-chart-skeleton-bar {
-  background: linear-gradient(90deg, #3c4258, #7d6eae, #3c4258);
-  background-size: 200% 100%;
+html[data-theme='dark'] .admin-app .admin-brand-loader-word {
+  color: #c9bfff;
 }
 
 html[data-theme='dark'] .admin-app .recharts-cartesian-axis-tick text,

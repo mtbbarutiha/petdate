@@ -6,6 +6,7 @@ import { API_BASE, adminFetch, getAdminPassword, getAdminUsername } from '../api
 import { AdminThumb } from '../AdminThumb';
 import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 async function fetchPending(): Promise<User[]> {
   return adminFetch<User[]>('/api/users/verification/pending');
@@ -106,7 +107,7 @@ function AdminVerificationMedia({ user }: { user: User }) {
   }, [user.id, user.verificationPhotoFileId, user.avatarUrl, raw]);
 
   if (state.status === 'loading') {
-    return <p className="muted" style={{ marginTop: 10 }}>{tr('در حال بارگذاری فایل احراز…')}</p>;
+    return <AdminBrandLoader size="card" />;
   }
   if (state.status === 'error') {
     return (
@@ -235,7 +236,7 @@ export function AdminVerificationPage() {
       </header>
 
       {error && <p className="muted" style={{ color: '#b91c1c' }}>{error}</p>}
-      {loading && <p className="muted">{tr('در حال بارگذاری…')}</p>}
+      {loading && <AdminBrandLoader size="page" />}
 
       {!loading && items.length === 0 && (
         <div className="admin-card">

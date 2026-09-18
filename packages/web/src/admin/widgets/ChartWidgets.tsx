@@ -16,6 +16,7 @@ import {
   useTimeDrill,
 } from './DrillControls';
 import type { ChartPoint, WidgetRenderContext } from './types';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import { tr } from '../../i18n';
 
 export { chartWidgetPhase } from './chartPhase';
@@ -32,18 +33,7 @@ function ChartEmpty({ hint }: { hint?: string }) {
 }
 
 export function WidgetChartLoading(): ReactNode {
-  return (
-    <div className="wdg-chart-loading" role="status" aria-live="polite" aria-busy="true">
-      <div className="wdg-chart-loading-spin" aria-hidden />
-      <p className="wdg-chart-loading-label">{tr('در حال بارگذاری…')}</p>
-      <div className="wdg-chart-skeleton" aria-hidden>
-        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--lg" />
-        <div className="wdg-chart-skeleton-bar" />
-        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--md" />
-        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--sm" />
-      </div>
-    </div>
-  );
+  return <AdminBrandLoader size="card" className="wdg-chart-loading" />;
 }
 
 export function WidgetChartError({ message }: { message?: string | null }): ReactNode {
