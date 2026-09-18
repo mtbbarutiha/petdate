@@ -3,6 +3,7 @@
  * Stock drops when an order is shipped or completed. Profit uses these unit costs.
  */
 import { getDb } from './db';
+import { ensureShopSuppliersSchema, resolveSupplierForPurchase } from './shop-suppliers';
 
 export type SupplierPurchase = {
   id: number;
@@ -11,6 +12,7 @@ export type SupplierPurchase = {
   qty: number;
   unitCostToman: number;
   supplier: string;
+  supplierId: number | null;
   purchasedAt: string;
   note: string;
   createdAt: string;
@@ -64,6 +66,7 @@ export function ensureShopWarehouseSchema(): void {
   getDb().exec(
     `CREATE INDEX IF NOT EXISTS idx_shop_purchases_product ON shop_supplier_purchases(product_id)`
   );
+  ensureShopSuppliersSchema();
 }
 
 function mapPurchase(row: Record<string, unknown>): SupplierPurchase {
@@ -74,6 +77,7 @@ function mapPurchase(row: Record<string, unknown>): SupplierPurchase {
     qty: Number(row.qty || 0),
     unitCostToman: Number(row.unit_cost_toman || 0),
     supplier: String(row.supplier || ''),
+    supplierId: row.supplier_id == null || row.supplier_id === '' ? null : Number(row.supplier_id) || null,
     purchasedAt: String(row.purchased_at || ''),
     note: String(row.note || ''),
     createdAt: String(row.created_at || ''),
@@ -124,11 +128,21 @@ export function listSupplierPurchases(limit = 200): SupplierPurchase[] {
   return rows.map(mapPurchase);
 }
 
+function readProductTitle(productId: string, fallback?: string): string {
+  const given = String(fallback || '').trim();
+  if (given) return given;
+  const row = getDb().prepare(`SELECT title FROM shop_products WHERE id = ?`).get(productId) as
+    | { title: string }
+    | undefined;
+  return row?.title || productId;
+}
+
 export function createSupplierPurchase(input: {
   productId: string;
   qty: number;
   unitCostToman: number;
-  supplier: string;
+  supplier?: string;
+  supplierId?: number;
   purchasedAt?: string;
   note?: string;
   productTitle?: string;
@@ -137,31 +151,82 @@ export function createSupplierPurchase(input: {
   const productId = String(input.productId || '').trim();
   const qty = Math.floor(Number(input.qty));
   const unit = Math.floor(Number(input.unitCostToman));
-  const supplier = String(input.supplier || '').trim();
   if (!productId) throw new Error('محصول الزامی است');
   if (!Number.isFinite(qty) || qty < 1) throw new Error('تعداد نامعتبر است');
   if (!Number.isFinite(unit) || unit < 0) throw new Error('بهای واحد نامعتبر است');
-  if (!supplier) throw new Error('نام تأمین‌کننده الزامی است');
-
-  let title = String(input.productTitle || '').trim();
-  if (!title) {
-    const row = getDb().prepare(`SELECT title FROM shop_products WHERE id = ?`).get(productId) as
-      | { title: string }
-      | undefined;
-    title = row?.title || productId;
-  }
+  const resolved = resolveSupplierForPurchase({
+    supplierId: input.supplierId,
+    supplier: input.supplier,
+  });
+  const title = readProductTitle(productId, input.productTitle);
   const purchasedAt = String(input.purchasedAt || '').trim() || new Date().toISOString();
   const result = getDb()
     .prepare(
       `INSERT INTO shop_supplier_purchases
-        (product_id, product_title, qty, unit_cost_toman, supplier, purchased_at, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+        (product_id, product_title, qty, unit_cost_toman, supplier, supplier_id, purchased_at, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(productId, title, qty, unit, supplier, purchasedAt, String(input.note || '').trim());
+    .run(
+      productId,
+      title,
+      qty,
+      unit,
+      resolved.name,
+      resolved.id,
+      purchasedAt,
+      String(input.note || '').trim()
+    );
   refreshProductCost(productId);
   const row = getDb()
     .prepare(`SELECT * FROM shop_supplier_purchases WHERE id = ?`)
     .get(result.lastInsertRowid) as Record<string, unknown>;
+  return mapPurchase(row);
+}
+
+export function updateSupplierPurchase(
+  id: number,
+  input: {
+    qty: number;
+    unitCostToman: number;
+    supplier?: string;
+    supplierId?: number;
+    purchasedAt?: string;
+    note?: string;
+  }
+): SupplierPurchase {
+  ensureShopWarehouseSchema();
+  const existing = getDb()
+    .prepare(`SELECT * FROM shop_supplier_purchases WHERE id = ?`)
+    .get(id) as Record<string, unknown> | undefined;
+  if (!existing) throw new Error('سند خرید پیدا نشد');
+  const qty = Math.floor(Number(input.qty));
+  const unit = Math.floor(Number(input.unitCostToman));
+  if (!Number.isFinite(qty) || qty < 1) throw new Error('تعداد نامعتبر است');
+  if (!Number.isFinite(unit) || unit < 0) throw new Error('بهای واحد نامعتبر است');
+  const resolved = resolveSupplierForPurchase({
+    supplierId: input.supplierId,
+    supplier: input.supplier ?? String(existing.supplier || ''),
+  });
+  const purchasedAt = String(input.purchasedAt || '').trim() || String(existing.purchased_at || '');
+  getDb()
+    .prepare(
+      `UPDATE shop_supplier_purchases
+       SET qty = ?, unit_cost_toman = ?, supplier = ?, supplier_id = ?, purchased_at = ?, note = ?
+       WHERE id = ?`
+    )
+    .run(
+      qty,
+      unit,
+      resolved.name,
+      resolved.id,
+      purchasedAt,
+      String(input.note ?? existing.note ?? '').trim(),
+      id
+    );
+  refreshProductCost(String(existing.product_id));
+  const row = getDb()
+    .prepare(`SELECT * FROM shop_supplier_purchases WHERE id = ?`)
+    .get(id) as Record<string, unknown>;
   return mapPurchase(row);
 }
 

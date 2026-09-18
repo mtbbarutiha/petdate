@@ -176,6 +176,23 @@ function readCookieUtm(): UtmAttribution {
 }
 
 /**
+ * Keep stored UTM fields when a later URL is empty or only partial.
+ * A new non-empty value wins; missing fields stay from the session.
+ */
+export function mergeUtmAttribution(stored: UtmAttribution, incoming: UtmAttribution): UtmAttribution {
+  const pick = (next: string | null, prev: string | null) => (next && next.trim() ? next : prev);
+  return {
+    utmSource: pick(incoming.utmSource, stored.utmSource),
+    utmMedium: pick(incoming.utmMedium, stored.utmMedium),
+    utmCampaign: pick(incoming.utmCampaign, stored.utmCampaign),
+    utmContent: pick(incoming.utmContent, stored.utmContent),
+    utmTerm: pick(incoming.utmTerm, stored.utmTerm),
+    gclid: pick(incoming.gclid, stored.gclid),
+    fbclid: pick(incoming.fbclid, stored.fbclid),
+  };
+}
+
+/**
  * First-touch UTM: capture from URL on landing, persist for the session (and cookie),
  * return attribution for every collect / dataLayer push.
  */
@@ -184,18 +201,11 @@ export function captureAndReadUtm(search?: string): UtmAttribution {
   const fromUrl = parseUtmFromSearch(
     search ?? (typeof window !== 'undefined' ? window.location.search : ''),
   );
-  if (utmHasValue(fromUrl)) {
-    writeStoredUtm(fromUrl);
-    return fromUrl;
-  }
   const stored = readStoredUtm();
-  if (utmHasValue(stored)) return stored;
-  const cookie = readCookieUtm();
-  if (utmHasValue(cookie)) {
-    writeStoredUtm(cookie);
-    return cookie;
-  }
-  return emptyUtm();
+  const base = utmHasValue(stored) ? stored : readCookieUtm();
+  const merged = mergeUtmAttribution(base, fromUrl);
+  if (utmHasValue(merged)) writeStoredUtm(merged);
+  return merged;
 }
 
 function apiBase(): string {
@@ -816,8 +826,18 @@ function maybeInitClarity(): void {
   });
 }
 
+/**
+ * dataLayer event name: `page_view`.
+ * Payload includes utm_source, utm_medium, utm_campaign, utm_content, and utm_term
+ * when known. Session key `pd_analytics_utm_v1` keeps them across SPA navigations
+ * so a later route without a query string does not drop attribution.
+ */
 function pushGtmVirtualPageview(pathname: string): void {
   if (typeof window === 'undefined' || !resolveGtmId()) return;
+  if (lastGtmPagePath == null) {
+    const boot = (window as Window & { __pdBootPageView?: string }).__pdBootPageView;
+    if (typeof boot === 'string' && boot) lastGtmPagePath = boot;
+  }
   const path = pathname.split('?')[0] || '/';
   const search = pathname.includes('?')
     ? pathname.slice(pathname.indexOf('?'))

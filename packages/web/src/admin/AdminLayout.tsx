@@ -83,6 +83,7 @@ const NAV_GROUPS: NavGroup[] = [
       platformBadgeKey: 'shopOrders',
     },
     { to: '/admin/shop/warehouse', icon: Package, labelKey: 'admin.warehouse', perm: 'shop.read' },
+    { to: '/admin/shop/suppliers', icon: Building2, labelKey: 'admin.suppliers', perm: 'shop.read' },
     { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
     { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
     { to: '/admin/shop/brands', icon: Package, labelKey: 'admin.brands', perm: 'shop.read' },
@@ -502,10 +503,11 @@ function AdminLayoutInner() {
               </div>
             </div>
             <div className="admin-topbar-end">
-              <LanguageToggle compact className="admin-lang-toggle" />
+              {/* RTL flex-direction:row — first child sits on the visual right, so راهنما is right of EN. */}
               <Link to="/admin/guide" className="admin-btn admin-btn--ghost admin-guide-link">
                 {t('admin.guide')}
               </Link>
+              <LanguageToggle compact className="admin-lang-toggle" />
               <ThemeToggle compact className="admin-theme-toggle" />
               <AdminHeaderNotifications />
             </div>
