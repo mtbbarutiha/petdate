@@ -76,6 +76,18 @@ Mobile owners opening «پرونده پزشکی» from My Pets use `/pets/:id#pe
 
 Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
 
+## SPA routes that start with `/t` (`/team-chat`, `/trainer-consult`)
+
+Event ticket HTML is Express (`/t/:code`). Origin used `location ^~ /t`, which is a **prefix** match. Nginx then proxied these SPA paths to Express, which returned a short HTML **404** (`Cannot GET /team-chat`) — not `index.html`.
+
+| URL | Before | After |
+|-----|--------|-------|
+| `/t/PD-KRJ-2026-000154` | Express ticket HTML | unchanged (`location ^~ /t/`) |
+| `/support/chat` / `/vet-consult` | SPA 200 (never matched `/t`) | unchanged |
+| `/team-chat` / `/team-chat/:slug` / `/trainer-consult` | Express **404** HTML | SPA `index.html` via `location /` `try_files` |
+
+After deploy: `curl -sI https://petdate.ir/team-chat/sara-noori` and `/trainer-consult` must be **200** `text/html` **without** `x-powered-by: Express`. Ticket URLs stay Express.
+
 ## Host canonical (`www` → `petdate.ir`)
 
 Preferred public host is **`https://petdate.ir`** (canonical, schema, sitemap).

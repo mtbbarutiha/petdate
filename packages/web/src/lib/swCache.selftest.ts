@@ -19,8 +19,8 @@ assert.match(sw, /petdate-web-v61-hero-admin-photos/, 'swRegister active cacheId
 assert.match(vite, /cacheId:\s*'petdate-web-v61-hero-admin-photos'/, 'vite PWA cacheId is v61');
 assert.match(
   vite,
-  /navigateFallbackDenylist:[\s\S]*?\/\^\\\/t/,
-  'SW navigation denylist includes /t ticket HTML routes',
+  /navigateFallbackDenylist:[\s\S]*?\/\^\\\/t\(\?:\\\/\|\$\)/,
+  'SW navigation denylist is /t or /t/… only (not /team-chat or /trainer-consult)',
 );
 assert.doesNotMatch(sw, /petdate-web-v60-landing-css-restore/, 'old v60-landing-css-restore cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260918-landing-css-restore-v60/, 'old v60 bust key is retired');
