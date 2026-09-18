@@ -125,6 +125,11 @@ const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'sara-nozi': 'sara-noori',
   'pasha-yazdani': 'faranak-ahmadi',
   pasha: 'faranak-ahmadi',
+  /** First-name shortcuts used in live links / staff usernames. */
+  sara: 'sara-noori',
+  faranak: 'faranak-ahmadi',
+  leila: 'leila-kiani',
+  sanaz: 'sanaz-ghaffari',
   /** یلدا replaced by ساناز as sole public support face. */
   'yalda-shabani': 'sanaz-ghaffari',
 };

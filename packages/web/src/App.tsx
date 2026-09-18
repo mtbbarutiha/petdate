@@ -494,6 +494,7 @@ export default function App() {
             <Route path="games" element={<Navigate to="/events" replace />} />
             <Route path="pet/:slugOrId" element={<PublicPetPage />} />
             <Route path="vet-consult" element={<VetConsultRoute />} />
+            <Route path="team-chat" element={<Navigate to="/#team" replace />} />
             <Route path="team-chat/:agentSlug" element={<TeamChatStartPage />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />

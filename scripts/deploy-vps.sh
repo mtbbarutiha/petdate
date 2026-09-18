@@ -396,8 +396,13 @@ server {
     proxy_set_header X-Real-IP \$remote_addr;
   }
 
-  location /t {
+  location = /t {
     proxy_pass http://127.0.0.1:3001/t;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+  }
+  location ^~ /t/ {
+    proxy_pass http://127.0.0.1:3001/t/;
     proxy_set_header Host \$host;
     proxy_set_header X-Real-IP \$remote_addr;
   }

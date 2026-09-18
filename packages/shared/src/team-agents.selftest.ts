@@ -44,6 +44,10 @@ assert.equal(teamAgentChatPath('yalda-shabani'), '/support/chat');
 assert.equal(teamAgentChatPath('pasha-yazdani'), '/team-chat/faranak-ahmadi');
 assert.equal(teamAgentChatPath('layla-ahmadi'), '/team-chat/faranak-ahmadi');
 assert.equal(teamAgentChatPath('sara-nozi'), '/team-chat/sara-noori');
+assert.equal(teamAgentChatPath('sara'), '/team-chat/sara-noori');
+assert.equal(teamAgentChatPath('faranak'), '/team-chat/faranak-ahmadi');
+assert.equal(teamAgentChatPath('leila'), '/team-chat/leila-kiani');
+assert.equal(teamAgentChatPath('sanaz'), '/support/chat');
 
 const EXPECTED: Record<string, { kind: string; role: string; id: string; name: string }> = {
   'faranak-ahmadi': {

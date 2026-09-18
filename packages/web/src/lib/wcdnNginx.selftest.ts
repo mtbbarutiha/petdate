@@ -40,6 +40,8 @@ assert.match(
   /trailing-slash|\/api\/auth\/avatar/,
   'documents avatar upload trailing-slash trap'
 );
+assert.match(doc, /\/team-chat/, 'documents /team-chat not stolen by /t ticket prefix');
+assert.match(doc, /\/trainer-consult/, 'documents /trainer-consult SPA fallback');
 assert.match(doc, /Flexible SSL/, 'documents Flexible SSL constraint');
 assert.match(doc, /http:\/\/petdate\.ir/, 'documents apex HTTP check');
 assert.match(doc, /apiErrorMessage/, 'documents SPA HTML→Persian error mapping');
@@ -91,6 +93,30 @@ assert.match(
   deploy,
   /petdate-shop-product-redirects\.map/,
   'deploy backs up the product redirect map so nginx -t rollback can restore it'
+);
+
+// Event tickets are /t and /t/* only. Bare prefix /t stole /team-chat + /trainer-consult
+// (Express HTML "Cannot GET", not the SPA). /support/chat and /vet-consult never matched /t.
+{
+  const ticketExact = (conf.match(/location = \/t \{/g) || []).length;
+  const ticketSlash = (conf.match(/location \^~ \/t\//g) || []).length;
+  assert.equal(ticketExact, 2, `exact /t once per server (got ${ticketExact})`);
+  assert.equal(ticketSlash, 2, `ticket prefix /t/ once per server (got ${ticketSlash})`);
+}
+assert.doesNotMatch(
+  conf,
+  /location \^~ \/t \{/,
+  'must not use location ^~ /t (steals /team-chat and /trainer-consult)'
+);
+assert.match(
+  deploy,
+  /location \^~ \/t\//,
+  'deploy fallback tickets use /t/ not bare /t'
+);
+assert.doesNotMatch(
+  deploy,
+  /location \/t \{/,
+  'deploy fallback must not prefix-steal /team-chat'
 );
 
 // /pets/:id SPA deep links (medical tab) must not hard-404 under the stock-photo prefix.
