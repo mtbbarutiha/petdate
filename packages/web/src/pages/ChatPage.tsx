@@ -90,6 +90,7 @@ import {
   buyCoinsPath,
   chatReplySnippetBody,
   isPendingRequestExpired,
+  isGenderDefaultAvatarPath,
   makeUserPublicId,
   petPublicIdOf,
   userPublicIdOf,
@@ -409,7 +410,6 @@ function ConversationListPane({
                     <InboxPeerAvatar
                       avatarUrl={c.peerAvatarUrl || peer?.ownerAvatarUrl}
                       name={c.title}
-                      gender={peer?.ownerGender}
                     />
                     <span className="tg-chat-list-meta">
                       <strong>
@@ -1187,14 +1187,16 @@ export function ChatPage() {
         const displayName = (user.name && String(user.name).trim()) || null;
         setPeerOwnerLabel(label);
         setPeerOwnerDisplayName(displayName);
-        setPeerOwnerAvatar(
-          resolvePublicAvatarUrl(user.avatarUrl, {
+        setPeerOwnerAvatar(() => {
+          const resolved = resolvePublicAvatarUrl(user.avatarUrl, {
             verificationPhotoFileId: user.verificationPhotoFileId,
-            gender: user.gender,
             moderationStatus: user.avatarModerationStatus,
             publicFacing: true,
-          })
-        );
+          });
+          // Peer DTO may substitute a shared gender JPG. That is not this owner's face.
+          if (!resolved || isGenderDefaultAvatarPath(resolved)) return '';
+          return resolved;
+        });
         setPeerOwnerMeta({
           city: user.city || undefined,
           province: user.province || undefined,

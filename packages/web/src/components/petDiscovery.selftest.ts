@@ -28,6 +28,13 @@ assert.match(panel, /listUserContacts/, 'calls contacts API');
 assert.match(panel, /pet-discovery-contacts/, 'contacts list test id');
 assert.match(panel, /onOpenContact/, 'opens existing chat from contact');
 assert.match(panel, /listNearbyPets/, 'calls nearby API');
+assert.match(panel, /getCurrentPosition/, 'nearby calls navigator.geolocation.getCurrentPosition');
+assert.match(panel, /permissions\.query/, 'reads Permissions API state');
+assert.match(panel, /requestCurrentPosition\(\)/, 'starts the browser prompt in the click turn');
+assert.match(panel, /discoveryGeoAllow/, 'allow button is the retry control');
+assert.match(panel, /pet-discovery-geo-allow/, 'geo allow button test id');
+assert.match(panel, /pet-discovery-geo-ask/, 'geo ask region test id');
+assert.doesNotMatch(panel, /discoveryGeoDenied/, 'does not render the red location-denied copy');
 assert.match(panel, /peopleFromDiscoveryPets/, 'dedupes to people');
 assert.match(panel, /sendPlaymateRequestNow/, 'wires real playmate request');
 assert.match(panel, /discoverySendRequest/, 'send-request CTA i18n');
@@ -54,6 +61,10 @@ assert.match(fa, /discoveryContacts:\s*'لیست مخاطبین'/, 'fa contacts 
 assert.match(fa, /discoveryOpenChat:\s*'باز کردن گفتگو'/, 'fa open-chat CTA');
 assert.match(fa, /discoverySendRequest:\s*'ارسال درخواست'/, 'fa send request CTA');
 assert.match(fa, /discoveryNearbyCount:\s*'\{n\} نفر/, 'fa people count nearby');
+assert.match(fa, /discoveryGeoAllow:\s*'اجازه دسترسی به موقعیت'/, 'fa location allow button');
+assert.match(en, /discoveryGeoAllow:\s*'Allow location access'/, 'en location allow button');
+assert.match(fa, /discoveryGeoAsk:/, 'fa asks for location instead of erroring first');
+assert.doesNotMatch(panel, /toastError\(msg\)[\s\S]{0,80}discoveryGeo/, 'geo denial is not toasted as an error');
 assert.match(en, /discoverySendRequest:\s*'Send request'/, 'en send request CTA');
 assert.match(en, /discoveryContacts:\s*'Contacts'/, 'en contacts label');
 assert.match(panel, /audience\?: 'playmate' \| 'owners'/, 'panel supports owners audience');
@@ -91,5 +102,27 @@ assert.equal(people[0]!.ownerName, 'Ali');
 assert.equal(people[0]!.pet.name, 'Jimy', 'first pet wins per owner');
 assert.equal(people[1]!.ownerName, 'Sara');
 assert.equal(people[2]!.ownerName, 'صاحب پت', 'fallback owner label');
+
+const withPhoto = peopleFromDiscoveryPets([
+  stubPet({
+    id: 5,
+    ownerId: 13,
+    name: 'beni',
+    ownerName: 'sarvenazgh',
+    ownerAvatarUrl: '/api/auth/avatar/13/face.jpg',
+  }),
+]);
+assert.equal(withPhoto[0]!.ownerAvatarUrl, '/api/auth/avatar/13/face.jpg', 'keeps a real owner photo');
+
+const stockFace = peopleFromDiscoveryPets([
+  stubPet({
+    id: 6,
+    ownerId: 14,
+    name: 'میلی',
+    ownerName: 'Mohammad',
+    ownerAvatarUrl: '/images/defaults/avatar-female.jpg',
+  }),
+]);
+assert.equal(stockFace[0]!.ownerAvatarUrl, undefined, 'shared gender stock is not an owner photo');
 
 console.log('petDiscovery.selftest: ok');

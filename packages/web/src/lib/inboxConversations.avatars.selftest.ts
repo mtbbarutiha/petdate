@@ -67,13 +67,13 @@ const patientDefault = resolveConsultPeerAvatarUrl(
   baseConsult({ patientGender: 'female' }),
   'as_vet',
 );
-assert.equal(patientDefault, '/images/defaults/avatar-female.jpg');
+assert.equal(patientDefault, undefined, 'missing patient photo is not a shared female stock face');
 
 const vetDefault = resolveConsultPeerAvatarUrl(
   baseConsult({ vetName: 'صاحب ناشناس', vetGender: 'male' }),
   'as_patient',
 );
-assert.equal(vetDefault, '/images/defaults/avatar-male.jpg');
+assert.equal(vetDefault, undefined, 'unknown vet is not a shared male stock face');
 
 const verifyVideo = resolveConsultPeerAvatarUrl(
   baseConsult({
