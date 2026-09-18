@@ -73,7 +73,7 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /@media \(min-width:860px\)\{:root\{--pepito-nav-h:74px;--pepito-hero-h:calc\(100svh - var\(--pepito-nav-h\)\)\}/,
+  /@media \(min-width:860px\)\{[\s\S]*?:root\{--pepito-nav-h:74px;--pepito-hero-h:calc\(100svh - var\(--pepito-nav-h\)\)\}/,
   'critical desktop hero fills the first viewport (no about-section peek)'
 );
 assert.doesNotMatch(
@@ -135,6 +135,36 @@ assert.match(
   indexHtml,
   /\.pepito-hero-slides,\.pepito-hero-slide\{position:absolute;inset:0/,
   'critical CSS sizes hero slide stack before deferred pepito.css',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero-slide\{opacity:0/,
+  'critical CSS hides inactive slides (suit/person bleed into nav)',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero-slide\.is-active\{opacity:1/,
+  'critical CSS shows the active hero slide',
+);
+assert.match(
+  indexHtml,
+  /@media \(min-width:860px\)\{[\s\S]*?\.pepito-nav-primary\{display:flex/,
+  'critical CSS keeps desktop primary nav as a single flex row before pepito.css',
+);
+assert.match(
+  indexHtml,
+  /@media \(min-width:860px\)\{[\s\S]*?\.pepito-site-desktop-nav\{display:inline-flex/,
+  'critical CSS lays out SiteDesktopNav inline before pepito.css',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-nav-profile-btn\{[^}]*overflow:hidden/,
+  'critical CSS clips logged-in avatar (suit bleed on first paint)',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-nav-profile-photo\{[^}]*object-fit:cover/,
+  'critical CSS sizes profile photo inside the avatar chip',
 );
 assert.match(
   indexHtml,
@@ -213,7 +243,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v58-hero-fullbleed/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v59-logged-in-preload/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -387,6 +417,7 @@ assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk
 assert.match(below, /hydrateShopCatalogOnce/, 'landing hydrates shop catalog from below-fold only');
 assert.match(below, /IntersectionObserver/, 'landing shop catalog waits for #shop intersection');
 assert.match(below, /scheduleLandingAppCss/, 'below-fold arms deferred chrome CSS');
+assert.match(welcome, /scheduleLandingAppCss/, 'WelcomePage arms deferred chrome CSS on mount (not only below-fold)');
 assert.doesNotMatch(below, /if \(newsIndex === 0\) return/, 'news arrows must scroll back to page 0');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');

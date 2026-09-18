@@ -6,6 +6,7 @@ import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { parkBootLcp, unparkBootLcp } from '../lib/parkBootLcp';
+import { scheduleLandingAppCss } from '../styles/loadAppCss';
 import { resolvePublicMediaUrl } from '../lib/mediaUrl';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
@@ -287,6 +288,13 @@ export function WelcomePage() {
   /* Lock mobile hero band once so URL-chrome / svh shifts cannot jump the page. */
   useEffect(() => {
     lockMobileHeroHeight();
+  }, []);
+
+  /* Arm deferred pepito/global CSS on home mount — do not wait for below-fold.
+     Critical CSS covers the above-fold FOUC; this still applies full chrome on
+     first input / ~8s after load (same scheduler as WelcomeBelowFold). */
+  useEffect(() => {
+    scheduleLandingAppCss();
   }, []);
 
   /* If HTML lacked a boot snapshot, mark ready immediately so offline defaults paint. */
