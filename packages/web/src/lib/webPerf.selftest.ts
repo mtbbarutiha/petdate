@@ -78,8 +78,8 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /\.pepito-hero\{[^}]*background:#14161e/,
-  'critical hero uses solid fill (photo comes from boot LCP / React only)'
+  /\.pepito-hero\{[^}]*background:transparent/,
+  'critical hero fill is transparent so boot LCP shows through',
 );
 assert.doesNotMatch(
   indexHtml,
@@ -264,7 +264,15 @@ assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes')
 assert.match(welcome, /unparkBootLcp|parkBootLcp/, 'HTML LCP img stays visible on slide 0 then parks on handoff');
 assert.match(welcome, /bootHandedOff/, 'boot LCP handoff waits for slide change (no first-paint park)');
 assert.match(welcome, /i !== 0 \|\| bootHandedOff/, 'slide 0 uses #pd-boot-lcp until handoff');
+assert.match(welcome, /setInterval/, 'hero autoplay restores sliding carousel');
+assert.match(welcome, /heroNavKey/, 'manual slide nav resets autoplay interval');
+assert.match(welcome, /prefers-reduced-motion:\s*reduce/, 'hero autoplay respects reduced motion');
 assert.match(welcome, /data-pd-hero-h-locked/, 'React must not re-lock hero height after head script');
+assert.doesNotMatch(
+  indexHtml,
+  /\.pepito-hero\{[^}]*contain:layout paint/,
+  'critical CSS must not use contain:paint (hides hero UI under #pd-boot-lcp)',
+);
 assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (smaller index entry)');
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/AppDialog'\)/, 'AppDialogHost is lazy off landing entry');
@@ -286,8 +294,20 @@ assert.match(welcome, /i === slide && \(i !== 0 \|\| bootHandedOff\)/, 'active n
 assert.doesNotMatch(welcome, /appendChild\(img\)/, 'must not move the LCP node (causes render delay)');
 assert.match(
   indexHtml,
-  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{position:absolute;[^}]*z-index:1/,
-  'critical CSS keeps the HTML LCP in document flow above #root fill'
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{position:absolute;[^}]*z-index:0/,
+  'critical CSS keeps boot LCP behind isolated #root (shows through hero hole)',
+);
+assert.match(indexHtml, /#root\{[^}]*isolation:isolate/, 'critical CSS isolates transparent #root above boot LCP');
+assert.match(indexHtml, /#root\{[^}]*background:transparent/, 'critical CSS keeps #root transparent for boot LCP hole');
+assert.match(
+  indexHtml,
+  /\.pepito-hero\{[^}]*background:transparent/,
+  'critical CSS hero fill is transparent so boot LCP is visible',
+);
+assert.match(
+  indexHtml,
+  /id="pd-boot-lcp"[\s\S]*?style="[^"]*z-index:0/,
+  'inline boot LCP geometry uses z-index:0 (not above hero UI)',
 );
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /hydrateShopCatalogOnce/, 'landing hydrates shop catalog from below-fold only');
@@ -344,15 +364,27 @@ assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
 
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?contain:\s*layout paint/,
+  'pepito hero must not use contain:paint (stacking flattens under boot LCP)',
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?contain:\s*layout;/,
+  'pepito hero keeps contain:layout without paint',
+);
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?position:\s*absolute/, 'hydrated boot LCP is absolute, not viewport-fixed');
-assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?z-index:\s*1/, 'hydrated boot LCP paints above landing fill');
+assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?z-index:\s*0/, 'hydrated boot LCP stays behind isolated #root');
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?inset:\s*auto/, 'hydrated boot LCP overrides hero-media inset');
+assert.match(pepitoCss, /\.pepito-landing \{[\s\S]*?background:\s*transparent/, 'landing is transparent so boot LCP shows through hero');
+assert.match(pepitoCss, /\.pepito-hero \{[\s\S]*?background:\s*transparent/, 'hero fill is transparent for boot LCP hole');
 assert.match(below, /width=\{232\}[\s\S]*?height=\{232\}/, 'below-fold adoption thumbs reserve 232px');
 assert.match(below, /width=\{480\}[\s\S]*?height=\{388\}/, 'below-fold about photo attrs match 480 WebP');
 assert.match(
   pepitoCss,
-  /\.pepito-hero \{[\s\S]*?background:\s*#14161e;/,
-  'hydrated hero uses solid fill (no dual static photo under slides)'
+  /\.pepito-hero \{[\s\S]*?background:\s*transparent/,
+  'hydrated hero fill is transparent so boot LCP shows through',
 );
 assert.doesNotMatch(
   pepitoCss,

@@ -284,7 +284,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 /* ── Pepito landing ── */
 .pepito-landing {
-  background: var(--pepito-white);
+  /* Transparent so body>#pd-boot-lcp shows through the hero; sections paint their own fills. */
+  background: transparent;
   color: var(--pepito-muted);
   overflow-x: clip;
   width: 100%;
@@ -637,10 +638,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
-  contain: layout paint;
-  /* Solid fill only — never a second photo under the slide <img> (dual-source flash).
-     Boot LCP + React media own the visible image; admin /api/hero is the SoT. */
-  background: #14161e;
+  /* layout only — contain:paint flattens wash/copy/dots under out-of-root LCP.
+     Transparent fill: isolated #root lets body>#pd-boot-lcp show through on slide 0. */
+  contain: layout;
+  /* Fallback when boot LCP is parked and a React slide img has not painted yet. */
+  background: transparent;
   color: #fff;
   touch-action: pan-y;
 }
@@ -714,8 +716,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
 /* HTML LCP node lives outside #root; height matches the compact #377 hero band.
-   absolute (not fixed) so the photo scrolls with the hero. z-index:1 so it paints
-   above #root/landing fills — fixed+z-0 left slide 0 as a black empty band.
+   absolute (not fixed) so the photo scrolls with the hero.
+   z-index:0 + transparent isolated #root: boot paints above the body fill and
+   shows through the hero hole, while wash (2) / copy (3) / dots (4) stay on top.
    Override .pepito-hero-media inset:0 so geometry stays the hero band. */
 body > #pd-boot-lcp,
 body > #pd-boot-lcp.pepito-hero-media {
@@ -728,7 +731,7 @@ body > #pd-boot-lcp.pepito-hero-media {
   width: 100%;
   height: var(--pepito-hero-h);
   max-height: var(--pepito-hero-h);
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
   margin: 0;
   display: block;

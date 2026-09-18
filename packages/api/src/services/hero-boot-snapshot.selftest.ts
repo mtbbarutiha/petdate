@@ -45,6 +45,7 @@ assert.match(img, /position:absolute/, 'boot LCP keeps inline geometry after sna
 assert.match(img, /display:block/, 'boot LCP stays visible after snapshot rewrite');
 assert.doesNotMatch(img, /is-parked/, 'snapshot rewrite must not park homepage LCP');
 assert.match(img, /object-position:50% 90%/, 'focus position preserved');
+assert.match(img, /z-index:0/, 'boot LCP stays behind isolated #root (hero UI above)');
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const heroRoute = readFileSync(join(apiRoot, 'routes/hero.ts'), 'utf8');

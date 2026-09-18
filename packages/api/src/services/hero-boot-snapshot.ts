@@ -75,7 +75,7 @@ export function bootLcpImgOpenTag(snap: HeroBootSnapshot): string {
   let style =
     'position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:0;bottom:auto;width:100%;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:' +
     pos +
-    ';z-index:1;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1';
+    ';z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1';
   if (snap.scale > 0 && snap.scale !== 1) {
     style += `;transform:scale(${snap.scale});transform-origin:${pos}`;
   }
