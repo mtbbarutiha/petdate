@@ -746,6 +746,8 @@ export const en: Dict = {
     analytics: 'Analytics',
     tagManager: 'Tag manager',
     monitoring: 'Monitoring',
+    security: 'Security',
+    reportsHub: 'Reports',
     errorLogs: 'Error logs',
     platformSettings: 'Platform settings',
     loginSubtitle: 'Pet Date operator login — bot, shop, web & HR',
