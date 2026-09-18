@@ -15,6 +15,7 @@ import {
   isValidGtmContainerId,
   isValidGa4MeasurementId,
   parseUtmFromSearch,
+  mergeUtmAttribution,
   resolveGa4MeasurementId,
   setRuntimeGa4MeasurementId,
   pushDataLayer,
@@ -143,5 +144,30 @@ pushDataLayer({ event: 'sign_up', method: 'otp' });
 scheduleAfterLoadIdle(() => {
   throw new Error('scheduleAfterLoadIdle must not run off-window');
 });
+
+const sessionUtm = {
+  utmSource: 'telegram',
+  utmMedium: 'social',
+  utmCampaign: 'spring',
+  utmContent: 'banner',
+  utmTerm: 'dogs',
+  gclid: null,
+  fbclid: null,
+};
+const emptyIncoming = {
+  utmSource: null,
+  utmMedium: null,
+  utmCampaign: null,
+  utmContent: null,
+  utmTerm: null,
+  gclid: null,
+  fbclid: null,
+};
+const kept = mergeUtmAttribution(sessionUtm, emptyIncoming);
+assert.equal(kept.utmSource, 'telegram');
+assert.equal(kept.utmTerm, 'dogs');
+const partial = mergeUtmAttribution(sessionUtm, { ...emptyIncoming, utmSource: 'instagram' });
+assert.equal(partial.utmSource, 'instagram');
+assert.equal(partial.utmCampaign, 'spring');
 
 console.log('siteAnalytics.selftest: OK');

@@ -34,6 +34,10 @@ assert.match(loading, /admin\.loading/, 'loading copy uses i18n');
 assert.match(loading, /admin-route-spinner/, 'centered spinner');
 assert.match(loading, /admin-route-skeleton/, 'skeleton bars');
 assert.match(loading, /role="status"/, 'accessible status role');
+assert.match(outlet, /armAdminFetchWatch/, 'overlay waits on this route adminFetch generation');
+assert.match(outlet, /LOAD_TIMEOUT_MS = 12000/, 'hung requests stop blocking after 12s');
+assert.match(outlet, /admin-route-timeout/, 'timeout surfaces an error instead of a forever spinner');
+assert.match(loading, /admin-route-loading-brand/, 'branded loader mark');
 
 assert.match(css, /\.admin-app\s+\.admin-outlet\s*\{/, 'outlet fills main column');
 assert.match(css, /\.admin-outlet-page\.is-pending/, 'pending outlet is hidden');

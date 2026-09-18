@@ -88,7 +88,14 @@ import {
   listSupplierPurchases,
   listWarehouseProducts,
   shopProfitSummary,
+  updateSupplierPurchase,
 } from '../shop-warehouse';
+import {
+  createShopSupplier,
+  deleteShopSupplier,
+  listShopSuppliers,
+  updateShopSupplier,
+} from '../shop-suppliers';
 import { rateLimit } from '../middleware/rate-limit';
 import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
 import { decorateAiConsultDisplay } from '../services/ai-consult-session';
@@ -1552,7 +1559,56 @@ adminRouter.get('/shop/warehouse', (_req, res) => {
     stock: listStockOnHand(),
     profit: shopProfitSummary(),
     products: listWarehouseProducts(),
+    suppliers: listShopSuppliers({ includeInactive: true }),
   });
+});
+
+adminRouter.get('/shop/suppliers', (_req, res) => {
+  res.json({ suppliers: listShopSuppliers({ includeInactive: true }) });
+});
+
+adminRouter.post('/shop/suppliers', (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const row = createShopSupplier({
+      name: String(body.name || ''),
+      phone: body.phone != null ? String(body.phone) : undefined,
+      contactPerson: body.contactPerson != null ? String(body.contactPerson) : undefined,
+      addressNotes: body.addressNotes != null ? String(body.addressNotes) : undefined,
+      active: body.active !== false,
+    });
+    res.status(201).json({ supplier: row });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'ثبت تأمین‌کننده ناموفق بود' });
+  }
+});
+
+adminRouter.patch('/shop/suppliers/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const body = req.body ?? {};
+    const row = updateShopSupplier(id, {
+      name: body.name != null ? String(body.name) : undefined,
+      phone: body.phone != null ? String(body.phone) : undefined,
+      contactPerson: body.contactPerson != null ? String(body.contactPerson) : undefined,
+      addressNotes: body.addressNotes != null ? String(body.addressNotes) : undefined,
+      active: body.active == null ? undefined : Boolean(body.active),
+    });
+    res.json({ supplier: row });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'ویرایش تأمین‌کننده ناموفق بود';
+    res.status(msg.includes('پیدا نشد') ? 404 : 400).json({ error: msg });
+  }
+});
+
+adminRouter.delete('/shop/suppliers/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    res.json(deleteShopSupplier(id));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'حذف تأمین‌کننده ناموفق بود';
+    res.status(msg.includes('پیدا نشد') ? 404 : 400).json({ error: msg });
+  }
 });
 
 adminRouter.post('/shop/purchases', (req, res) => {
@@ -1562,7 +1618,8 @@ adminRouter.post('/shop/purchases', (req, res) => {
       productId: String(body.productId || ''),
       qty: Number(body.qty),
       unitCostToman: Number(body.unitCostToman),
-      supplier: String(body.supplier || ''),
+      supplier: body.supplier != null ? String(body.supplier) : undefined,
+      supplierId: body.supplierId != null ? Number(body.supplierId) : undefined,
       purchasedAt: body.purchasedAt ? String(body.purchasedAt) : undefined,
       note: body.note ? String(body.note) : undefined,
       productTitle: body.productTitle ? String(body.productTitle) : undefined,
@@ -1570,6 +1627,25 @@ adminRouter.post('/shop/purchases', (req, res) => {
     res.status(201).json({ purchase: row, profit: shopProfitSummary(), stock: listStockOnHand() });
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'ثبت خرید ناموفق بود' });
+  }
+});
+
+adminRouter.patch('/shop/purchases/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const body = req.body ?? {};
+    const row = updateSupplierPurchase(id, {
+      qty: Number(body.qty),
+      unitCostToman: Number(body.unitCostToman),
+      supplier: body.supplier != null ? String(body.supplier) : undefined,
+      supplierId: body.supplierId != null ? Number(body.supplierId) : undefined,
+      purchasedAt: body.purchasedAt ? String(body.purchasedAt) : undefined,
+      note: body.note != null ? String(body.note) : undefined,
+    });
+    res.json({ purchase: row, profit: shopProfitSummary(), stock: listStockOnHand() });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'ویرایش سند خرید ناموفق بود';
+    res.status(msg.includes('پیدا نشد') ? 404 : 400).json({ error: msg });
   }
 });
 

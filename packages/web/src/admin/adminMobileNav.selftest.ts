@@ -106,4 +106,11 @@ for (const block of mobile768Blocks) {
   );
 }
 
+const endIdx = layout.indexOf('admin-topbar-end');
+const userIdx = layout.indexOf('admin-topbar-user', endIdx);
+const topbarEnd = layout.slice(endIdx, userIdx);
+const guideIdx = topbarEnd.indexOf('admin-guide-link');
+const langIdx = topbarEnd.indexOf('<LanguageToggle');
+assert.ok(guideIdx >= 0 && langIdx > guideIdx, 'راهنما source order is before EN so RTL places it on the right');
+
 console.log('adminMobileNav.selftest: ok');

@@ -9,7 +9,11 @@ export function AdminPageLoading({ overlay = false }: { overlay?: boolean }) {
       aria-live="polite"
       aria-busy="true"
     >
-      <div className="admin-route-spinner" aria-hidden />
+      <div className="admin-route-loading-mark" aria-hidden>
+        <span className="admin-route-spinner" />
+        <span className="admin-route-spinner admin-route-spinner--inner" />
+      </div>
+      <p className="admin-route-loading-brand">PetDate</p>
       <p className="admin-route-loading-label">{t('admin.loading')}</p>
       <div className="admin-route-skeleton" aria-hidden>
         <div className="admin-route-skeleton-bar admin-route-skeleton-bar--lg" />
