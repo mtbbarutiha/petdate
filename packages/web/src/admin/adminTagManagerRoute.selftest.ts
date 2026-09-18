@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const app = readFileSync(join(webRoot, 'src/App.tsx'), 'utf8');
-const layout = readFileSync(join(webRoot, 'src/admin/AdminLayout.tsx'), 'utf8');
+const layout = readFileSync(join(webRoot, 'src/admin/adminNav.ts'), 'utf8');
 const page = readFileSync(join(webRoot, 'src/admin/pages/AdminTagManagerPage.tsx'), 'utf8');
 
 assert.match(app, /AdminTagManagerPage/, 'App lazy-imports AdminTagManagerPage');

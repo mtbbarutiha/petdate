@@ -9,7 +9,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const layout = readFileSync(join(webRoot, 'admin/AdminLayout.tsx'), 'utf8');
+const layout = readFileSync(join(webRoot, 'admin/adminNav.ts'), 'utf8');
+const shell = readFileSync(join(webRoot, 'admin/AdminLayout.tsx'), 'utf8');
 const sharedNav = readFileSync(
   join(webRoot, '../../shared/src/admin-nav.ts'),
   'utf8'
@@ -20,8 +21,8 @@ assert.match(layout, /financeBadgeKey:\s*['"]transactions['"]/, 'transactions ba
 assert.match(layout, /financeBadgeKey:\s*['"]pendingAllocation['"]/, 'allocation badge wired');
 assert.match(layout, /crmBadgeKey:\s*['"]tickets['"]/, 'CRM ticketing badge wired');
 assert.match(layout, /platformBadgeKey:\s*['"]shopOrders['"]/, 'shop orders badge wired');
-assert.match(layout, /\/api\/admin\/finance-os\/nav-counts/, 'polls finance-os nav-counts');
-assert.match(layout, /\/api\/admin\/crm\/nav-counts/, 'polls crm nav-counts');
+assert.match(shell, /\/api\/admin\/finance-os\/nav-counts/, 'polls finance-os nav-counts');
+assert.match(shell, /\/api\/admin\/crm\/nav-counts/, 'polls crm nav-counts');
 
 const storeBlock = layout.split("titleKey: 'admin.store'")[1]?.split(/titleKey: 'admin\.[^']+'/)[0] || '';
 assert.ok(storeBlock, 'store nav group present');

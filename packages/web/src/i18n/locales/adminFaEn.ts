@@ -761,6 +761,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "تیکتی برای این همکار نیست": "No tickets for this colleague",
   "تیکتی نیست": "No Tickets",
   "تیکتینگ": "Ticketing",
+  "تیکت باشگاه مشتریان": "Club Tickets",
   "تیم": "Team",
   "تیم / دپارتمان": "Team / Department",
   "تیم آپگرید": "Upgrade Team",

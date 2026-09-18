@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const repoRoot = join(webRoot, '../..');
-const layout = readFileSync(join(webRoot, 'src/admin/AdminLayout.tsx'), 'utf8');
+const layout = readFileSync(join(webRoot, 'src/admin/adminNav.ts'), 'utf8');
 const hr = readFileSync(join(webRoot, '../shared/src/hr.ts'), 'utf8');
 const staff = readFileSync(join(webRoot, '../shared/src/staff-agents.ts'), 'utf8');
 const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-staff-roles-agents-v1'), 'utf8');

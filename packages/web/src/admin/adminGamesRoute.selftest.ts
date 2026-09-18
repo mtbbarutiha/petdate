@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const webSrc = join(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = join(webSrc, '../../..');
-const layout = readFileSync(join(webSrc, 'admin/AdminLayout.tsx'), 'utf8');
+const layout = readFileSync(join(webSrc, 'admin/adminNav.ts'), 'utf8');
 const app = readFileSync(join(webSrc, 'App.tsx'), 'utf8');
 const page = readFileSync(join(webSrc, 'admin/pages/AdminGamesPage.tsx'), 'utf8');
 const adminRoutes = readFileSync(join(repoRoot, 'packages/api/src/routes/admin.ts'), 'utf8');

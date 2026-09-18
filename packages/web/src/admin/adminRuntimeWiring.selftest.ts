@@ -19,7 +19,7 @@ assert.match(settings, /shopEnabled/, 'settings still expose shop flag');
 assert.doesNotMatch(settings, /hint: 'placeholder درگاه کارت'/, 'card flag is no longer a placeholder hint');
 assert.doesNotMatch(settings, /hint: 'بنر نگهداری \(placeholder\)'/, 'maintenance flag is no longer a placeholder hint');
 
-const layout = read(join(webRoot, 'admin/AdminLayout.tsx'));
+const layout = read(join(webRoot, 'admin/adminNav.ts'));
 assert.match(layout, /\/admin\/coin-sells/, 'coin-sell queue in sidebar');
 assert.match(layout, /financeBadgeKey:\s*['"]coinSells['"]/, 'coin-sell badge wired');
 assert.match(layout, /\/admin\/support/, 'support inbox in sidebar');
