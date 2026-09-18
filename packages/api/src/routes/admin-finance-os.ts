@@ -7,8 +7,18 @@ import {
   allocateFinanceOsExpense,
   classifyFinanceOsTransaction,
   createFinanceOsAccount,
+  createFinanceOsCommitment,
+  createFinanceOsEquipment,
+  createFinanceOsExpense,
+  createFinanceOsOffice,
   createFinanceOsPerson,
+  createFinanceOsSbgPerson,
+  deleteFinanceOsCommitment,
+  deleteFinanceOsEquipment,
+  deleteFinanceOsExpense,
+  deleteFinanceOsInvoice,
   deleteFinanceOsOffice,
+  deleteFinanceOsSbgPerson,
   getFinanceOsAccountsBundle,
   getFinanceOsAllocationBundle,
   getFinanceOsNavCounts,
@@ -19,7 +29,10 @@ import {
   resolveFinanceOsSuspicious,
   updateFinanceOsAccount,
   updateFinanceOsBankBalance,
+  updateFinanceOsCommitment,
   updateFinanceOsEquipment,
+  updateFinanceOsExpense,
+  updateFinanceOsInvoice,
   updateFinanceOsOffice,
   updateFinanceOsSbgPerson,
   upsertFinanceOsDim,
@@ -147,6 +160,10 @@ financeOsAdminRouter.get('/allocation', (_req, res) => {
   }
 });
 
+financeOsAdminRouter.post('/allocation/offices', requirePermission('finance.write'), (req, res) => {
+  try { res.json(createFinanceOsOffice(req.body || {})); } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
 financeOsAdminRouter.patch('/allocation/offices/:id', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -173,6 +190,10 @@ financeOsAdminRouter.delete('/allocation/offices/:id', requirePermission('financ
   }
 });
 
+financeOsAdminRouter.post('/allocation/people', requirePermission('finance.write'), (req, res) => {
+  try { res.json(createFinanceOsSbgPerson(req.body || {})); } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
 financeOsAdminRouter.patch('/allocation/people/:id', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -186,6 +207,18 @@ financeOsAdminRouter.patch('/allocation/people/:id', requirePermission('finance.
   }
 });
 
+financeOsAdminRouter.delete('/allocation/people/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(deleteFinanceOsSbgPerson(id));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.post('/allocation/equipment', requirePermission('finance.write'), (req, res) => {
+  try { res.json(createFinanceOsEquipment(req.body || {})); } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
 financeOsAdminRouter.patch('/allocation/equipment/:id', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -197,6 +230,34 @@ financeOsAdminRouter.patch('/allocation/equipment/:id', requirePermission('finan
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }
+});
+
+financeOsAdminRouter.delete('/allocation/equipment/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(deleteFinanceOsEquipment(id));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.post('/allocation/expenses', requirePermission('finance.write'), (req, res) => {
+  try { res.json(createFinanceOsExpense(req.body || {})); } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.patch('/allocation/expenses/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(updateFinanceOsExpense(id, req.body || {}));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.delete('/allocation/expenses/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(deleteFinanceOsExpense(id));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
 });
 
 financeOsAdminRouter.post('/allocation/expenses/:id/allocate', requirePermission('finance.write'), (req, res) => {
@@ -220,12 +281,48 @@ financeOsAdminRouter.post('/allocation/invoices', requirePermission('finance.wri
   }
 });
 
+financeOsAdminRouter.patch('/allocation/invoices/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(updateFinanceOsInvoice(id, req.body || {}));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.delete('/allocation/invoices/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(deleteFinanceOsInvoice(id));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
 financeOsAdminRouter.patch('/allocation/bank-balance', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(updateFinanceOsBankBalance(Number(req.body?.bankBalance)));
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }
+});
+
+financeOsAdminRouter.post('/allocation/commitments', requirePermission('finance.write'), (req, res) => {
+  try { res.json(createFinanceOsCommitment(req.body || {})); } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.patch('/allocation/commitments/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(updateFinanceOsCommitment(id, req.body || {}));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
+});
+
+financeOsAdminRouter.delete('/allocation/commitments/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
+    res.json(deleteFinanceOsCommitment(id));
+  } catch (err) { res.status(400).json({ error: (err as Error).message }); }
 });
 
 financeOsAdminRouter.post('/allocation/commitments/:id/done', requirePermission('finance.write'), (req, res) => {

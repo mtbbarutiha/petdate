@@ -197,6 +197,7 @@ export function ensureFinanceOsSchema(): void {
   // PostgreSQL rejects bare column name `desc` (reserved). Older SQLite demo DBs
   // may still have it — rename when needed so both drivers share desc_text.
   migrateFinanceOsDescColumns();
+  ensureFinanceOsExpenseOfficeColumn();
   d.exec(`
     CREATE INDEX IF NOT EXISTS idx_finance_os_tx_status ON finance_os_transactions(status);
     CREATE INDEX IF NOT EXISTS idx_finance_os_tx_account ON finance_os_transactions(account);
@@ -286,6 +287,17 @@ export function scrubFinanceOsSbgBranding(force = false): void {
 /** Read description column; prefer desc_text (PG-safe), fall back to legacy desc. */
 function rowDesc(row: Record<string, unknown>): string {
   return String(row.desc_text ?? row.desc ?? '');
+}
+
+function ensureFinanceOsExpenseOfficeColumn(): void {
+  try {
+    const cols = db().prepare('PRAGMA table_info(finance_os_sbg_expenses)').all() as Array<{ name: string }>;
+    if (!cols.length) return;
+    if (cols.some((c) => c.name === 'office')) return;
+    db().exec("ALTER TABLE finance_os_sbg_expenses ADD COLUMN office TEXT NOT NULL DEFAULT ''");
+  } catch (err) {
+    console.warn('finance-os migrate expense office:', (err as Error).message);
+  }
 }
 
 function migrateFinanceOsDescColumns(): void {
@@ -1032,6 +1044,69 @@ function mapEquipment(row: Record<string, unknown>): FinanceOsEquipment {
   };
 }
 
+function mapExpense(row: Record<string, unknown>): FinanceOsSbgExpense {
+  return {
+    id: Number(row.id),
+    date: String(row.date),
+    amount: Number(row.amount) || 0,
+    desc: rowDesc(row),
+    category: String(row.category || ''),
+    relatedPerson: String(row.related_person || ''),
+    office: String(row.office || ''),
+    account: String(row.account || ''),
+    allocated: Boolean(Number(row.allocated)),
+    splits: parseJson(row.splits_json, []),
+  };
+}
+
+function mapInvoice(row: Record<string, unknown>): FinanceOsInvoice {
+  const status = String(row.status || 'draft');
+  return {
+    id: Number(row.id),
+    number: String(row.number),
+    business: String(row.business),
+    jy: Number(row.jy),
+    jm: Number(row.jm),
+    total: Number(row.total) || 0,
+    status: status === 'issued' || status === 'paid' ? status : 'draft',
+    lines: parseJson(row.lines_json, []),
+    createdAt: String(row.created_at || ''),
+  };
+}
+
+function mapCommitment(row: Record<string, unknown>): FinanceOsCommitment {
+  return {
+    id: Number(row.id),
+    desc: rowDesc(row),
+    category: String(row.category || ''),
+    amount: Number(row.amount) || 0,
+    dueDate: String(row.due_date || ''),
+    status: row.status === 'done' ? 'done' : 'pending',
+  };
+}
+
+function costAmount(raw: unknown): number {
+  const n = Math.round(Number(raw) || 0);
+  if (!n) return 0;
+  return n > 0 ? -n : n;
+}
+
+function commitmentBankImpact(status: string, amount: number): number {
+  return status === 'done' ? Math.round(Number(amount) || 0) : 0;
+}
+
+function adjustBankForCommitment(
+  prev: { status: string; amount: number } | null,
+  next: { status: string; amount: number } | null
+): void {
+  const delta =
+    commitmentBankImpact(prev?.status || '', prev?.amount || 0) -
+    commitmentBankImpact(next?.status || '', next?.amount || 0);
+  if (!delta) return;
+  metaSet('bankBalance', metaGet<number>('bankBalance', 0) + delta);
+}
+
+
 function normalizeOfficeAreas(areas: unknown): FinanceOsOffice['areas'] {
   if (!Array.isArray(areas)) return [];
   return areas
@@ -1532,8 +1607,9 @@ export function getFinanceOsAllocationBundle(): FinanceOsAllocationBundle {
       desc: rowDesc(r),
       category: String(r.category || ''),
       relatedPerson: String(r.related_person || ''),
+      office: String(r.office || ''),
       account: String(r.account || ''),
-      allocated: Boolean(r.allocated),
+      allocated: Boolean(Number(r.allocated)),
       splits: parseJson(r.splits_json, []),
     })
   );
@@ -1612,48 +1688,192 @@ export function allocateFinanceOsExpense(
     desc: rowDesc(row),
     category: String(row.category || ''),
     relatedPerson: String(row.related_person || ''),
+    office: String(row.office || ''),
     account: String(row.account || ''),
     allocated: true,
     splits: clean,
   };
 }
 
+
 export function issueFinanceOsInvoice(input: {
   business: string;
   jy: number;
   jm: number;
+  status?: FinanceOsInvoice['status'];
   lines: Array<{ desc: string; category: string; amount: number }>;
 }): FinanceOsInvoice {
   ensureFinanceOsSchema();
   const business = String(input.business || '').trim();
   if (!business) throw new Error('بیزنس‌لاین الزامی است');
-  const lines = (input.lines || []).map((l) => ({
-    desc: String(l.desc || ''),
-    category: String(l.category || ''),
-    amount: Math.round(Number(l.amount) || 0),
-  }));
+  const lines = normalizeInvoiceLines(input.lines);
   const total = lines.reduce((s, l) => s + l.amount, 0);
-  const seq =
-    (db().prepare('SELECT COUNT(*) AS c FROM finance_os_invoices').get() as { c: number }).c + 1;
+  const seq = (db().prepare('SELECT COUNT(*) AS c FROM finance_os_invoices').get() as { c: number }).c + 1;
   const number = `INV-PD-${input.jy}-${String(input.jm).padStart(2, '0')}-${String(seq).padStart(2, '0')}`;
   const createdAt = nowIso();
-  const info = db()
-    .prepare(
-      `INSERT INTO finance_os_invoices (number, business, jy, jm, total, status, lines_json, created_at)
-       VALUES (?,?,?,?,?,'issued',?,?)`
-    )
-    .run(number, business, input.jy, input.jm, total, JSON.stringify(lines), createdAt);
-  return {
-    id: Number(info.lastInsertRowid),
-    number,
-    business,
-    jy: input.jy,
-    jm: input.jm,
-    total,
-    status: 'issued',
-    lines,
-    createdAt,
-  };
+  const status = input.status === 'draft' || input.status === 'paid' ? input.status : 'issued';
+  const info = db().prepare(
+    `INSERT INTO finance_os_invoices (number, business, jy, jm, total, status, lines_json, created_at) VALUES (?,?,?,?,?,?,?,?)`
+  ).run(number, business, input.jy, input.jm, total, status, JSON.stringify(lines), createdAt);
+  return mapInvoice(db().prepare('SELECT * FROM finance_os_invoices WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+function normalizeInvoiceLines(lines: Array<{ desc?: string; category?: string; amount?: number }> | undefined): FinanceOsInvoice['lines'] {
+  return (lines || []).map((l) => ({
+    desc: String(l.desc || '').trim(),
+    category: String(l.category || '').trim(),
+    amount: Math.round(Number(l.amount) || 0),
+  })).filter((l) => l.desc || l.amount);
+}
+
+function nextEquipmentCode(): string {
+  const rows = db().prepare('SELECT code FROM finance_os_equipment').all() as Array<{ code: string }>;
+  const used = new Set(rows.map((r) => String(r.code)));
+  let n = rows.length + 1;
+  let code = `EQ-${String(n).padStart(4, '0')}`;
+  while (used.has(code)) { n += 1; code = `EQ-${String(n).padStart(4, '0')}`; }
+  return code;
+}
+
+export function createFinanceOsOffice(input: { name: string; address?: string; totalSqm?: number; monthlyRent?: number; areas?: FinanceOsOffice['areas'] }): FinanceOsOffice {
+  ensureFinanceOsSchema();
+  const name = String(input.name || '').trim();
+  if (!name) throw new Error('نام دفتر الزامی است');
+  const dup = db().prepare('SELECT id FROM finance_os_offices WHERE name = ?').get(name);
+  if (dup) throw new Error('دفتری با این نام وجود دارد');
+  let areas = normalizeOfficeAreas(input.areas);
+  const monthlyRent = Math.round(Number(input.monthlyRent) || 0);
+  const totalSqmInput = Number(input.totalSqm) || 0;
+  if (!areas.length && (monthlyRent > 0 || totalSqmInput > 0)) {
+    areas = normalizeOfficeAreas([{ id: 'area-1', name: 'کل دفتر', sqm: totalSqmInput, monthlyRent, assignedBusiness: null }]);
+  }
+  const totalSqm = totalSqmInput > 0 ? totalSqmInput : areas.reduce((s, a) => s + (Number(a.sqm) || 0), 0);
+  const info = db().prepare(`INSERT INTO finance_os_offices (name, address, total_sqm, space_json, headcount_json, areas_json) VALUES (?,?,?,'[]','[]',?)`).run(name, String(input.address || '').trim(), totalSqm, JSON.stringify(areas));
+  return mapOffice(db().prepare('SELECT * FROM finance_os_offices WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+export function createFinanceOsSbgPerson(input: { name: string; role?: string; office?: string; allocationMethod?: 'auto' | 'manual' }): FinanceOsSbgPerson {
+  ensureFinanceOsSchema();
+  const name = String(input.name || '').trim();
+  if (!name) throw new Error('نام الزامی است');
+  const method = input.allocationMethod === 'manual' ? 'manual' : 'auto';
+  const info = db().prepare(`INSERT INTO finance_os_sbg_people (name, role, office, allocation_method, time_json) VALUES (?,?,?,?,'[]')`).run(name, String(input.role || '').trim(), String(input.office || '').trim(), method);
+  return mapSbgPerson(db().prepare('SELECT * FROM finance_os_sbg_people WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+export function deleteFinanceOsSbgPerson(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT id FROM finance_os_sbg_people WHERE id = ?').get(id);
+  if (!prev) throw new Error('فرد یافت نشد');
+  db().prepare('DELETE FROM finance_os_sbg_people WHERE id = ?').run(id);
+  return { ok: true };
+}
+
+export function createFinanceOsEquipment(input: { name: string; category?: string; purchasePrice?: number; currentValue?: number; monthlyRate?: number; assignedBusiness?: string; assignedPerson?: string }): FinanceOsEquipment {
+  ensureFinanceOsSchema();
+  const name = String(input.name || '').trim();
+  if (!name) throw new Error('نام الزامی است');
+  const purchase = Math.round(Number(input.purchasePrice) || 0);
+  const current = input.currentValue != null ? Math.round(Number(input.currentValue) || 0) : purchase;
+  const info = db().prepare(`INSERT INTO finance_os_equipment (code, category, expense_category, name, brand, purchase_date, purchase_price, current_value, monthly_rate, ownership, assigned_business, assigned_person) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(nextEquipmentCode(), String(input.category || '').trim(), '', name, '', nowIso().slice(0, 10), purchase, current, Math.round(Number(input.monthlyRate) || 0), 'هلدینگ', String(input.assignedBusiness || '').trim(), String(input.assignedPerson || '').trim());
+  return mapEquipment(db().prepare('SELECT * FROM finance_os_equipment WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+export function deleteFinanceOsEquipment(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT id FROM finance_os_equipment WHERE id = ?').get(id);
+  if (!prev) throw new Error('تجهیز یافت نشد');
+  db().prepare('DELETE FROM finance_os_equipment WHERE id = ?').run(id);
+  return { ok: true };
+}
+
+export function createFinanceOsExpense(input: { date?: string; amount: number; desc: string; category?: string; relatedPerson?: string; office?: string; account?: string }): FinanceOsSbgExpense {
+  ensureFinanceOsSchema();
+  const desc = String(input.desc || '').trim();
+  if (!desc) throw new Error('شرح الزامی است');
+  const amount = costAmount(input.amount);
+  if (!amount) throw new Error('مبلغ الزامی است');
+  const info = db().prepare(`INSERT INTO finance_os_sbg_expenses (date, amount, desc_text, category, related_person, office, account, allocated, splits_json) VALUES (?,?,?,?,?,?,?,0,'[]')`).run(String(input.date || nowIso().slice(0, 10)).slice(0, 10), amount, desc, String(input.category || '').trim(), String(input.relatedPerson || '').trim(), String(input.office || '').trim(), String(input.account || 'W-CASH-HLD'));
+  invalidateFinanceOsNavCountsCache();
+  return mapExpense(db().prepare('SELECT * FROM finance_os_sbg_expenses WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+export function updateFinanceOsExpense(id: number, patch: Partial<{ date: string; amount: number; desc: string; category: string; relatedPerson: string; office: string; account: string }>): FinanceOsSbgExpense {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_sbg_expenses WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!prev) throw new Error('هزینه یافت نشد');
+  const desc = patch.desc != null ? String(patch.desc).trim() : rowDesc(prev);
+  if (!desc) throw new Error('شرح الزامی است');
+  const amount = patch.amount != null ? costAmount(patch.amount) : Number(prev.amount) || 0;
+  if (!amount) throw new Error('مبلغ الزامی است');
+  db().prepare(`UPDATE finance_os_sbg_expenses SET date=?, amount=?, desc_text=?, category=?, related_person=?, office=?, account=? WHERE id=?`).run(patch.date != null ? String(patch.date).slice(0, 10) : String(prev.date), amount, desc, patch.category != null ? String(patch.category).trim() : String(prev.category || ''), patch.relatedPerson != null ? String(patch.relatedPerson).trim() : String(prev.related_person || ''), patch.office != null ? String(patch.office).trim() : String(prev.office || ''), patch.account != null ? String(patch.account) : String(prev.account || ''), id);
+  return mapExpense(db().prepare('SELECT * FROM finance_os_sbg_expenses WHERE id = ?').get(id) as Record<string, unknown>);
+}
+
+export function deleteFinanceOsExpense(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT id FROM finance_os_sbg_expenses WHERE id = ?').get(id);
+  if (!prev) throw new Error('هزینه یافت نشد');
+  db().prepare('DELETE FROM finance_os_sbg_expenses WHERE id = ?').run(id);
+  invalidateFinanceOsNavCountsCache();
+  return { ok: true };
+}
+
+export function updateFinanceOsInvoice(id: number, patch: Partial<{ business: string; jy: number; jm: number; status: FinanceOsInvoice['status']; lines: FinanceOsInvoice['lines'] }>): FinanceOsInvoice {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_invoices WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!prev) throw new Error('فاکتور یافت نشد');
+  const business = patch.business != null ? String(patch.business).trim() : String(prev.business || '');
+  if (!business) throw new Error('بیزنس‌لاین الزامی است');
+  const lines = patch.lines != null ? normalizeInvoiceLines(patch.lines) : parseJson(prev.lines_json, []);
+  const total = lines.reduce((s: number, l: { amount: number }) => s + (Number(l.amount) || 0), 0);
+  const status = patch.status === 'draft' || patch.status === 'issued' || patch.status === 'paid' ? patch.status : mapInvoice(prev).status;
+  db().prepare(`UPDATE finance_os_invoices SET business=?, jy=?, jm=?, total=?, status=?, lines_json=? WHERE id=?`).run(business, patch.jy != null ? Number(patch.jy) || 0 : Number(prev.jy) || 0, patch.jm != null ? Number(patch.jm) || 0 : Number(prev.jm) || 0, total, status, JSON.stringify(lines), id);
+  return mapInvoice(db().prepare('SELECT * FROM finance_os_invoices WHERE id = ?').get(id) as Record<string, unknown>);
+}
+
+export function deleteFinanceOsInvoice(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT id FROM finance_os_invoices WHERE id = ?').get(id);
+  if (!prev) throw new Error('فاکتور یافت نشد');
+  db().prepare('DELETE FROM finance_os_invoices WHERE id = ?').run(id);
+  return { ok: true };
+}
+
+export function createFinanceOsCommitment(input: { desc: string; category?: string; amount: number; dueDate?: string; status?: 'pending' | 'done' }): FinanceOsCommitment {
+  ensureFinanceOsSchema();
+  const desc = String(input.desc || '').trim();
+  if (!desc) throw new Error('شرح الزامی است');
+  const amount = Math.round(Number(input.amount) || 0);
+  if (!amount) throw new Error('مبلغ الزامی است');
+  const status = input.status === 'done' ? 'done' : 'pending';
+  const info = db().prepare(`INSERT INTO finance_os_commitments (desc_text, category, amount, due_date, status) VALUES (?,?,?,?,?)`).run(desc, String(input.category || '').trim(), amount, String(input.dueDate || '').slice(0, 10), status);
+  adjustBankForCommitment(null, { status, amount });
+  return mapCommitment(db().prepare('SELECT * FROM finance_os_commitments WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<string, unknown>);
+}
+
+export function updateFinanceOsCommitment(id: number, patch: Partial<{ desc: string; category: string; amount: number; dueDate: string; status: 'pending' | 'done' }>): FinanceOsCommitment {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_commitments WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!prev) throw new Error('تعهد یافت نشد');
+  const before = mapCommitment(prev);
+  const desc = patch.desc != null ? String(patch.desc).trim() : before.desc;
+  if (!desc) throw new Error('شرح الزامی است');
+  const amount = patch.amount != null ? Math.round(Number(patch.amount) || 0) : before.amount;
+  if (!amount) throw new Error('مبلغ الزامی است');
+  const status = patch.status === 'done' || patch.status === 'pending' ? patch.status : before.status;
+  db().prepare(`UPDATE finance_os_commitments SET desc_text=?, category=?, amount=?, due_date=?, status=? WHERE id=?`).run(desc, patch.category != null ? String(patch.category).trim() : before.category, amount, patch.dueDate != null ? String(patch.dueDate).slice(0, 10) : before.dueDate, status, id);
+  adjustBankForCommitment(before, { status, amount });
+  return mapCommitment(db().prepare('SELECT * FROM finance_os_commitments WHERE id = ?').get(id) as Record<string, unknown>);
+}
+
+export function deleteFinanceOsCommitment(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_commitments WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!prev) throw new Error('تعهد یافت نشد');
+  db().prepare('DELETE FROM finance_os_commitments WHERE id = ?').run(id);
+  adjustBankForCommitment(mapCommitment(prev), null);
+  return { ok: true };
 }
 
 export function updateFinanceOsOffice(
