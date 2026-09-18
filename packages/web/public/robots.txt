@@ -1,12 +1,13 @@
 # petdate.ir — پت‌دیت
-# Public: landing, FAQ, shop browse, adoption, vet-consult marketing, login.
+# Public: landing, FAQ, shop browse, adoption, events, magazine, vet-consult, login.
 # Private/app surfaces are disallowed (auth OTP, chats, wallet, admin, onboarding).
+# Legacy /games is crawlable so bots can follow origin 301 → /events (do not Disallow).
 
 User-agent: *
 Allow: /
 Allow: /faq
 Allow: /help
-Allow: /games
+Allow: /events
 Allow: /shop
 Allow: /shop/c/
 Allow: /shop/product/
@@ -15,6 +16,7 @@ Allow: /magazine/
 Allow: /adoption
 Allow: /adoption/
 Allow: /vet-consult
+Allow: /landings/app
 Allow: /auth/login
 Disallow: /admin
 Disallow: /admin/

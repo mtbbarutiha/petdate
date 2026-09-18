@@ -64,13 +64,20 @@ assert.match(
 );
 assert.match(
   conf,
-  /location ~ \^\/\(\?:faq\|help\|shop/,
-  'public marketing HTML is cacheable'
+  /location ~ \^\/\(\?:faq\|help\|shop[\s\S]*?events\|magazine\|landings\/app/,
+  'public marketing HTML includes events/magazine/app (no trailing-slash 301)'
 );
 assert.match(
   conf,
   /location ~ \^\/\(\?:faq\|help\|shop[\s\S]*?try_files \$uri \$uri\/index\.html \/index\.html;/,
   'public routes serve prerendered index.html without directory-slash 301'
+);
+assert.match(conf, /location = \/games \{ return 301 \/events; \}/, '/games soft-404 → /events');
+assert.match(conf, /location = \/games\/ \{ return 301 \/events; \}/, '/games/ soft-404 → /events');
+assert.doesNotMatch(
+  conf,
+  /location ~ \^\/\(\?:faq\|help\|shop\|adoption\|vet-consult\|games\|/,
+  'legacy /games is no longer a public HTML shell location'
 );
 assert.match(conf, /shop-product-redirects\.map/, 'product id→slug map included');
 assert.match(conf, /\$shop_product_redirect/, 'product id redirects wired');
