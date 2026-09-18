@@ -186,6 +186,49 @@ async function main() {
   fos.updateFinanceOsBankBalance(balBefore + 5000);
   assert(fos.getFinanceOsAllocationBundle().bankBalance === balBefore + 5000, 'bank balance');
 
+  const createdOffice = fos.createFinanceOsOffice({
+    name: 'دفتر تست ایجاد',
+    address: 'تهران، تجریش',
+    totalSqm: 55,
+    monthlyRent: 9000000,
+    areas: [{ id: 'sp-1', name: 'اتاق جلسه', sqm: 18, monthlyRent: 4000000, assignedBusiness: 'پت‌دیت' }],
+  });
+  assert(createdOffice.name === 'دفتر تست ایجاد', 'office create name');
+  assert(createdOffice.address === 'تهران، تجریش', 'office create city');
+  assert(createdOffice.areas[0]?.monthlyRent === 4000000, 'office create space rent');
+  const rentOnly = fos.createFinanceOsOffice({ name: 'دفتر فقط اجاره', address: 'کرج', monthlyRent: 7000000 });
+  assert(rentOnly.areas[0]?.name === 'کل دفتر' && rentOnly.areas[0].monthlyRent === 7000000, 'monthly rent becomes area');
+  fos.deleteFinanceOsOffice(createdOffice.id);
+  fos.deleteFinanceOsOffice(rentOnly.id);
+
+  const personCreated = fos.createFinanceOsSbgPerson({ name: 'نسترن تست', role: 'کارشناس', office: 'دفتر مرکزی - ونک', allocationMethod: 'manual' });
+  assert(personCreated.office === 'دفتر مرکزی - ونک', 'person office');
+  fos.deleteFinanceOsSbgPerson(personCreated.id);
+
+  const eqCreated = fos.createFinanceOsEquipment({ name: 'مانیتور تست', category: 'نمایشگر', purchasePrice: 8000000, monthlyRate: 200000, assignedBusiness: 'پت‌دیت' });
+  assert(eqCreated.purchasePrice === 8000000, 'equipment cost');
+  fos.deleteFinanceOsEquipment(eqCreated.id);
+
+  const pendingBefore = fos.getFinanceOsAllocationBundle().pendingAllocationCount;
+  const expCreated = fos.createFinanceOsExpense({ desc: 'هزینه تست تخصیص', amount: 1500000, category: 'OVERHEAD', office: 'دفتر مرکزی - ونک', relatedPerson: 'امیر توکلی', date: '2026-09-01' });
+  assert(expCreated.amount === -1500000 && expCreated.office === 'دفتر مرکزی - ونک' && !expCreated.allocated, 'expense create');
+  assert(fos.getFinanceOsAllocationBundle().pendingAllocationCount === pendingBefore + 1, 'pending increments');
+  fos.deleteFinanceOsExpense(expCreated.id);
+  assert(fos.getFinanceOsAllocationBundle().pendingAllocationCount === pendingBefore, 'pending decrements');
+
+  const extraInv = fos.issueFinanceOsInvoice({ business: 'پت‌دیت', jy: 1405, jm: 7, status: 'draft', lines: [{ desc: 'خط تست', category: 'اجاره', amount: 1000 }] });
+  assert(extraInv.status === 'draft', 'invoice draft');
+  assert(fos.updateFinanceOsInvoice(extraInv.id, { status: 'paid' }).status === 'paid', 'invoice edit');
+  fos.deleteFinanceOsInvoice(extraInv.id);
+
+  const bankNow = fos.getFinanceOsAllocationBundle().bankBalance;
+  const commit = fos.createFinanceOsCommitment({ desc: 'تعهد تست', category: 'اجاره', amount: 3000, dueDate: '2026-12-01', status: 'pending' });
+  assert(fos.getFinanceOsAllocationBundle().bankBalance === bankNow, 'pending commitment keeps bank');
+  fos.updateFinanceOsCommitment(commit.id, { status: 'done' });
+  assert(fos.getFinanceOsAllocationBundle().bankBalance === bankNow - 3000, 'done commitment debits bank');
+  fos.deleteFinanceOsCommitment(commit.id);
+  assert(fos.getFinanceOsAllocationBundle().bankBalance === bankNow, 'delete commitment refunds bank');
+
   const counts = fos.getFinanceOsNavCounts();
   assert(typeof counts.queue === 'number', 'nav queue');
   assert(typeof counts.suspicious === 'number', 'nav suspicious');

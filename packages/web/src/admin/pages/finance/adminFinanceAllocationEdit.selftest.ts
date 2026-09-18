@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildOfficeCreateBody } from './financeAllocationPayload';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(join(here, 'AdminFinanceAllocationPage.tsx'), 'utf8');
@@ -55,5 +56,37 @@ assert.match(routes, /patch\('\/allocation\/equipment\/:id'/, 'equipment PATCH r
 assert.match(service, /export function updateFinanceOsOffice/, 'office update service');
 assert.match(service, /export function updateFinanceOsSbgPerson/, 'people update service');
 assert.match(service, /export function updateFinanceOsEquipment/, 'equipment update service');
+
+assert.deepEqual(
+  buildOfficeCreateBody({
+    name: '  دفتر شمال  ',
+    address: ' تهران، تجریش ',
+    totalSqm: '55',
+    monthlyRent: '12000000',
+    areas: [
+      { id: 'a1', name: ' اتاق جلسه ', sqm: '18', monthlyRent: '4000000', assignedBusiness: 'پت‌دیت' },
+      { id: 'a2', name: '   ', sqm: '1', monthlyRent: '2', assignedBusiness: '' },
+    ],
+  }),
+  {
+    name: 'دفتر شمال',
+    address: 'تهران، تجریش',
+    totalSqm: 55,
+    monthlyRent: 12000000,
+    areas: [{ id: 'a1', name: 'اتاق جلسه', sqm: 18, monthlyRent: 4000000, assignedBusiness: 'پت‌دیت' }],
+  },
+  'office create payload'
+);
+assert.match(page, /data-testid="admin-office-create"/, 'office create button');
+assert.match(page, /tr\('ایجاد دفتر'\)/, 'create office label');
+assert.match(page, /tr\('دفتری ثبت نشده'\)/, 'empty offices show create');
+assert.match(page, /\/api\/admin\/finance-os\/allocation\/offices'/, 'office create posts collection');
+assert.match(page, /tr\('افزودن فرد'\)/, 'people create');
+assert.match(page, /tr\('افزودن تجهیز'\)/, 'equipment create');
+assert.match(page, /tr\('ایجاد تخصیص'\)/, 'allocation create');
+assert.match(page, /tr\('ایجاد فاکتور'\)/, 'invoice create');
+assert.match(page, /tr\('ایجاد تعهد'\)/, 'commitment create');
+assert.match(routes, /post\('\/allocation\/offices'/, 'office POST route');
+assert.match(service, /export function createFinanceOsOffice/, 'office create service');
 
 console.log('adminFinanceAllocationEdit.selftest: ok');

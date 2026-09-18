@@ -194,6 +194,7 @@ export interface FinanceOsSbgExpense {
   desc: string;
   category: string;
   relatedPerson: string;
+  office: string;
   account: string;
   allocated: boolean;
   splits: Array<{ business: string; amount: number; basis: string }>;
