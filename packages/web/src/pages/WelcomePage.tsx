@@ -12,6 +12,10 @@ import { GatedLink, PawIcon } from './landingGatedLink';
 const WelcomeBelowFold = lazy(() =>
   import('./WelcomeBelowFold').then((m) => ({ default: m.WelcomeBelowFold })),
 );
+/** Footer uses lucide — keep it off the hero/Welcome parse graph (landmark stays outside <main>). */
+const SiteFooter = lazy(() =>
+  import('../components/SiteFooter').then((m) => ({ default: m.SiteFooter })),
+);
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
@@ -380,13 +384,16 @@ export function WelcomePage() {
         sectionLinks={welcomeSectionLinks()}
         showCart
         deferDesktopNav
-        logoSrc="/media/lcp/logo-390.webp"
-        logoWidth={390}
-        logoHeight={114}
+        logoSrc="/media/lcp/logo-200.webp"
+        logoSrcSet="/media/lcp/logo-160.webp 160w, /media/lcp/logo-200.webp 200w, /media/lcp/logo-260.webp 260w, /media/lcp/logo-390.webp 390w"
+        logoSizes="144px"
+        logoWidth={200}
+        logoHeight={58}
       />
 
       <PlatformBanners placement="landing" />
 
+      <main id="main-content" className="pepito-landing-main">
       <section
         className="pepito-hero"
         role="region"
@@ -503,6 +510,12 @@ export function WelcomePage() {
           </Suspense>
         ) : null}
       </div>
+      </main>
+      {showBelowFold ? (
+        <Suspense fallback={null}>
+          <SiteFooter />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

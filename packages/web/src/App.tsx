@@ -1,9 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
-import { LegacyAdoptionHashRedirect } from './components/LegacyAdoptionHashRedirect';
 import { PersistTagAssistantParams } from './components/PersistTagAssistantParams';
-import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -25,6 +23,14 @@ const AppDialogHost = lazy(() =>
 );
 const FaceVerifyRewardToast = lazy(() =>
   import('./components/FaceVerifyRewardToast').then((m) => ({ default: m.FaceVerifyRewardToast })),
+);
+/** pageSeo pulls shop+adoption catalogs — keep off landing entry / unused-JS. */
+const RouteSeo = lazy(() => import('./components/RouteSeo').then((m) => ({ default: m.RouteSeo })));
+/** Legacy hash redirect is rare — do not parse on first paint. */
+const LegacyAdoptionHashRedirect = lazy(() =>
+  import('./components/LegacyAdoptionHashRedirect').then((m) => ({
+    default: m.LegacyAdoptionHashRedirect,
+  })),
 );
 
 /** First input or 10s — keeps /api/analytics/collect + GTM helpers off LCP. */
@@ -465,11 +471,13 @@ export default function App() {
       </Suspense>
       <ShopCartProvider>
         <ScrollToTop />
-        <LegacyAdoptionHashRedirect />
+        <Suspense fallback={null}>
+          <LegacyAdoptionHashRedirect />
+          <RouteSeo />
+        </Suspense>
         <PersistTagAssistantParams />
         <ReferralCapture />
         <SiteAnalyticsListener />
-        <RouteSeo />
         <EnsureAppCss />
         <Suspense fallback={<RouteFallback />}>
           <Routes>

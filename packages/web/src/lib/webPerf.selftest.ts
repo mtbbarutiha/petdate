@@ -162,7 +162,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v50-cls-a11y/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v51-landmark-js-images/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -260,7 +260,18 @@ assert.doesNotMatch(welcome, /addEventListener\('scroll', load/, 'below-fold mus
 assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remount per slide (CLS)');
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
-assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
+assert.match(welcome, /logo-200\.webp/, 'nav logo src is display-sized (~144 CSS px)');
+assert.match(welcome, /logo-160\.webp 160w.*logo-260\.webp 260w/, 'nav logo srcset covers 1x–2x');
+assert.match(welcome, /logoSizes="144px"|sizes=\{?["']144px["']\}?/, 'nav logo sizes matches CSS width');
+assert.match(welcome, /<main[^>]*className="pepito-landing-main"/, 'homepage has exactly one main landmark');
+assert.match(welcome, /SiteFooter/, 'footer stays outside main (lazy after below-fold)');
+assert.match(indexHtml, /<main id="main-content" class="pepito-landing-main">/, 'boot HTML has main before hydrate');
+assert.match(indexHtml, /logo-200\.webp/, 'boot nav logo src is display-sized');
+assert.doesNotMatch(
+  indexHtml,
+  /pepito-nav-logo"[\s\S]*?src="\/media\/lcp\/logo-390\.webp"/,
+  'boot nav must not default src to 390w'
+);
 assert.match(welcome, /unparkBootLcp|parkBootLcp/, 'HTML LCP img stays visible on slide 0 then parks on handoff');
 assert.match(welcome, /bootHandedOff/, 'boot LCP handoff waits for slide change (no first-paint park)');
 assert.match(welcome, /i !== 0 \|\| bootHandedOff/, 'slide 0 uses #pd-boot-lcp until handoff');
@@ -277,8 +288,20 @@ assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (sma
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/AppDialog'\)/, 'AppDialogHost is lazy off landing entry');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/FaceVerifyRewardToast'\)/, 'FaceVerify toast is lazy off landing entry');
+assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/RouteSeo'\)/, 'RouteSeo/pageSeo is lazy off landing entry');
+assert.match(
+  appTsx,
+  /lazy\(\(\) =>\s*import\('\.\/components\/LegacyAdoptionHashRedirect'\)/,
+  'LegacyAdoptionHashRedirect is lazy off landing entry'
+);
 assert.doesNotMatch(appTsx, /import \{ AppDialogHost \}/, 'AppDialogHost must not be a static App import');
 assert.doesNotMatch(appTsx, /import \{ FaceVerifyRewardToast \}/, 'FaceVerify must not be a static App import');
+assert.doesNotMatch(appTsx, /import \{ RouteSeo \}/, 'RouteSeo must not be a static App import');
+assert.doesNotMatch(
+  appTsx,
+  /import \{ LegacyAdoptionHashRedirect \}/,
+  'LegacyAdoptionHashRedirect must not be a static App import'
+);
 assert.match(appTsx, /import \{ VetConsultRoute \}/, 'VetConsultRoute shell stays eager (old-SW /vet-consult)');
 assert.doesNotMatch(appTsx, /const VetConsultRoute = lazy/, 'VetConsultRoute must not be a lazy App import');
 assert.match(
@@ -320,8 +343,29 @@ assert.match(below, /requestAnimationFrame\(\(\) => \{\s*\n?\s*raf2 = window\.re
 assert.doesNotMatch(below, /getComputedStyle/, 'carousel must not force-reflow via getComputedStyle');
 assert.match(below, /\$\{base\}-232\.webp/, 'adoption thumbs use 232w WebP');
 assert.match(below, /about-480\.webp/, 'about photo serves a display-sized WebP');
+assert.match(below, /src="\/media\/lcp\/about-480\.webp"/, 'about img src is 480w not 800w');
+assert.match(below, /sizes="480px"/, 'about sizes forces 480 on typical viewports');
+assert.doesNotMatch(below, /SiteFooter/, 'footer is outside below-fold so it can sit outside <main>');
 assert.match(below, /role="img"/, 'review stars have a role so aria-label is allowed');
 assert.match(below, /pepito-news-nav" role="group"/, 'news nav is not a generic labeled div');
+
+const cart = readFileSync(join(webSrc, 'hooks/useShopCart.tsx'), 'utf8');
+const cartSync = readFileSync(join(webSrc, 'hooks/useShopCatalogSync.ts'), 'utf8');
+const toastSrc = readFileSync(join(webSrc, 'hooks/useAppToast.tsx'), 'utf8');
+assert.match(cart, /import\('\.\.\/data\/shopCatalog'\)/, 'cart loads shopCatalog dynamically');
+assert.doesNotMatch(
+  cart,
+  /import \{ getProduct/,
+  'cart must not statically import getProduct (landing unused-JS)'
+);
+assert.match(cartSync, /import\('\.\.\/data\/shopCatalog'\)/, 'catalog hydrate dynamic-imports shopCatalog');
+assert.doesNotMatch(
+  cartSync,
+  /from '\.\.\/data\/shopCatalog'/,
+  'catalog sync must not statically import shopCatalog'
+);
+assert.match(toastSrc, /from '\.\.\/i18n\/I18nProvider'/, 'toast skips i18n barrel (adminFaEn/en)');
+assert.doesNotMatch(toastSrc, /from '\.\.\/i18n'/, 'toast must not import i18n barrel');
 
 /** Same three checks as GoogleChrome/lighthouse core/audits/agentic/llms-txt.js */
 function assertLighthouseLlmsTxt(content: string, label: string) {
@@ -462,11 +506,10 @@ assert.match(below, /width=\{1600\} height=\{800\}/, 'news cover attrs match 2:1
 const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');
 const navCluster = readFileSync(join(webSrc, 'components/NavUserCluster.tsx'), 'utf8');
-const toast = readFileSync(join(webSrc, 'hooks/useAppToast.tsx'), 'utf8');
 assert.doesNotMatch(header, /from 'lucide-react'/, 'SiteHeader must not parse lucide');
 assert.doesNotMatch(themeToggle, /from 'lucide-react'/, 'ThemeToggle must not parse lucide');
 assert.doesNotMatch(navCluster, /from 'lucide-react'/, 'guest nav cluster must not parse lucide');
-assert.doesNotMatch(toast, /from 'lucide-react'/, 'toast host must not pull lucide onto landing');
+assert.doesNotMatch(toastSrc, /from 'lucide-react'/, 'toast host must not pull lucide onto landing');
 
 const shopInvoice = readFileSync(join(webSrc, 'components/shop/ShopInvoice.tsx'), 'utf8');
 assert.match(shopInvoice, /pd-shop-invoice-seal/, 'shop invoice renders seal/stamp');

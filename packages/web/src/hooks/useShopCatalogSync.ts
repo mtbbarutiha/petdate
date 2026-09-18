@@ -1,8 +1,4 @@
 import { useEffect, useState } from 'react';
-import {
-  applyLiveShopCatalog,
-  isShopCatalogHydrated,
-} from '../data/shopCatalog';
 
 let hydratePromise: Promise<boolean> | null = null;
 
@@ -21,16 +17,18 @@ export function isLandingHomePath(pathname: string): boolean {
 /**
  * Shared hydrate — call only from shop routes, landing #shop intersection,
  * or an explicit user action. Never schedule from ShopCartProvider on `/`.
+ * Dynamic-imports shopCatalog so the static product seed stays off the landing entry.
  */
 export async function hydrateShopCatalogOnce(): Promise<boolean> {
-  if (isShopCatalogHydrated()) return true;
   if (!hydratePromise) {
     hydratePromise = (async () => {
       try {
+        const catalog = await import('../data/shopCatalog');
+        if (catalog.isShopCatalogHydrated()) return true;
         const { fetchPublicShopCatalog } = await import('../lib/api');
         const data = await fetchPublicShopCatalog();
         if (!data.products?.length) return false;
-        applyLiveShopCatalog({
+        catalog.applyLiveShopCatalog({
           products: data.products,
           categories: data.categories,
           brands: data.brands,
@@ -46,8 +44,8 @@ export async function hydrateShopCatalogOnce(): Promise<boolean> {
 
 /** Hydrate shop listing helpers from /api/shop (DB) so web matches bot. */
 export function useShopCatalogSync(): { ready: boolean; synced: boolean } {
-  const [ready, setReady] = useState(isShopCatalogHydrated());
-  const [synced, setSynced] = useState(isShopCatalogHydrated());
+  const [ready, setReady] = useState(false);
+  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
