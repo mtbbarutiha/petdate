@@ -29,6 +29,7 @@ import { AdminIdChip } from '../../AdminIds';
 import { AdminThumb } from '../../AdminThumb';
 import { JalaliDateSelect, formatAdminFaDate, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
 import { tr } from '../../../i18n';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 
 const TABS = [
   { id: 'identity', label: 'هویتی - تحصیلی' },
@@ -271,7 +272,7 @@ export function AdminHrEmployeeDetailPage() {
     return <p className="admin-error">{tr('شناسه نامعتبر')}</p>;
   }
   if (!employee && !error) {
-    return <p className="admin-muted">{tr('در حال بارگذاری…')}</p>;
+    return <AdminBrandLoader size="page" />;
   }
   if (!employee) {
     return <p className="admin-error">{error}</p>;

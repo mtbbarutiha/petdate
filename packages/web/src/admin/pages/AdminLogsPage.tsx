@@ -6,6 +6,7 @@ import { groupConsecutiveLogs } from '../adminLogGroups';
 import { adminLogSecondary, pickLogTitle, translateAppLogMessage } from '../adminLogMessageFa';
 import { appConfirm } from '../../components/AppDialog';
 import { tr, useI18n } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 type LogRow = {
   id: number;
@@ -228,7 +229,7 @@ export function AdminLogsPage() {
       ) : null}
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !logs.length ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {loading && !logs.length ? <AdminBrandLoader size="page" /> : null}
 
       <section className="admin-card admin-card--logs">
         <div className="admin-table-wrap admin-table-wrap--logs">

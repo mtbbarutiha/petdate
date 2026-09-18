@@ -37,6 +37,7 @@ import {
   AdminKpiStrip,
   type AdminKpiItem,
 } from '../../dash';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import {
   AdminProgressRing,
   MOTION_PALETTE,
@@ -162,7 +163,9 @@ export function AdminSalesDashboardPage() {
   }
   if (!data) {
     return (
-      <AdminDashPage title={tr("داشبورد فروش")} subtitle="در حال بارگذاری…" />
+      <AdminDashPage title={tr("داشبورد فروش")}>
+        <AdminBrandLoader size="page" />
+      </AdminDashPage>
     );
   }
 

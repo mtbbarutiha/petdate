@@ -13,6 +13,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import { useSalesCallSimOptional } from './SalesCallSim';
@@ -260,7 +261,13 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
     try { await adminFetch(path, { method: 'POST', body: JSON.stringify(body ?? {}) }); await reload(); }
     catch (e) { setError(e instanceof Error ? e.message : 'خطا'); throw e; }
   };
-  if (!data) return <div className="admin-page"><p>{error || '…'}</p></div>;
+  if (!data) {
+    return (
+      <div className="admin-page">
+        {error ? <p className="admin-error">{error}</p> : <AdminBrandLoader size="page" />}
+      </div>
+    );
+  }
   const { item } = data;
   const lastPayment = data.payments[0];
   return (
@@ -428,7 +435,7 @@ export function AdminSalesPipelinePage() {
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !stages.length ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {loading && !stages.length ? <AdminBrandLoader size="card" /> : null}
 
       <div className="sales-pipe-board" role="list" aria-label={tr("مراحل قیف فروش")}>
         {stages.map((s) => {
@@ -666,7 +673,7 @@ export function AdminSalesCustomerDetailPage() {
     void adminFetch<{ customer: SalesCustomer; orders: { id: number; product: string; amount: number; at: string }[]; upgrades: SalesItem[] }>(`/api/admin/sales/customers/${id}`)
       .then(setData).catch(() => undefined);
   }, [id]);
-  if (!data) return <div className="admin-page"><p>…</p></div>;
+  if (!data) return <div className="admin-page"><AdminBrandLoader size="page" /></div>;
   const c = data.customer;
   return (
     <div className="admin-page">
@@ -979,7 +986,7 @@ export function AdminSalesCallsPage() {
 export function AdminSalesReportsPage() {
   const [r, setR] = useState<SalesReportSummary | null>(null);
   useEffect(() => { void adminFetch<SalesReportSummary>('/api/admin/sales/reports').then(setR); }, []);
-  if (!r) return <div className="admin-page"><p>…</p></div>;
+  if (!r) return <div className="admin-page"><AdminBrandLoader size="page" /></div>;
   return (
     <div className="admin-page admin-page--wide">
       <header className="admin-header"><div><h1>{tr('گزارشات')}</h1><p>{tr('Pet Date · بدون تفکیک بیزنس‌لاین')}</p></div></header>
@@ -1044,7 +1051,7 @@ export function AdminSalesSettingsPage() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  if (!settings) return <div className="admin-page"><p>…</p></div>;
+  if (!settings) return <div className="admin-page"><AdminBrandLoader size="page" /></div>;
 
   const tabs: Array<{ k: typeof tab; fa: string; show?: boolean }> = [
     { k: 'perf', fa: 'عملکرد من' },

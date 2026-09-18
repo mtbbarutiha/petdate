@@ -36,6 +36,7 @@ import {
   useRechartsMotion,
 } from '../../motionCharts';
 import { tr } from '../../../i18n';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 
 type TabKey = 'team' | 'person' | 'quality' | 'changelog';
 type AuditRow = Record<string, unknown>;
@@ -280,7 +281,7 @@ export function AdminCrmReportsPage() {
       </div>
 
       {loading || !summary ? (
-        <p>{tr('در حال بارگذاری…')}</p>
+        <AdminBrandLoader size="page" />
       ) : tab === 'changelog' ? (
         <section className="admin-card">
           <div className="admin-card-head"><h2>{tr('تاریخچه تغییرات')}</h2></div>

@@ -15,6 +15,7 @@ import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { checkTone, type CheckTone } from '../monitoringTone';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 type CheckStatus = 'up' | 'down' | 'warn' | 'not_configured';
 type Check = {
@@ -294,7 +295,7 @@ export function AdminMonitoringPage() {
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {loading && !data ? <AdminBrandLoader size="page" /> : null}
 
       {data ? (
         <>

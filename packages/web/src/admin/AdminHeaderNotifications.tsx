@@ -5,6 +5,7 @@ import type { AdminHeaderNotification, AdminNotificationsPayload } from '@petdat
 import { adminFetch, formatNumFa } from './api';
 import { formatAdminFaDateTime } from './JalaliDateSelect';
 import { tr } from '../i18n';
+import { AdminBrandLoader } from './AdminBrandLoader';
 
 const POLL_MS = 45_000;
 
@@ -134,7 +135,7 @@ export function AdminHeaderNotifications() {
             ) : null}
           </div>
           <div className="admin-notif-list">
-            {loading && items.length === 0 ? <p className="admin-muted admin-notif-empty">{tr('در حال بارگذاری…')}</p> : null}
+            {loading && items.length === 0 ? <AdminBrandLoader size="card" /> : null}
             {error ? <p className="admin-notif-error">{error}</p> : null}
             {!loading && !error && items.length === 0 ? (
               <p className="admin-muted admin-notif-empty">{tr('اعلانی نیست')}</p>

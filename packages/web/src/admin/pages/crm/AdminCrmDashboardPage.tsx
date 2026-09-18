@@ -23,6 +23,7 @@ import {
   AdminKpiStrip,
   type AdminKpiItem,
 } from '../../dash';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import {
   adminChartPlotMargin,
   adminChartTickFormatter,
@@ -197,7 +198,11 @@ export function AdminCrmDashboardPage() {
     return <AdminDashPage title={tr("میز کار من")} error={error} onRefresh={reload} />;
   }
   if (!data) {
-    return <AdminDashPage title={tr("میز کار من")} subtitle="در حال بارگذاری…" />;
+    return (
+      <AdminDashPage title={tr("میز کار من")}>
+        <AdminBrandLoader size="page" />
+      </AdminDashPage>
+    );
   }
 
   const completeFollowup = (id: number) => {

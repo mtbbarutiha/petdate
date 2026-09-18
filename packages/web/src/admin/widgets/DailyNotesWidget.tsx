@@ -12,6 +12,7 @@ import {
 import { usePrefersReducedMotion } from '../motionCharts';
 import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import { useDashboardSelectedDate } from './DashboardSelectedDate';
 import type { WidgetRenderContext } from './types';
 
@@ -143,7 +144,7 @@ export function DailyNotesWidget({ ctx }: { ctx?: WidgetRenderContext }) {
 
       <ul className="wdg-notes-list" aria-label={tr('یادداشت‌های روزانه')}>
         {loading ? (
-          <li className="wdg-notes-empty">{tr('در حال بارگذاری…')}</li>
+          <li className="wdg-notes-empty"><AdminBrandLoader size="card" /></li>
         ) : notes.length === 0 ? (
           <li className="wdg-notes-empty">{tr('یادداشتی برای این روز نیست')}</li>
         ) : (

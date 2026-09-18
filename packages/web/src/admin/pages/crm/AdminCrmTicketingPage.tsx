@@ -34,6 +34,7 @@ import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { tr } from '../../../i18n';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 
 type View = 'dash' | 'tickets' | 'queue' | 'followups' | 'escalations' | 'reports' | 'settings' | 'detail';
 type ModalKind =
@@ -215,7 +216,7 @@ export function AdminCrmTicketingPage() {
         </aside>
 
         <main className="tk-main">
-          {!data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+          {!data ? <AdminBrandLoader size="card" /> : null}
 
           {data && view === 'dash' ? (
             <Dash stats={data.stats} tickets={tickets} openTk={openTk} agents={agents} />

@@ -3,6 +3,7 @@ import { Inbox, Mail, PenLine, RefreshCw, Reply, Send } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 
 type SmtpConfig = {
   configured: boolean;
@@ -384,9 +385,11 @@ export function AdminMailPage() {
               );
             })}
             {!inboxItems.length ? (
-              <p className="admin-mail-list-empty admin-muted">
-                {inboxLoading ? tr('در حال بارگذاری…') : tr('پیامی در صندوق نیست')}
-              </p>
+              inboxLoading ? (
+                <AdminBrandLoader size="card" />
+              ) : (
+                <p className="admin-mail-list-empty admin-muted">{tr('پیامی در صندوق نیست')}</p>
+              )
             ) : null}
           </div>
 
@@ -463,8 +466,10 @@ export function AdminMailPage() {
               <li><span>Auth</span><strong>{smtp.authConfigured ? tr('بله (رمز مخفی)') : tr('خیر')}</strong></li>
               <li><span>Reachability</span><strong>{data?.smtpReachable.detail}</strong></li>
             </ul>
+          ) : loading ? (
+            <AdminBrandLoader size="card" />
           ) : (
-            <p className="admin-muted">{loading ? '…' : tr('داده‌ای نیست')}</p>
+            <p className="admin-muted">{tr('داده‌ای نیست')}</p>
           )}
         </section>
 

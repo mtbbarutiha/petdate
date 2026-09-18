@@ -10,6 +10,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch } from '../../api';
 import { AdminModal } from '../../AdminModal';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import { tr } from '../../../i18n';
 
 type ItemDetail = {
@@ -111,7 +112,7 @@ export function LeadWorkspaceModal({
   return (
     <AdminModal open={itemId != null} onClose={onClose} title={tr('پرونده لید')} size="lg" busy={busy}>
       {error ? <p className="admin-error">{error}</p> : null}
-      {!detail ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : (
+      {!detail ? (error ? null : <AdminBrandLoader size="card" />) : (
         <form className="admin-form-grid" onSubmit={(e) => void save(e)}>
           <label>
             <span className="form-label">{tr('نام')}</span>

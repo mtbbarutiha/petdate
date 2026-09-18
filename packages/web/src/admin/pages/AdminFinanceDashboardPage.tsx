@@ -11,11 +11,13 @@ import {
   CategoryDonutWidget,
   FINANCE_WIDGET_CATALOG,
   TimeLineWidget,
+  WidgetChartLoading,
   WidgetDashboard,
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
 import { AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../dash';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import { appAlert } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
@@ -116,7 +118,7 @@ export function AdminFinanceDashboardPage() {
   };
 
   const renderFinanceWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (loading && !charts && !k) return <p className="admin-dash-chart-empty">{tr('در حال بارگذاری نمودار…')}</p>;
+    if (loading && !charts && !k) return <WidgetChartLoading />;
     switch (id) {
       case 'salesTrend':
         return salesTrend.length ? (
@@ -178,7 +180,7 @@ export function AdminFinanceDashboardPage() {
       {kpiItems.length ? (
         <AdminKpiStrip items={kpiItems} ariaLabel="شاخص‌های مالی" />
       ) : loading ? (
-        <p className="admin-muted" style={{ padding: 8 }}>{tr('در حال بارگذاری شاخص‌ها…')}</p>
+        <AdminBrandLoader size="card" />
       ) : null}
 
       <WidgetDashboard

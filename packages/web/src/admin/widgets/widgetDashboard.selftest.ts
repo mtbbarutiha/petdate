@@ -224,7 +224,10 @@ assert.equal(chartWidgetPhase({ loading: false, error: 'خطا', hasSeries: true
 
 const chartSrc = readFileSync(join(here, 'ChartWidgets.tsx'), 'utf8');
 assert.match(chartSrc, /wdg-chart-loading/, 'chart loader markup');
-assert.match(chartSrc, /در حال بارگذاری…/, 'loading copy inside chart widgets');
+assert.match(chartSrc, /AdminBrandLoader/, 'chart tiles use the brand loader');
+assert.match(chartSrc, /size="card"/, 'chart loader is the compact variant');
+assert.doesNotMatch(chartSrc, /wdg-chart-skeleton/, 'chart loader has no skeleton bars');
+assert.doesNotMatch(chartSrc, /در حال بارگذاری/, 'loading sentence is not the chart hero');
 assert.match(chartSrc, /role="alert"/, 'failed chart request is an error, not an empty chart');
 
 const calSrc = readFileSync(join(here, 'CalendarWidget.tsx'), 'utf8');
@@ -297,17 +300,18 @@ assert.match(
   /\.admin-app \.wdg-chart-loading\s*\{/,
   'widget chart loader is styled inside the tile'
 );
-assert.match(css, /wdg-chart-skeleton-bar/, 'chart loader includes skeleton bars');
+assert.match(css, /admin-brand-loader-ring/, 'chart loader uses the brand ring, not skeleton bars');
+assert.doesNotMatch(css, /wdg-chart-skeleton-bar/, 'chart loader has no skeleton bars');
 assert.match(
   css,
-  /prefers-reduced-motion:\s*reduce[\s\S]*wdg-chart-loading-spin/,
+  /prefers-reduced-motion:\s*reduce[\s\S]*admin-brand-loader-ring/,
   'chart loader motion can be disabled'
 );
 const darkCss = readFileSync(join(here, '../../styles/theme-dark.css'), 'utf8');
 assert.match(
   darkCss,
-  /html\[data-theme='dark'\] \.admin-app \.wdg-chart-skeleton-bar/,
-  'dark cards keep the chart skeleton visible'
+  /html\[data-theme='dark'\] \.admin-app \.admin-brand-loader-ring/,
+  'dark cards keep the brand ring visible'
 );
 
 const resizeBlock = css.match(/\.admin-app \.wdg-resize \{[\s\S]*?\n\}/);

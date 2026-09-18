@@ -27,6 +27,7 @@ import {
   useRechartsMotion,
 } from '../motionCharts';
 import { tr } from '../../i18n';
+import { AdminBrandLoader } from '../AdminBrandLoader';
 import {
   adminDeviceLabel,
   analyticsHealthNote,
@@ -188,7 +189,7 @@ export function AdminTagManagerPage() {
       </header>
 
       {error ? <div className="admin-banner is-bad">{error}</div> : null}
-      {loading && !data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
+      {loading && !data ? <AdminBrandLoader size="page" /> : null}
 
       {data ? (
         <>

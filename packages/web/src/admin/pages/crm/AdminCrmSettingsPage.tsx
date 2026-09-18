@@ -4,6 +4,7 @@ import { CRM_PRIORITIES } from '@petdate/shared';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { AdminModal } from '../../AdminModal';
+import { AdminBrandLoader } from '../../AdminBrandLoader';
 import { formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { tr } from '../../../i18n';
 
@@ -178,8 +179,7 @@ export function AdminCrmSettingsPage() {
   if (!settings) {
     return (
       <div className="admin-page">
-        <p>{tr('در حال بارگذاری…')}</p>
-        {error ? <p className="admin-error">{error}</p> : null}
+        {error ? <p className="admin-error">{error}</p> : <AdminBrandLoader size="page" />}
       </div>
     );
   }
