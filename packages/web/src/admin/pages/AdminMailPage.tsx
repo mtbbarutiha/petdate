@@ -466,8 +466,10 @@ export function AdminMailPage() {
               <li><span>Auth</span><strong>{smtp.authConfigured ? tr('بله (رمز مخفی)') : tr('خیر')}</strong></li>
               <li><span>Reachability</span><strong>{data?.smtpReachable.detail}</strong></li>
             </ul>
+          ) : loading ? (
+            <AdminBrandLoader size="card" />
           ) : (
-            {loading ? <AdminBrandLoader size="card" /> : <p className="admin-muted">{tr('داده‌ای نیست')}</p>}
+            <p className="admin-muted">{tr('داده‌ای نیست')}</p>
           )}
         </section>
 
