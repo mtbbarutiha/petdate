@@ -129,9 +129,16 @@
       .pepito-nav-leading{display:flex;align-items:center;gap:.35rem;flex:0 1 auto;min-width:0}
       .pepito-nav-logo img{height:42px;width:144px;aspect-ratio:390/114;object-fit:contain;display:block}
       .pepito-nav-actions{margin-left:0!important;margin-right:0;margin-inline-start:0!important;margin-inline-end:0;display:flex;align-items:center;gap:.65rem;direction:ltr;flex:0 0 auto;min-height:44px;min-width:9.5rem}
-      .pepito-nav-section-link{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:.55rem .4rem;box-sizing:border-box;line-height:1.2}
+      .pepito-nav-section-link{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:.55rem .4rem;box-sizing:border-box;line-height:1.2;white-space:nowrap;flex-shrink:0}
       .pepito-nav-links.pepito-nav-section-inline{gap:1.1rem}
-      .pd-theme-toggle,.pd-lang-toggle{width:44px;height:44px;min-height:44px;border-radius:999px;border:1px solid #3a3f55;background:#242836;color:#f4f3f8;display:inline-flex;align-items:center;justify-content:center}
+      /* Logged-in avatar/wallet chips before deferred pepito.css — unstyled <img>
+         otherwise paints full-size into the nav (suit/person bleed on first paint). */
+      .pepito-nav-user-cluster{display:flex;align-items:center;gap:.45rem;direction:ltr;flex-shrink:0}
+      .pepito-nav-profile-btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;border:2px solid #3a3f55;background:#242836;overflow:hidden;flex-shrink:0;box-sizing:border-box;cursor:pointer}
+      .pepito-nav-profile-photo{width:100%;height:100%;object-fit:cover;display:block}
+      .pepito-nav-wallet-btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;height:40px;min-height:40px;padding:0 .75rem;border-radius:999px;border:1.5px solid #3a3f55;background:#242836;color:#f4f3f8;white-space:nowrap;flex-shrink:0;box-sizing:border-box;font:inherit;cursor:pointer}
+      .pepito-nav-cart-link{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;min-height:40px;border-radius:999px;border:1.5px solid #3a3f55;background:#242836;color:#f4f3f8;flex-shrink:0;box-sizing:border-box;text-decoration:none}
+      .pd-theme-toggle,.pd-lang-toggle{width:44px;height:44px;min-height:44px;border-radius:999px;border:1px solid #3a3f55;background:#242836;color:#f4f3f8;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
       /* Solid hero fill — photo comes only from #pd-boot-lcp / React (admin API SoT).
          Fixed band height (locked px on mobile) — never grow/shrink after first paint. */
       /* contain:layout only — paint would flatten wash/copy/dots. Transparent fill so
@@ -139,7 +146,18 @@
       /* clip-path + overflow:hidden keep slide ken-burns inside the hero frame.
          First viewport = nav + hero only (100svh) — no about-section peek. */
       .pepito-hero{min-height:var(--pepito-hero-h);height:var(--pepito-hero-h);max-height:var(--pepito-hero-h);position:relative;overflow:hidden;clip-path:inset(0);background:transparent;display:grid;align-items:center;contain:layout;isolation:isolate}
-      @media (min-width:860px){:root{--pepito-nav-h:74px;--pepito-hero-h:calc(100svh - var(--pepito-nav-h))}.pepito-landing--with-dock{padding-bottom:0}.pepito-nav{height:var(--pepito-nav-h);min-height:var(--pepito-nav-h)}}
+      /* Desktop primary row BEFORE deferred pepito.css (load+8s / first input).
+         Without display:flex, SiteDesktopNav + section links stack as blocks →
+         two cramped nav rows (logged-in avatar/wallet makes it worse). */
+      @media (min-width:860px){
+        :root{--pepito-nav-h:74px;--pepito-hero-h:calc(100svh - var(--pepito-nav-h))}
+        .pepito-landing--with-dock{padding-bottom:0}
+        .pepito-nav{height:var(--pepito-nav-h);min-height:var(--pepito-nav-h);flex-wrap:nowrap;overflow:hidden}
+        .pepito-nav-primary{display:flex;align-items:center;gap:.95rem;flex:0 1 auto;min-width:0;margin-inline-start:.35rem}
+        .pepito-nav-links,.pepito-nav-links.pepito-nav-section-inline{display:flex;flex-wrap:nowrap;align-items:center;gap:1.1rem;flex:0 1 auto;min-width:0}
+        .pepito-site-desktop-nav{display:inline-flex;align-items:center;gap:.95rem;flex-wrap:nowrap;max-width:none}
+        .pepito-site-desktop-nav-link{display:inline-flex;align-items:center;white-space:nowrap;flex-shrink:0;min-height:44px;padding:.15rem 0;color:inherit;text-decoration:none;font-weight:600;font-size:.95rem;line-height:1.2}
+      }
       .pepito-hero-media{width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;inset:0}
       /* Boot LCP must paint with critical CSS only — never wait on hashed CSS/JS.
          Override .pepito-hero-media inset:0 so size is the hero band, not zero/conflict.
@@ -152,8 +170,12 @@
       /* is-parked is for non-home / post-slide-0 only — never hide boot LCP on first paint. */
       body>#pd-boot-lcp.is-parked,#pd-boot-lcp.is-parked{display:none!important}
       /* Absolute slide stack in critical CSS — deferred pepito.css used to leave
-         .pepito-hero-slides at height:0 until print→all, so handoff media collapsed. */
+         .pepito-hero-slides at height:0 until print→all, so handoff media collapsed.
+         Hide inactive slides before pepito.css opacity rules — otherwise stacked
+         slide media (e.g. vet suit) peeks into the fixed nav band. */
       .pepito-hero-slides,.pepito-hero-slide{position:absolute;inset:0;width:100%;height:100%}
+      .pepito-hero-slide{opacity:0;z-index:0}
+      .pepito-hero-slide.is-active{opacity:1;z-index:1}
       .pepito-hero-slide picture{position:absolute;inset:0;display:block;width:100%;height:100%;margin:0}
       .pepito-hero-wash{position:absolute;inset:0;z-index:2;background:rgba(5,1,12,.34);pointer-events:none}
       .pepito-hero-inner{position:relative;z-index:3;width:min(var(--pepito-container-max),100%);margin-inline:auto;padding-inline:var(--pepito-container-pad);padding-block:calc(env(safe-area-inset-top,0px) + 1.35rem) 2.25rem;box-sizing:border-box;min-height:14.5rem}
@@ -203,13 +225,13 @@
         } catch (e) {}
       })();
     </script>
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v58-hero-fullbleed + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v59-logged-in-preload + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v58-hero-fullbleed" />
+    <meta name="pd-web-perf" content="web-perf-v59-logged-in-preload" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
