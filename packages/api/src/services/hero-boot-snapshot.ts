@@ -74,9 +74,11 @@ export function bootLcpImgOpenTag(snap: HeroBootSnapshot): string {
   const pos = `${snap.posX}% ${snap.posY}%`;
   /* Never inline transform:scale on boot LCP — it sits outside .pepito-hero
      overflow:hidden and bleeds into the nav / RTL gutter. Admin pan uses
-     object-position only here; scale applies to in-hero React media. */
+     object-position only here; scale applies to in-hero React media.
+     width:100% (not auto): fixed height + width:auto uses intrinsic 16:9 and
+     RTL ignores left → dark left gutter on short viewports. */
   const style =
-    'position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:0;bottom:auto;width:auto;max-width:100%;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:' +
+    'position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:auto;bottom:auto;width:100%;max-width:none;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:' +
     pos +
     ';z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1;transform:none;animation:none;clip-path:inset(0)';
   return `<img

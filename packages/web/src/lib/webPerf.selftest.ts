@@ -118,6 +118,31 @@ assert.match(
 );
 assert.match(
   indexHtml,
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*width:100%/,
+  'critical boot LCP uses width:100% (not auto) so RTL short viewports stay full-bleed',
+);
+assert.match(
+  indexHtml,
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*left:0;right:auto/,
+  'critical boot LCP anchors to physical left (RTL-safe)',
+);
+assert.doesNotMatch(
+  indexHtml,
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*width:auto;max-width:100%/,
+  'critical boot LCP must not use width:auto (intrinsic-ratio RTL gutter)',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero-slides,\.pepito-hero-slide\{position:absolute;inset:0/,
+  'critical CSS sizes hero slide stack before deferred pepito.css',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero-slide picture\{position:absolute;inset:0/,
+  'critical CSS sizes picture wrappers so abs media has a full frame',
+);
+assert.match(
+  indexHtml,
   /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*transform:none!important/,
   'critical boot LCP disables ken-burns/scale (outside hero overflow clip)',
 );
@@ -188,7 +213,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v57-above-fold-pad/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v58-hero-fullbleed/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -447,6 +472,26 @@ assert.match(
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?position:\s*absolute/, 'hydrated boot LCP is absolute, not viewport-fixed');
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?z-index:\s*0/, 'hydrated boot LCP stays behind isolated #root');
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?inset:\s*auto/, 'hydrated boot LCP overrides hero-media inset');
+assert.match(
+  pepitoCss,
+  /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?width:\s*100%/,
+  'hydrated boot LCP uses width:100% (RTL short-viewport full-bleed)',
+);
+assert.match(
+  pepitoCss,
+  /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?left:\s*0;\s*right:\s*auto/,
+  'hydrated boot LCP anchors to physical left',
+);
+assert.match(
+  pepitoCss,
+  /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[^}]*width:\s*100%;[^}]*max-width:\s*none/,
+  'hydrated boot LCP rule block uses width:100% / max-width:none (not width:auto)',
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-hero-slide picture \{[\s\S]*?position:\s*absolute/,
+  'hydrated picture wrappers fill the slide frame',
+);
 assert.match(pepitoCss, /\.pepito-landing \{[\s\S]*?background:\s*transparent/, 'landing is transparent so boot LCP shows through hero');
 assert.match(pepitoCss, /\.pepito-hero \{[\s\S]*?background:\s*transparent/, 'hero fill is transparent for boot LCP hole');
 assert.match(below, /width=\{232\}[\s\S]*?height=\{232\}/, 'below-fold adoption thumbs reserve 232px');
