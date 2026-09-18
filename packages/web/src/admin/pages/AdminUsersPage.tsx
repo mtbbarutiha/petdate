@@ -29,6 +29,7 @@ import {
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
+import { appAlert } from '../../components/AppDialog';
 import { tr, useI18n } from '../../i18n';
 
 /** Soft-deleted anonymized shell left for finance FK history. */
@@ -114,6 +115,7 @@ export function AdminUsersPage() {
   const [credit, setCredit] = useState<{ userId: number; amount: string; currency: string } | null>(null);
   const [editing, setEditing] = useState<User | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [otpCode, setOtpCode] = useState('');
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [geoRows, setGeoRows] = useState<IranHeatRow[]>([]);
@@ -680,19 +682,19 @@ export function AdminUsersPage() {
               </div>
               <div className="form-group">
                 <label className="form-label">{tr('احراز هویت OTP')}</label>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                   <button type="button" className="admin-btn" onClick={() => {
                     const phone = editForm.phone || '';
                     void adminFetch(`/api/admin/users/${editing?.id}/verify-otp`, { method: 'POST', body: JSON.stringify({ send: true, phone }) })
-                      .then(() => window.alert(tr('کد OTP ارسال شد')))
-                      .catch((e) => window.alert(e instanceof Error ? e.message : 'خطا'));
+                      .then(() => appAlert(tr('کد OTP ارسال شد'), { variant: 'admin' }))
+                      .catch((e) => appAlert(e instanceof Error ? e.message : 'خطا', { variant: 'admin' }));
                   }}>{tr('ارسال OTP')}</button>
+                  <input className="form-input" dir="ltr" placeholder={tr('کد OTP')} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} style={{ maxWidth: 140 }} />
                   <button type="button" className="admin-btn admin-btn--primary" onClick={() => {
-                    const code = window.prompt(tr('کد OTP')) || '';
-                    if (!code) return;
-                    void adminFetch(`/api/admin/users/${editing?.id}/verify-otp`, { method: 'POST', body: JSON.stringify({ phone: editForm.phone, code }) })
-                      .then(() => window.alert(tr('احراز شد')))
-                      .catch((e) => window.alert(e instanceof Error ? e.message : 'خطا'));
+                    if (!otpCode.trim()) return;
+                    void adminFetch(`/api/admin/users/${editing?.id}/verify-otp`, { method: 'POST', body: JSON.stringify({ phone: editForm.phone, code: otpCode.trim() }) })
+                      .then(() => appAlert(tr('احراز شد'), { variant: 'admin' }))
+                      .catch((e) => appAlert(e instanceof Error ? e.message : 'خطا', { variant: 'admin' }));
                   }}>{tr('تایید OTP')}</button>
                 </div>
                 <select
