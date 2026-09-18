@@ -222,22 +222,21 @@ export const RETIRED_SHOP_PRODUCTS: ReadonlyArray<{ id: string; slug: string }> 
   { id: 'p220', slug: 'bird-accessories-10-p220' },
 ];
 
+/**
+ * Empty legacy category slugs → 301 /shop.
+ * Do NOT list slugs that still have live SHOP_PRODUCTS (those must stay indexable).
+ */
 export const RETIRED_SHOP_CATEGORY_SLUGS = [
-  'dog-treats',
   'dog-grooming',
-  'dog-toys',
   'dog-bowls',
   'dog-carriers-travel',
   'dog-collars',
   'dog-clothing',
   'dog-flea-tick',
   'dog-beds',
-  'cat-treats',
   'cat-grooming',
-  'cat-toys',
   'cat-trees',
   'cat-bowls',
-  'cat-litter',
   'cat-carriers-travel',
   'cat-beds',
   'cat-flea-tick',

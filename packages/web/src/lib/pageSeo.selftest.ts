@@ -121,12 +121,19 @@ assert.ok(paths.includes('/help'), 'sitemap lists public /help');
 assert.ok(paths.includes('/events'), 'sitemap lists /events');
 assert.ok(paths.includes('/faq'));
 assert.ok(paths.includes('/landings/app'));
+assert.ok(paths.includes('/shop/c/dog-treats'), 'live dog-treats category stays in sitemap');
+assert.ok(!paths.includes('/shop/c/dog-grooming'), 'empty retired category omitted from sitemap');
 assert.ok(paths.includes(productCanonicalPath(product)));
 assert.ok(!paths.includes('/auth/login'), 'login omitted as low-value');
 assert.ok(!paths.some((p) => p === `/shop/product/${product.id}` && p !== productCanonicalPath(product)), 'no bare p123 product locs');
 assert.ok(paths.includes('/magazine/علائم-هشدار-سگ-و-گربه'));
 assert.ok(paths.includes('/llms.txt'), 'sitemap lists llms.txt');
 assert.ok(!listPrerenderPaths(['علائم-هشدار-سگ-و-گربه']).includes('/llms.txt'), 'do not prerender HTML over llms.txt');
+
+const eventsSeo = pageSeoForPath('/events');
+assert.equal(eventsSeo.canonicalPath, '/events');
+assert.equal(pageSeoForPath('/games').canonicalPath, '/events', '/games SEO canonical points at /events');
+assert.notEqual(eventsSeo.title, home.title);
 
 const shell = `<!DOCTYPE html><html><head>
 <title data-pd-seo="title">HOME TITLE</title>

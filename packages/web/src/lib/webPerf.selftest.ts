@@ -509,6 +509,12 @@ assert.match(
 assert.match(llms, /Roles/, 'llms.txt documents product roles for agents');
 assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
+assert.match(robots, /Allow: \/events/, 'robots.txt allows /events');
+assert.match(robots, /Allow: \/landings\/app/, 'robots.txt allows app landing');
+assert.match(robots, /Sitemap:\s*https:\/\/petdate\.ir\/sitemap\.xml/, 'robots.txt lists sitemap');
+assert.doesNotMatch(robots, /^Allow: \/games$/m, 'robots.txt does not advertise legacy /games');
+assert.doesNotMatch(robots, /^Disallow: \/games/m, 'do not Disallow /games — crawlers must see 301 → /events');
+assert.doesNotMatch(robots, /^Disallow: \/$/m, 'robots.txt must not Disallow all');
 
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
 assert.doesNotMatch(

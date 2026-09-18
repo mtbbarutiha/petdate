@@ -745,8 +745,10 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
     { path: '/llms-full.txt', changefreq: 'weekly', priority: '0.3' },
   ];
   const liveCategorySlugs = new Set(SHOP_PRODUCTS.map((p) => p.categorySlug));
+  const retiredCategories = new Set<string>(RETIRED_SHOP_CATEGORY_SLUGS);
   for (const cat of SHOP_CATEGORIES) {
     if (!liveCategorySlugs.has(cat.slug)) continue;
+    if (retiredCategories.has(cat.slug)) continue;
     urls.push({ path: `/shop/c/${cat.slug}`, changefreq: 'weekly', priority: '0.75' });
   }
   for (const product of SHOP_PRODUCTS) {
