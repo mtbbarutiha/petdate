@@ -58,13 +58,12 @@ function useAfterFirstInput(timeoutMs = 10000): boolean {
 
 function SiteAnalyticsListener() {
   const location = useLocation();
-  const ready = useAfterFirstInput(10000);
   const path = `${location.pathname}${location.search}`;
   const pathRef = useRef(path);
   pathRef.current = path;
 
   useEffect(() => {
-    if (!ready) return;
+    // dataLayer event `page_view` (with session UTMs) fires on every public route, not after first input.
     let cancelled = false;
     void import('./lib/siteAnalytics').then((m) => {
       if (!cancelled) m.trackPageview(pathRef.current);
@@ -72,7 +71,7 @@ function SiteAnalyticsListener() {
     return () => {
       cancelled = true;
     };
-  }, [ready, location.pathname, location.search]);
+  }, [location.pathname, location.search]);
   return null;
 }
 
@@ -284,6 +283,9 @@ const AdminGuidePage = lazy(() =>
 );
 const AdminShopWarehousePage = lazy(() =>
   import('./admin/pages/AdminShopWarehousePage').then((m) => ({ default: m.AdminShopWarehousePage })),
+);
+const AdminShopSuppliersPage = lazy(() =>
+  import('./admin/pages/AdminShopSuppliersPage').then((m) => ({ default: m.AdminShopSuppliersPage })),
 );
 const AdminShopProductsPage = lazy(() =>
   import('./admin/pages/AdminShopProductsPage').then((m) => ({ default: m.AdminShopProductsPage })),
@@ -556,6 +558,7 @@ export default function App() {
                 <Route path="events" element={<AdminGamesPage />} />
                 <Route path="guide" element={<AdminGuidePage />} />
                 <Route path="shop/warehouse" element={<AdminShopWarehousePage />} />
+                <Route path="shop/suppliers" element={<AdminShopSuppliersPage />} />
                 <Route path="games" element={<Navigate to="/admin/events" replace />} />
                 <Route path="matches" element={<Navigate to="/admin/playdates" replace />} />
                 <Route path="consults" element={<AdminConsultsPage />} />

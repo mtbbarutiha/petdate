@@ -60,6 +60,60 @@
     <script>
       window.dataLayer = window.dataLayer || [];
     </script>
+    <script id="petdate-utm-pageview">
+      /* dataLayer event name: page_view — session-persisted utm_* so GTM reports stay attributed on every public page. */
+      (function () {
+        try {
+          var KEY = 'pd_analytics_utm_v1';
+          var q = new URLSearchParams(location.search);
+          function read(name) {
+            var v = q.get(name);
+            return v && String(v).trim() ? v : null;
+          }
+          var incoming = {
+            utmSource: read('utm_source'),
+            utmMedium: read('utm_medium'),
+            utmCampaign: read('utm_campaign'),
+            utmContent: read('utm_content'),
+            utmTerm: read('utm_term'),
+            gclid: read('gclid'),
+            fbclid: read('fbclid')
+          };
+          var stored = {};
+          try { stored = JSON.parse(sessionStorage.getItem(KEY) || '{}') || {}; } catch (e) { stored = {}; }
+          function pick(next, prev) { return next || (typeof prev === 'string' && prev ? prev : null); }
+          var merged = {
+            utmSource: pick(incoming.utmSource, stored.utmSource),
+            utmMedium: pick(incoming.utmMedium, stored.utmMedium),
+            utmCampaign: pick(incoming.utmCampaign, stored.utmCampaign),
+            utmContent: pick(incoming.utmContent, stored.utmContent),
+            utmTerm: pick(incoming.utmTerm, stored.utmTerm),
+            gclid: pick(incoming.gclid, stored.gclid),
+            fbclid: pick(incoming.fbclid, stored.fbclid)
+          };
+          var has = merged.utmSource || merged.utmMedium || merged.utmCampaign || merged.utmContent || merged.utmTerm || merged.gclid || merged.fbclid;
+          if (has) {
+            try { sessionStorage.setItem(KEY, JSON.stringify(merged)); } catch (e) {}
+          }
+          if (location.pathname.indexOf('/admin') === 0) return;
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({
+            event: 'page_view',
+            page_path: location.pathname,
+            page_title: document.title,
+            page_location: location.href,
+            utm_source: merged.utmSource,
+            utm_medium: merged.utmMedium,
+            utm_campaign: merged.utmCampaign,
+            utm_content: merged.utmContent,
+            utm_term: merged.utmTerm,
+            gclid: merged.gclid,
+            fbclid: merged.fbclid
+          });
+          window.__pdBootPageView = location.pathname + location.search;
+        } catch (e) {}
+      })();
+    </script>
     <script id="petdate-gtm-html">
       (function (w, d, s, l, i) {
         w[l] = w[l] || [];

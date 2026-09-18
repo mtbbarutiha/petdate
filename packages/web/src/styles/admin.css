@@ -7910,6 +7910,71 @@ body:has(.admin-app) {
   100% { background-position: -100% 0; }
 }
 
+.admin-app .admin-route-loading-mark {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+.admin-app .admin-route-spinner--inner {
+  position: absolute;
+  inset: 8px;
+  width: auto;
+  height: auto;
+  border-width: 2px;
+  animation-duration: 1.1s;
+  animation-direction: reverse;
+}
+.admin-app .admin-route-loading-brand {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--admin-ink);
+}
+.admin-app .admin-route-timeout {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-chip-well);
+  color: var(--admin-ink);
+}
+.admin-app .admin-supplier-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 200px;
+  min-width: min(100%, 180px);
+}
+.admin-app .admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-app .admin-form-grid label.admin-check-line {
+  flex-direction: row;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 420px) {
+  .admin-app { --admin-control-h: 44px; }
+  .admin-app .admin-page { padding: 12px 12px 28px; overflow-x: clip; }
+  .admin-app .admin-toolbar { flex-direction: column; align-items: stretch; }
+  .admin-app .admin-toolbar > .admin-input,
+  .admin-app .admin-toolbar > .admin-select,
+  .admin-app .admin-toolbar > .admin-btn,
+  .admin-app .admin-supplier-picker { flex: 1 1 100%; width: 100%; min-width: 0; }
+  .admin-app .admin-filter-primary,
+  .admin-app .admin-filter-dates { flex-direction: column; }
+  .admin-app .admin-filter-primary .admin-input,
+  .admin-app .admin-filter-primary .admin-select,
+  .admin-app .admin-filter-dates .admin-input,
+  .admin-app .admin-guide-link,
+  .admin-app .admin-nav-toggle,
+  .admin-app .admin-theme-toggle,
+  .admin-app .pd-lang-toggle--compact { min-height: 44px; }
+  .admin-app .admin-stats { grid-template-columns: 1fr; }
+  .admin-app .admin-topbar-end { flex-wrap: wrap; max-width: 100%; }
+}
 @media (prefers-reduced-motion: reduce) {
   .admin-app .admin-route-spinner,
   .admin-app .admin-route-skeleton-bar,

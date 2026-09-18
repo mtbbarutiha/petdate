@@ -185,5 +185,9 @@ assert.doesNotMatch(
 );
 
 assert.match(ci, /adminResponsive\.selftest\.ts/, 'CI runs the admin responsive selftest');
+assert.match(css, /@media \(max-width:\s*420px\)/, 'phone breakpoint stacks admin chrome');
+assert.match(css, /flex:\s*1 1 100%/, 'filters and supplier picker stretch on a phone');
+assert.match(css, /min-height:\s*44px/, 'touch targets stay at least 44px');
+assert.match(layout, /\/admin\/shop\/suppliers/, 'suppliers nav is in the admin shell');
 
 console.log('adminResponsive.selftest: ok');

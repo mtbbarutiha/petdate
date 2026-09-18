@@ -91,6 +91,8 @@ export function GamesPage() {
   const [myTickets, setMyTickets] = useState<EventTicketPublic[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [createGuideOpen, setCreateGuideOpen] = useState(false);
+  const [extraBought, setExtraBought] = useState<number[]>([]);
   const [creating, setCreating] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -138,6 +140,14 @@ export function GamesPage() {
 
   const validTickets = useMemo(() => myTickets.filter((t) => t.isValid), [myTickets]);
   const expiredTickets = useMemo(() => myTickets.filter((t) => !t.isValid), [myTickets]);
+  const purchasedGameIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const ticket of myTickets) {
+      if (typeof ticket.gameId === 'number' && ticket.gameId > 0) ids.add(ticket.gameId);
+    }
+    for (const id of extraBought) ids.add(id);
+    return ids;
+  }, [myTickets, extraBought]);
 
   const typeLabel = useMemo(() => (gt: GameType) => t(gameTypeKey(gt)), [t]);
   const statusLabel = useMemo(() => (st: GameStatus) => t(gameStatusKey(st)), [t]);
@@ -179,6 +189,9 @@ export function GamesPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('games.joinFail');
       toastError(msg);
+      if (/قبلاً|already/i.test(msg)) {
+        setExtraBought((ids) => (ids.includes(game.id) ? ids : [...ids, game.id]));
+      }
       if (/سکه|coins|موجودی/i.test(msg)) {
         navigate(buyCoinsPath({ need: fee || 1, next: '/games' }));
       }
@@ -410,7 +423,14 @@ export function GamesPage() {
             <button
               type="button"
               className="pepito-btn button-1"
-              onClick={() => setShowForm((v) => !v)}
+              onClick={() => {
+                if (showForm) {
+                  setShowForm(false);
+                  setCreateGuideOpen(false);
+                  return;
+                }
+                setCreateGuideOpen(true);
+              }}
               data-testid="games-toggle-create"
             >
               <Plus size={16} strokeWidth={2.25} aria-hidden />
@@ -422,6 +442,44 @@ export function GamesPage() {
             </Link>
           )}
         </div>
+
+        {createGuideOpen && isLoggedIn ? (
+          <div className="pepito-games-guide" role="presentation" data-testid="games-create-guide">
+            <div
+              className="pepito-games-guide-card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="games-create-guide-title"
+            >
+              <h2 id="games-create-guide-title">{t('games.createGuideTitle')}</h2>
+              <p>{t('games.createGuideLead')}</p>
+              <ol>
+                <li>{t('games.createGuideStepTitle')}</li>
+                <li>{t('games.createGuideStepPhoto')}</li>
+                <li>{t('games.createGuideStepWhen')}</li>
+                <li>{t('games.createGuideStepSeats')}</li>
+                <li>{t('games.createGuideStepFee')}</li>
+                <li>{t('games.createGuideStepPlace')}</li>
+              </ol>
+              <div className="pepito-games-guide-actions">
+                <button type="button" className="pepito-btn button-2" onClick={() => setCreateGuideOpen(false)}>
+                  {t('games.createGuideDismiss')}
+                </button>
+                <button
+                  type="button"
+                  className="pepito-btn button-1"
+                  data-testid="games-create-guide-accept"
+                  onClick={() => {
+                    setCreateGuideOpen(false);
+                    setShowForm(true);
+                  }}
+                >
+                  {t('games.createGuideAccept')}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {showForm && isLoggedIn ? (
           <form
@@ -626,6 +684,7 @@ export function GamesPage() {
               const seatsLeft = Math.max(0, g.maxPlayers - g.currentPlayers);
               const canJoin = g.status === 'open' && seatsLeft > 0;
               const isHost = user?.id === g.hostUserId;
+              const alreadyBought = purchasedGameIds.has(g.id);
               const fee = Math.max(0, Math.floor(Number(g.joinFeeCoins) || 0));
               const showPhoto = Boolean(g.photoUrl);
               const pendingOwnPhoto =
@@ -718,6 +777,13 @@ export function GamesPage() {
                         >
                           {t('games.loginToJoin')}
                         </Link>
+                      ) : alreadyBought && !isHost ? (
+                        <span
+                          className="pepito-games-card-note pepito-games-card-note--bought"
+                          data-testid={`games-bought-${g.id}`}
+                        >
+                          {t('games.alreadyBought')}
+                        </span>
                       ) : canJoin && !isHost ? (
                         <button
                           type="button"

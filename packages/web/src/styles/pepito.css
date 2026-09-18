@@ -13767,6 +13767,37 @@ select.pepito-wallet-convert-control {
   font-size: 0.85rem;
   color: var(--text-secondary, #5b6472);
 }
+.pepito-games-card-note--bought {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pepito-card, #fff) 80%, #1f8a4c 20%);
+  color: var(--pepito-ink, #1b1b1f);
+  font-weight: 700;
+}
+.pepito-games-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, #000 45%, transparent);
+}
+.pepito-games-guide-card {
+  width: min(440px, 100%);
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--pepito-card, #fff);
+  color: var(--pepito-ink, #1b1b1f);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+.pepito-games-guide-card h2 { margin: 0 0 8px; }
+.pepito-games-guide-card ol { margin: 12px 0; padding-inline-start: 1.2rem; display: grid; gap: 6px; }
+.pepito-games-guide-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.pepito-games-guide-actions .pepito-btn { min-height: 44px; }
 @media (max-width: 720px) {
   .pepito-games-form-grid {
     grid-template-columns: 1fr;

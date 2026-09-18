@@ -312,6 +312,7 @@ export async function joinGame(
 
 export type EventTicketPublic = {
   id: number;
+  gameId: number;
   ticketCode: string;
   publicPath: string;
   publicUrl: string;

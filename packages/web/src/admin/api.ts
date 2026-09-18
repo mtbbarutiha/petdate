@@ -29,28 +29,78 @@ export function clearAdminUsername() {
   sessionStorage.removeItem(USER_KEY);
 }
 
+type FetchWatchListener = () => void;
+const fetchWatchListeners = new Set<FetchWatchListener>();
+let fetchWatchGen = 0;
+const fetchStartedByGen = new Map<number, number>();
+const fetchOpenByGen = new Map<number, number>();
+
+/** Start a generation so route-change loading only waits on fetches that begin after the navigation. */
+export function armAdminFetchWatch(): number {
+  fetchWatchGen += 1;
+  fetchStartedByGen.set(fetchWatchGen, 0);
+  fetchOpenByGen.set(fetchWatchGen, 0);
+  return fetchWatchGen;
+}
+
+export function adminFetchWatchSnapshot(gen: number): { started: number; open: number } {
+  return {
+    started: fetchStartedByGen.get(gen) ?? 0,
+    open: fetchOpenByGen.get(gen) ?? 0,
+  };
+}
+
+export function subscribeAdminFetchWatch(listener: FetchWatchListener): () => void {
+  fetchWatchListeners.add(listener);
+  return () => {
+    fetchWatchListeners.delete(listener);
+  };
+}
+
+function notifyFetchWatch(): void {
+  for (const listener of fetchWatchListeners) listener();
+}
+
+function noteAdminFetchStart(): number {
+  const gen = fetchWatchGen;
+  fetchStartedByGen.set(gen, (fetchStartedByGen.get(gen) ?? 0) + 1);
+  fetchOpenByGen.set(gen, (fetchOpenByGen.get(gen) ?? 0) + 1);
+  notifyFetchWatch();
+  return gen;
+}
+
+function noteAdminFetchEnd(gen: number): void {
+  fetchOpenByGen.set(gen, Math.max(0, (fetchOpenByGen.get(gen) ?? 1) - 1));
+  notifyFetchWatch();
+}
+
 export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  const pwd = getAdminPassword();
-  if (pwd) headers.set('x-admin-password', pwd);
-  const user = getAdminUsername();
-  if (user) headers.set('x-admin-username', user);
-  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
-  if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try {
-      const j = (await res.json()) as { error?: string };
-      if (j.error) msg = j.error;
-    } catch {
-      try { msg = (await res.text()) || msg; } catch { /* ignore */ }
+  const gen = noteAdminFetchStart();
+  try {
+    const headers = new Headers(init?.headers);
+    const pwd = getAdminPassword();
+    if (pwd) headers.set('x-admin-password', pwd);
+    const user = getAdminUsername();
+    if (user) headers.set('x-admin-username', user);
+    if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
-    throw new Error(msg);
+    const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const j = (await res.json()) as { error?: string };
+        if (j.error) msg = j.error;
+      } catch {
+        try { msg = (await res.text()) || msg; } catch { /* ignore */ }
+      }
+      throw new Error(msg);
+    }
+    if (res.status === 204) return undefined as T;
+    return res.json() as Promise<T>;
+  } finally {
+    noteAdminFetchEnd(gen);
   }
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
 }
 
 /** Download admin CSV/binary with header auth (never put password in query string). */
