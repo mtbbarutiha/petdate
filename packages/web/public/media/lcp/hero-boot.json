@@ -5,5 +5,57 @@
   "posX": 50,
   "posY": 0,
   "scale": 1,
-  "updatedAt": "2026-09-17T18:36:54.930Z"
+  "updatedAt": "2026-09-18T12:21:09.045Z",
+  "slides": [
+    {
+      "role": "playmate",
+      "webp": "/media/lcp/hero-playmate-800.webp",
+      "srcSet": "/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w",
+      "fallback": "/pepito/uploads/1-hero.jpg",
+      "source": "default",
+      "posX": 50,
+      "posY": 0,
+      "scale": 1
+    },
+    {
+      "role": "vet",
+      "webp": "/media/lcp/hero-vet-800.webp",
+      "srcSet": "/media/lcp/hero-vet-800.webp 800w, /media/lcp/hero-vet-1280.webp 1280w, /media/lcp/hero-vet-1920.webp 1920w",
+      "fallback": "/pepito/uploads/3-hero.jpg",
+      "source": "default",
+      "posX": 50,
+      "posY": 0,
+      "scale": 1
+    },
+    {
+      "role": "trainer",
+      "webp": "/media/lcp/hero-trainer-800.webp",
+      "srcSet": "/media/lcp/hero-trainer-800.webp 800w, /media/lcp/hero-trainer-1280.webp 1280w, /media/lcp/hero-trainer-1920.webp 1920w",
+      "fallback": "/pepito/uploads/5-hero.jpg",
+      "source": "default",
+      "posX": 50,
+      "posY": 0,
+      "scale": 1
+    },
+    {
+      "role": "no_pet",
+      "webp": "/media/lcp/hero-nopet-800.webp",
+      "srcSet": "/media/lcp/hero-nopet-800.webp 800w, /media/lcp/hero-nopet-1280.webp 1280w, /media/lcp/hero-nopet-1920.webp 1920w",
+      "fallback": "/pepito/uploads/06-hero.jpg",
+      "source": "default",
+      "posX": 50,
+      "posY": 0,
+      "scale": 1
+    },
+    {
+      "role": "adoption",
+      "webp": "/media/lcp/hero-adoption-800.webp",
+      "srcSet": "/media/lcp/hero-adoption-800.webp 800w, /media/lcp/hero-adoption-1280.webp 1280w, /media/lcp/hero-adoption-1920.webp 1920w",
+      "fallback": "/pepito/uploads/2-hero.jpg",
+      "source": "default",
+      "posX": 50,
+      "posY": 0,
+      "scale": 1
+    }
+  ]
 }

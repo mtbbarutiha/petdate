@@ -78,7 +78,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing / landing CSS graph changes — v59 deferred pepito.
-        cacheId: 'petdate-web-v60-landing-css-restore',
+        cacheId: 'petdate-web-v61-hero-admin-photos',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         // /t (event tickets), /rx (prescriptions), /inv (invoices) are Express HTML —
