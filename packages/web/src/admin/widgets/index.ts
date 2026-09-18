@@ -66,8 +66,12 @@ export {
   TimeBarWidget,
   TimeLineWidget,
   TimeMultiLineWidget,
+  WidgetChartError,
+  WidgetChartLoading,
   WidgetEmpty,
+  chartWidgetPhase,
 } from './ChartWidgets';
+export type { ChartWidgetPhase } from './ChartWidgets';
 export { CalendarWidget } from './CalendarWidget';
 export { DailyNotesWidget } from './DailyNotesWidget';
 export {

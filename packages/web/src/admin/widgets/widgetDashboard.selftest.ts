@@ -3,6 +3,7 @@
  * Run: npx tsx packages/web/src/admin/widgets/widgetDashboard.selftest.ts
  */
 import assert from 'node:assert/strict';
+import { chartWidgetPhase } from './chartPhase.ts';
 import {
   aggregateByGrain,
   canDrillDown,
@@ -208,6 +209,23 @@ assert.doesNotMatch(
   /series \?\s*\n\s*<WidgetDashboard/,
   'widget board is not gated on series so calendar + notes always show'
 );
+assert.match(dashPage, /chartWidgetPhase/, 'platform widgets distinguish loading from empty charts');
+assert.match(dashPage, /WidgetChartLoading/, 'platform widgets render a loader until series arrives');
+assert.doesNotMatch(
+  dashPage,
+  /if \(!series\) return <WidgetEmpty/,
+  'missing series is not shown as an empty chart before the request settles'
+);
+assert.equal(chartWidgetPhase({ loading: true, error: null, hasSeries: false }), 'loading');
+assert.equal(chartWidgetPhase({ loading: false, error: 'خطا', hasSeries: false }), 'error');
+assert.equal(chartWidgetPhase({ loading: false, error: null, hasSeries: false }), 'empty');
+assert.equal(chartWidgetPhase({ loading: true, error: null, hasSeries: true }), 'ready');
+assert.equal(chartWidgetPhase({ loading: false, error: 'خطا', hasSeries: true }), 'ready');
+
+const chartSrc = readFileSync(join(here, 'ChartWidgets.tsx'), 'utf8');
+assert.match(chartSrc, /wdg-chart-loading/, 'chart loader markup');
+assert.match(chartSrc, /در حال بارگذاری…/, 'loading copy inside chart widgets');
+assert.match(chartSrc, /role="alert"/, 'failed chart request is an error, not an empty chart');
 
 const calSrc = readFileSync(join(here, 'CalendarWidget.tsx'), 'utf8');
 assert.match(calSrc, /setSelectedIso/, 'calendar publishes selected day');
@@ -273,6 +291,23 @@ assert.match(
   css,
   /\.admin-app\s+\.wdg-tile\s*\{[^}]*overflow:\s*hidden/s,
   'resized tiles clip to their grid area'
+);
+assert.match(
+  css,
+  /\.admin-app \.wdg-chart-loading\s*\{/,
+  'widget chart loader is styled inside the tile'
+);
+assert.match(css, /wdg-chart-skeleton-bar/, 'chart loader includes skeleton bars');
+assert.match(
+  css,
+  /prefers-reduced-motion:\s*reduce[\s\S]*wdg-chart-loading-spin/,
+  'chart loader motion can be disabled'
+);
+const darkCss = readFileSync(join(here, '../../styles/theme-dark.css'), 'utf8');
+assert.match(
+  darkCss,
+  /html\[data-theme='dark'\] \.admin-app \.wdg-chart-skeleton-bar/,
+  'dark cards keep the chart skeleton visible'
 );
 
 const resizeBlock = css.match(/\.admin-app \.wdg-resize \{[\s\S]*?\n\}/);
