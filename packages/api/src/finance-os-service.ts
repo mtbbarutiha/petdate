@@ -169,6 +169,7 @@ export function ensureFinanceOsSchema(): void {
       desc_text TEXT NOT NULL DEFAULT '',
       category TEXT NOT NULL DEFAULT '',
       related_person TEXT NOT NULL DEFAULT '',
+      office TEXT NOT NULL DEFAULT '',
       account TEXT NOT NULL DEFAULT '',
       allocated INTEGER NOT NULL DEFAULT 0,
       splits_json TEXT NOT NULL DEFAULT '[]'
