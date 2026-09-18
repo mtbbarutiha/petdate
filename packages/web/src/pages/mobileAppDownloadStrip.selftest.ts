@@ -35,9 +35,14 @@ assert.match(strip, /isNativeCapacitorShell/);
 assert.doesNotMatch(welcome, /MobileAppDownloadStrip/, 'home strip is below articles, not under hero');
 assert.match(welcomeBelow, /MobileAppDownloadStrip/);
 assert.match(welcomeBelow, /variant=["']article["']/);
-assert.match(welcomeBelow, /SiteFooter/);
-// strip must appear before footer in below-fold
-assert.ok(welcomeBelow.indexOf('MobileAppDownloadStrip') < welcomeBelow.indexOf('SiteFooter'));
+assert.doesNotMatch(welcomeBelow, /SiteFooter/, 'footer is outside below-fold (and outside <main>)');
+assert.match(welcome, /SiteFooter/, 'homepage footer renders from WelcomePage');
+// strip stays in below-fold; footer is a sibling after </main>
+assert.match(welcome, /WelcomeBelowFold[\s\S]*SiteFooter|pepito-below-fold-slot[\s\S]*SiteFooter/);
+assert.ok(
+  welcome.indexOf('WelcomeBelowFold') < welcome.indexOf('SiteFooter'),
+  'below-fold (with app strip) mounts before footer',
+);
 assert.match(magazinePage, /MobileAppDownloadStrip/);
 assert.match(magazinePage, /variant=["']article["']/);
 assert.match(strip, /mobile-app-strip\.css/, 'strip component loads its CSS on mount');

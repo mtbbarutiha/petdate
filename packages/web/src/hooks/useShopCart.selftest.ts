@@ -34,8 +34,11 @@ assert.doesNotMatch(
 
 assert.match(src, /hydrateShopCatalogOnce/, 'cart provider can hydrate catalog on shop routes');
 assert.match(src, /isShopPath|isLandingHomePath/, 'cart skips homepage catalog hydrate');
+assert.match(src, /import\('\.\.\/data\/shopCatalog'\)/, 'static seed catalog is dynamic-imported');
+assert.doesNotMatch(src, /import \{ getProduct/, 'getProduct is not a static import on landing entry');
 assert.match(sync, /isLandingHomePath/, 'sync exports landing-home guard');
 assert.match(sync, /isShopPath/, 'sync exports shop-path guard');
+assert.match(sync, /import\('\.\.\/data\/shopCatalog'\)/, 'hydrate dynamic-imports shopCatalog');
 assert.doesNotMatch(sync, /scheduleAfterLoadIdle|setTimeout\(run,\s*2500\)/, 'catalog hydrate is not timer-deferred from cart');
 assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydrate export');
 

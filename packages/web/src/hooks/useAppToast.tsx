@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useI18nOptional } from '../i18n';
+/* Import provider directly — `../i18n` barrel re-exports adminFaEn/en/tr (~200KiB). */
+import { useI18nOptional } from '../i18n/I18nProvider';
 import { splitToastCopy } from '../lib/toastCopy';
 import { IconAlertCircle, IconCheck, IconInfo, IconTriangleAlert, IconX } from '../components/icons/ChromeIcons';
 

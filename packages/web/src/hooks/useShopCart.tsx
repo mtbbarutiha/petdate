@@ -9,8 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { tomanToShopCoins, tomanToShopStars } from '@petdate/shared';
-import { isRetiredShopProduct } from '../data/retired-shop-products';
-import { getProduct, type ShopProduct } from '../data/shopCatalog';
+import type { ShopProduct } from '../data/shopCatalog';
 import type { ShopCartApiLine } from '../lib/api';
 import { useAuthStore } from './useAuthStore';
 import { hydrateShopCatalogOnce, isLandingHomePath, isShopPath } from './useShopCatalogSync';
@@ -26,6 +25,22 @@ export const SHOP_CART_SYNC_RULE = 'merge-then-persist' as const;
 /** Keep the large api.ts client off the landing entry; load when cart syncs. */
 function shopCartApi() {
   return import('../lib/api');
+}
+
+/** Static seed + getProduct stay off the homepage entry until a cart/shop needs them. */
+type CatalogGetProduct = (idOrSlug: string) => ShopProduct | undefined;
+let catalogGetProduct: CatalogGetProduct | null = null;
+let catalogModulePromise: Promise<CatalogGetProduct> | null = null;
+
+function loadCatalogGetProduct(): Promise<CatalogGetProduct> {
+  if (catalogGetProduct) return Promise.resolve(catalogGetProduct);
+  if (!catalogModulePromise) {
+    catalogModulePromise = import('../data/shopCatalog').then((m) => {
+      catalogGetProduct = m.getProduct;
+      return m.getProduct;
+    });
+  }
+  return catalogModulePromise;
 }
 
 export interface CartLine {
@@ -240,6 +255,22 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     [token, applyServerLines]
   );
 
+  /**
+   * Pull shopCatalog (static seed) only when cart lines exist or we leave the
+   * guest homepage — keeps ~200KiB of unused product JSON off landing index.
+   * Live /api/shop hydrate still runs on /shop* only (WelcomeBelowFold for #shop).
+   */
+  useEffect(() => {
+    if (isLandingHomePath(pathname) && lines.length === 0) return;
+    let cancelled = false;
+    void loadCatalogGetProduct().then(() => {
+      if (!cancelled) setCatalogEpoch((n) => n + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, lines.length]);
+
   /** Hydrate live catalog on /shop only — never on guest homepage critical path.
    *  Landing #shop section triggers hydrate via WelcomeBelowFold intersection. */
   useEffect(() => {
@@ -352,7 +383,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   }, [isLoggedIn]);
 
   const resolveProduct = useCallback((productId: string): ShopProduct | undefined => {
-    const fromCatalog = getProduct(productId);
+    const fromCatalog = catalogGetProduct?.(productId);
     if (fromCatalog) return fromCatalog;
     const meta = serverMetaRef.current.get(productId);
     if (!meta) return undefined;
@@ -392,18 +423,25 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
    */
   useEffect(() => {
     if (!lines.length) return;
-    const retired = lines.filter((l) => isRetiredShopProduct(l.productId));
-    if (!retired.length) return;
-    const retiredIds = new Set(retired.map((l) => l.productId));
-    setLines(lines.filter((l) => !retiredIds.has(l.productId)));
-    if (token) {
-      for (const ghost of retired) {
-        /* no userIntent — server allows missing/retired demo cleanup only */
-        void shopCartApi()
-          .then(({ removeShopCartItem }) => removeShopCartItem(token, ghost.productId))
-          .catch(() => undefined);
+    let cancelled = false;
+    void import('../data/retired-shop-products').then(({ isRetiredShopProduct }) => {
+      if (cancelled) return;
+      const retired = lines.filter((l) => isRetiredShopProduct(l.productId));
+      if (!retired.length) return;
+      const retiredIds = new Set(retired.map((l) => l.productId));
+      setLines(lines.filter((l) => !retiredIds.has(l.productId)));
+      if (token) {
+        for (const ghost of retired) {
+          /* no userIntent — server allows missing/retired demo cleanup only */
+          void shopCartApi()
+            .then(({ removeShopCartItem }) => removeShopCartItem(token, ghost.productId))
+            .catch(() => undefined);
+        }
       }
-    }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [lines, token]);
 
   const add = useCallback(
@@ -458,7 +496,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const addAnimated = useCallback(
     async (productId: string, qty = 1) => {
       if (pendingLockRef.current) return;
-      const product = resolveProduct(productId);
+      await loadCatalogGetProduct();
+      setCatalogEpoch((n) => n + 1);
+      const product = catalogGetProduct?.(productId) ?? resolveProduct(productId);
       if (!product?.inStock) return;
       const n = Math.max(1, Math.min(10, Math.floor(qty) || 1));
       pendingLockRef.current = true;

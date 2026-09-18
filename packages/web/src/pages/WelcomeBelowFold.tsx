@@ -15,7 +15,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
-import { SiteFooter } from '../components/SiteFooter';
 import { useI18n } from '../i18n/I18nProvider';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
@@ -517,7 +516,7 @@ export function WelcomeBelowFold() {
               <img
                 src="/media/lcp/about-480.webp"
                 srcSet="/media/lcp/about-480.webp 480w, /media/lcp/about-800.webp 800w"
-                sizes="(max-width: 859px) 92vw, 480px"
+                sizes="480px"
                 alt={t('landing.aboutImgAlt')}
                 loading="lazy"
                 width={480}
@@ -939,8 +938,6 @@ export function WelcomeBelowFold() {
       </section>
 
       <MobileAppDownloadStrip variant="article" />
-
-      <SiteFooter />
     </>
   );
 }
