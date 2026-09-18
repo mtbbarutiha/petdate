@@ -290,9 +290,8 @@ export function WelcomePage() {
     lockMobileHeroHeight();
   }, []);
 
-  /* Arm deferred pepito/global CSS on home mount — do not wait for below-fold.
-     Critical CSS covers the above-fold FOUC; this still applies full chrome on
-     first input / ~8s after load (same scheduler as WelcomeBelowFold). */
+  /* Ensure full pepito/global CSS is applied on home mount (idempotent with
+     main.tsx static imports). Do not wait for below-fold / input / idle. */
   useEffect(() => {
     scheduleLandingAppCss();
   }, []);

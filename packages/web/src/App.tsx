@@ -7,7 +7,6 @@ import { AppToastProvider } from './hooks/useAppToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
-import { isLandingHomePath } from './hooks/useShopCatalogSync';
 import { loadAppCss } from './styles/loadAppCss';
 import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
@@ -96,13 +95,11 @@ function ParkBootLcpOnNonHome() {
   return null;
 }
 
-/** Non-landing routes need full chrome CSS immediately (landing uses critical + deferred). */
+/** Full chrome CSS on every route (landing included — critical CSS alone is not enough). */
 function EnsureAppCss() {
-  const { pathname } = useLocation();
   useEffect(() => {
-    if (isLandingHomePath(pathname)) return;
     void loadAppCss();
-  }, [pathname]);
+  }, []);
   return null;
 }
 
