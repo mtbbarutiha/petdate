@@ -160,6 +160,9 @@ npx tsx "$ROOT/packages/web/src/admin/pages/sales/salesCallSim.selftest.ts"
 echo "==> selftest: admin route-transition loading (no stale tab flash)"
 npx tsx "$ROOT/packages/web/src/admin/adminRouteLoading.selftest.ts"
 
+echo "==> selftest: admin in-app section guide"
+npx tsx "$ROOT/packages/web/src/admin/adminGuide.selftest.ts"
+
 echo "==> selftest: shop suppliers + editable purchase invoices"
 npx tsx "$ROOT/packages/api/src/shop-suppliers.selftest.ts"
 

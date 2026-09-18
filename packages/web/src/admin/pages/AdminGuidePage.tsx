@@ -1,164 +1,88 @@
 import { Link } from 'react-router-dom';
-import { tr } from '../../i18n';
+import { ADMIN_GUIDE, type AdminGuideLesson } from './adminGuideContent';
 
-const SECTIONS: Array<{ id: string; title: string; body: string[]; to?: string }> = [
-  {
-    id: 'dashboard',
-    title: 'داشبورد',
-    to: '/admin/dashboard',
-    body: [
-      'نمای کلی پلتفرم: کاربران، سفارش‌ها، صف‌ها و نمودارها.',
-      'اگر عددی صفر است، همان بخش را از منو باز کنید؛ داشبورد فقط خلاصه است.',
-    ],
-  },
-  {
-    id: 'events',
-    title: 'ایونت‌ها',
-    to: '/admin/events',
-    body: [
-      'لیست ایونت‌ها با فیلتر وضعیت، استان و برگزارکننده.',
-      'جزئیات را باز کنید تا شرکت‌کنندگان، بلیط، پت و زمان عضویت را ببینید.',
-      'ویرایش عنوان، نوع، میزبان، مکان، هزینه، عکس، زمان، ظرفیت، خدمات، توضیح و وضعیت را ذخیره می‌کند.',
-      'لغو فقط وضعیت را می‌بندد. درآمد سکه‌ای عضویت در مالی، بخش درآمد ایونت است.',
-    ],
-  },
-  {
-    id: 'orders',
-    title: 'سفارش‌های فروشگاه',
-    to: '/admin/shop/orders',
-    body: [
-      'وضعیت را از منوی همان ردیف عوض کنید: پرداخت، ارسال، تکمیل، لغو.',
-      'لغو و برگشت به کیف پول وضعیت را لغو شده می‌کند و مبلغ پرداخت‌شده (تومان یا سکه) را یک‌بار به کیف پول مشتری برمی‌گرداند.',
-      'اگر دوباره بزنید، برگشت تکراری ثبت نمی‌شود. جزئیات برگشت داخل همان سفارش دیده می‌شود.',
-    ],
-  },
-  {
-    id: 'warehouse',
-    title: 'انبار و خرید از تأمین‌کننده',
-    to: '/admin/shop/warehouse',
-    body: [
-      'هر خرید: محصول، تعداد، بهای واحد، تأمین‌کننده و تاریخ.',
-      'تأمین‌کننده از فهرست «تأمین‌کنندگان» انتخاب می‌شود؛ تلفن و رابط کنار فهرست دیده می‌شود.',
-      'ویرایش هر سند خرید تعداد، بها، تأمین‌کننده، تاریخ و یادداشت را ذخیره می‌کند و موجودی و سود دوباره حساب می‌شود.',
-      'موجودی = جمع خریدها منهای سفارش‌هایی که ارسال یا تکمیل شده‌اند.',
-      'سود فروشگاه = درآمد سفارش‌های پرداخت‌شده منهای بهای همین خریدها، نه تخمین روی قیمت فروش.',
-    ],
-  },
-  {
-    id: 'finance',
-    title: 'مالی و تخصیص هزینه',
-    to: '/admin/finance',
-    body: [
-      'داشبورد مالی درآمد، هزینه و سود دوره را نشان می‌دهد. درآمد ایونت جدا و با سکه نوشته شده است.',
-      'تخصیص هزینه: حالت ویرایش را روشن کنید، فضا اضافه کنید، ذخیره کنید، یا حذف دفتر را بزنید و تأیید کنید.',
-      'صف واریز و برداشت را قبل از بستن روز چک کنید.',
-    ],
-  },
-  {
-    id: 'sales',
-    title: 'فروش و سرنخ‌ها',
-    to: '/admin/sales/leads',
-    body: [
-      'سرنخ جدید را در لیدها ثبت کنید، مرحله پایپلاین را جلو ببرید، و روی معامله برنده منتظر تأیید مالی بمانید.',
-      'درخواست خرید پت جدا از سفارش شاپ است.',
-    ],
-  },
-  {
-    id: 'calls',
-    title: 'مرکز تماس',
-    to: '/admin/sales/calls',
-    body: [
-      'تماس ورودی و خروجی را لاگ کنید. کارت ارزیابی را بعد از مکالمه ذخیره کنید.',
-      'اگر PBX وصل نیست، آدرس ضبط را دستی بگذارید.',
-    ],
-  },
-  {
-    id: 'mail',
-    title: 'ایمیل',
-    to: '/admin/mail',
-    body: [
-      'صندوق پیش‌فرض info@petdate.ir است. از منوی صندوق، صندوق پرسنل یا سیستمی را انتخاب کنید.',
-      'مدیر سیستم همه صندوق‌ها را می‌بیند. ایمیل سازمانی که در منابع انسانی ساخته شود اینجا فعال می‌شود.',
-      'لیست پیام‌ها اسکرول می‌شود. برای پاسخ، پیام را باز کنید.',
-    ],
-  },
-  {
-    id: 'hr',
-    title: 'منابع انسانی و پرسنل',
-    to: '/admin/hr/employees',
-    body: [
-      'پرسنل جدید: نام، سمت، و ایمیل سازمانی. همان ایمیل صندوق ادمین را فعال می‌کند.',
-      'قرارداد، هزینه نیرو و تیکت‌های HR از همان گروه منو هستند.',
-    ],
-  },
-  {
-    id: 'security',
-    title: 'امنیت',
-    to: '/admin/security',
-    body: [
-      'ورودهای ناموفق، نشست‌ها و هشدارها را از صفحه امنیت ببینید. نقش‌ها را فقط مدیر کامل از RBAC عوض می‌کند.',
-    ],
-  },
-  {
-    id: 'reports',
-    title: 'گزارش‌ها',
-    to: '/admin/reports',
-    body: [
-      'گزارش سایت، فروش و باشگاه مشتریان نمودار دارند. اگر تولتیپ نمودار سفید بود، حالت تیره را یک‌بار تازه کنید.',
-    ],
-  },
-  {
-    id: 'shop',
-    title: 'محصول، دسته و برند',
-    to: '/admin/shop/products',
-    body: [
-      'محصول را با عکس، قیمت و موجودی کاتالوگ بسازید. بهای واقعی را از انبار ثبت کنید تا سود درست شود.',
-      'دسته‌ها و برندها را جدا ویرایش کنید؛ حذف دسته، محصول را پاک نمی‌کند.',
-    ],
-  },
-  {
-    id: 'magazine',
-    title: 'مجله',
-    to: '/admin/magazine',
-    body: [
-      'مطلب جدید، پیش‌نویس، سپس انتشار. عکس شاخص را قبل از انتشار بگذارید.',
-    ],
-  },
-  {
-    id: 'users',
-    title: 'کاربران و احراز',
-    to: '/admin/users',
-    body: [
-      'جستجو با نام، موبایل یا آیدی. احراز چهره و مدارک در صف تأیید است؛ رد یا تأیید از همان صف.',
-      'حذف کاربر برگشت‌ناپذیر است. اول یادداشت بگذارید.',
-    ],
-  },
-];
+function groupsOf(lessons: AdminGuideLesson[]): string[] {
+  const out: string[] = [];
+  for (const lesson of lessons) {
+    if (!out.includes(lesson.group)) out.push(lesson.group);
+  }
+  return out;
+}
 
 export function AdminGuidePage() {
+  const groups = groupsOf(ADMIN_GUIDE);
+
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-guide-page">
       <header className="admin-header">
         <div>
-          <h1>{tr('راهنمای ادمین')}</h1>
-          <p>{tr('هر بخش چه کار می‌کند و از کجا استفاده شود.')}</p>
+          <h1>راهنمای کار با پنل</h1>
+          <p>
+            این صفحه آموزش عملی است، نه خلاصه. برای هر آیتم منو: این بخش چه کاری می‌کند،
+            قدم‌به‌قدم چه چیزی را بزنید و ذخیره کنید، تصویر همان صفحه، و جاهایی که معمولاً اشتباه می‌شود.
+            لینک «راهنما» بالای پنل همیشه به همین‌جا برمی‌گردد.
+          </p>
         </div>
       </header>
-      <nav className="admin-guide-toc" aria-label={tr('فهرست راهنما')}>
-        {SECTIONS.map((s) => (
-          <a key={s.id} className="admin-btn admin-btn--ghost" href={`#guide-${s.id}`}>
-            {tr(s.title)}
-          </a>
+
+      <nav className="admin-guide-toc" aria-label="فهرست راهنما">
+        {groups.map((group) => (
+          <div key={group} className="admin-guide-toc-group">
+            <strong>{group}</strong>
+            <div className="admin-guide-toc-links">
+              {ADMIN_GUIDE.filter((lesson) => lesson.group === group).map((lesson) => (
+                <a key={lesson.id} href={`#guide-${lesson.id}`}>
+                  {lesson.title}
+                </a>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
-      {SECTIONS.map((s) => (
-        <section key={s.id} id={`guide-${s.id}`} className="admin-card admin-guide-section" style={{ padding: 16 }}>
-          <h2>
-            {s.to ? <Link to={s.to}>{tr(s.title)}</Link> : tr(s.title)}
-          </h2>
-          {s.body.map((line) => (
-            <p key={line} style={{ margin: '8px 0' }}>{tr(line)}</p>
-          ))}
+
+      {ADMIN_GUIDE.map((lesson, index) => (
+        <section key={lesson.id} id={`guide-${lesson.id}`} className="admin-card admin-guide-section">
+          <header className="admin-guide-head">
+            <p className="admin-guide-kicker">
+              {lesson.group}
+              {' · '}
+              درس {index + 1}
+            </p>
+            <h2>
+              <Link to={lesson.path}>{lesson.title}</Link>
+            </h2>
+            <p className="admin-muted admin-guide-path" dir="ltr">
+              {lesson.path}
+            </p>
+          </header>
+          <div className="admin-guide-lesson">
+            <figure className="admin-guide-figure">
+              <img
+                src={lesson.image}
+                alt={`نمای صفحه ${lesson.title} در پنل ادمین`}
+                width={1280}
+                height={800}
+                loading={index < 2 ? 'eager' : 'lazy'}
+              />
+              <figcaption>تصویر همین بخش، از پنل در حالت تیره</figcaption>
+            </figure>
+            <div className="admin-guide-copy">
+              <p className="admin-guide-purpose">{lesson.purpose}</p>
+              <h3>فرآیند</h3>
+              <ol className="admin-guide-steps">
+                {lesson.steps.map((step, stepIndex) => (
+                  <li key={`${lesson.id}-s${stepIndex}`}>{step}</li>
+                ))}
+              </ol>
+              <h3>کجا را بزنید و کجا اشتباه می‌شود</h3>
+              <ul className="admin-guide-mistakes">
+                {lesson.mistakes.map((item, itemIndex) => (
+                  <li key={`${lesson.id}-m${itemIndex}`}>{item}</li>
+                ))}
+              </ul>
+              {lesson.empty ? <p className="admin-guide-empty">{lesson.empty}</p> : null}
+            </div>
+          </div>
         </section>
       ))}
     </div>

@@ -7024,15 +7024,121 @@ body:has(.admin-app) {
 .admin-app .admin-guide-link {
   white-space: nowrap;
 }
+.admin-app .admin-guide-page {
+  max-width: 1180px;
+}
 .admin-app .admin-guide-toc {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px;
+}
+.admin-app .admin-guide-toc-group {
+  display: grid;
+  gap: 8px;
+}
+.admin-app .admin-guide-toc-group strong {
+  font-size: 0.92rem;
+}
+.admin-app .admin-guide-toc-links {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 0 0 16px;
+}
+.admin-app .admin-guide-toc-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-chip-well);
+  color: var(--admin-ink);
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+.admin-app .admin-guide-toc-links a:hover {
+  border-color: var(--admin-accent, #7c6cff);
 }
 .admin-app .admin-guide-section {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  scroll-margin-top: 84px;
 }
+.admin-app .admin-guide-kicker {
+  margin: 0 0 4px;
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+}
+.admin-app .admin-guide-head h2 {
+  margin: 0;
+}
+.admin-app .admin-guide-path {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+.admin-app .admin-guide-lesson {
+  display: grid;
+  gap: 16px;
+  margin-top: 12px;
+}
+.admin-app .admin-guide-figure {
+  margin: 0;
+}
+.admin-app .admin-guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: #12141c;
+}
+.admin-app .admin-guide-figure figcaption {
+  margin-top: 6px;
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+}
+.admin-app .admin-guide-purpose {
+  margin: 0 0 12px;
+  line-height: 1.75;
+}
+.admin-app .admin-guide-copy h3 {
+  margin: 14px 0 8px;
+  font-size: 0.95rem;
+}
+.admin-app .admin-guide-steps,
+.admin-app .admin-guide-mistakes {
+  margin: 0;
+  padding-inline-start: 1.35rem;
+  display: grid;
+  gap: 8px;
+  line-height: 1.7;
+}
+.admin-app .admin-guide-mistakes {
+  padding: 12px 12px 12px 1.6rem;
+  border-radius: 10px;
+  background: var(--admin-chip-well);
+  border: 1px solid var(--admin-border);
+}
+.admin-app .admin-guide-empty {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--admin-border);
+  color: var(--admin-muted);
+  line-height: 1.7;
+}
+@media (min-width: 980px) {
+  .admin-app .admin-guide-lesson {
+    grid-template-columns: minmax(280px, 46%) minmax(0, 1fr);
+    align-items: start;
+  }
+  .admin-app .admin-guide-figure {
+    position: sticky;
+    top: 76px;
+  }
+}
+
 
 .admin-app .admin-motion-ring {
   display: grid;
