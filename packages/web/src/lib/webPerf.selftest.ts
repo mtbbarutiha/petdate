@@ -448,6 +448,7 @@ assert.match(below, /width=\{1600\} height=\{800\}/, 'news cover attrs match 2:1
 const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');
 const navCluster = readFileSync(join(webSrc, 'components/NavUserCluster.tsx'), 'utf8');
+const toast = readFileSync(join(webSrc, 'hooks/useAppToast.tsx'), 'utf8');
 assert.doesNotMatch(header, /from 'lucide-react'/, 'SiteHeader must not parse lucide');
 assert.doesNotMatch(themeToggle, /from 'lucide-react'/, 'ThemeToggle must not parse lucide');
 assert.doesNotMatch(navCluster, /from 'lucide-react'/, 'guest nav cluster must not parse lucide');
