@@ -149,8 +149,8 @@ export function playmateToInbox(match: MatchRequest): InboxConversation {
     canDecide: pending && match.direction === 'incoming',
     href: `/chats/${match.id}`,
     peerPet: peer,
-    // List title is the owner name — prefer their face over the pet photo.
-    peerAvatarUrl: peer.ownerAvatarUrl || peer.imageUrl || undefined,
+    // List title is the owner name — their face only, never the pet photo or a stock portrait.
+    peerAvatarUrl: peer.ownerAvatarUrl || undefined,
   };
 }
 

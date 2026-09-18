@@ -21,6 +21,19 @@ assert.match(
 assert.match(src, /pets\.map\(\(pet\) => presentPet/, 'GET / maps through presenter');
 assert.match(src, /sanitizePetPhotosForViewer/, 'pending photos stripped via shared helper');
 assert.match(src, /sendPhotoPlaceholder/, 'unapproved image route serves placeholder');
+assert.match(src, /export function publicOwnerAvatarUrl/, 'search cards resolve a real owner avatar');
+assert.match(
+  src,
+  /ownerAvatarUrl: publicOwnerAvatarUrl\(pet\.ownerAvatarUrl\)/,
+  'public discovery card includes ownerAvatarUrl'
+);
+assert.match(src, /isGenderDefaultAvatarPath\(raw\)/, 'shared gender stock face is not an owner photo');
+assert.match(src, /publicImageUrlForStored\(raw\)/, 'telegram file_id owner photos become web URLs');
+assert.doesNotMatch(
+  src,
+  /Never include[\s\S]{0,120}owner avatar/,
+  'public card no longer documents stripping the owner avatar'
+);
 const listStart = src.indexOf("petsRouter.get('/',");
 const nearbyStart = src.indexOf("petsRouter.get('/nearby'");
 assert.ok(listStart >= 0 && nearbyStart > listStart, 'GET / is declared before /nearby');

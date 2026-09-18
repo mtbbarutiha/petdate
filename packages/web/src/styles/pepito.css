@@ -14212,6 +14212,16 @@ select.pepito-wallet-convert-control {
 .pepito-pet-discovery-status.is-error {
   color: var(--danger, #c0392b);
 }
+.pepito-pet-discovery-geo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+.pepito-pet-discovery-geo .pepito-pet-discovery-status {
+  margin: 0;
+}
 .pepito-pet-discovery-empty {
   margin: 0.85rem 0 0;
   font-size: 0.9rem;

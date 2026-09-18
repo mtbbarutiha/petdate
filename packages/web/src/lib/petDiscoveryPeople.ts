@@ -1,4 +1,4 @@
-import type { PetProfile } from '@petdate/shared';
+import { isGenderDefaultAvatarPath, type PetProfile } from '@petdate/shared';
 
 /** One discovery row per person (owner), with their best pet summary. */
 export type DiscoveryPerson = {
@@ -16,10 +16,11 @@ export function peopleFromDiscoveryPets(pets: PetProfile[]): DiscoveryPerson[] {
     if (!pet?.ownerId || seen.has(pet.ownerId)) continue;
     seen.add(pet.ownerId);
     const name = String(pet.ownerName ?? '').trim() || 'صاحب پت';
+    const avatar = String(pet.ownerAvatarUrl ?? '').trim();
     out.push({
       ownerId: pet.ownerId,
       ownerName: name,
-      ownerAvatarUrl: pet.ownerAvatarUrl,
+      ownerAvatarUrl: avatar && !isGenderDefaultAvatarPath(avatar) ? avatar : undefined,
       pet,
     });
   }

@@ -1,5 +1,6 @@
 /**
- * Guard: inbox/list avatars resolve web-static + API paths, gender fallback on error.
+ * Guard: inbox/list avatars resolve web-static + API paths.
+ * Owner rows use a real photo or initials — not one shared gender portrait.
  * Run: npx tsx packages/web/src/components/inboxPeerAvatar.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -16,10 +17,12 @@ const playdateMap = readFileSync(join(here, '../lib/playdateMap.ts'), 'utf8');
 const chatPage = readFileSync(join(here, '../pages/ChatPage.tsx'), 'utf8');
 const ci = readFileSync(join(here, '../../../../scripts/ci-selftest.sh'), 'utf8');
 
-assert.match(avatar, /defaultAvatarUrlForGender/, 'falls back to gender default stock photo');
+assert.match(avatar, /allowStockFallback = false/, 'gender stock face is opt-in, not the default');
+assert.match(avatar, /isGenderDefaultAvatarPath/, 'drops a shared gender JPG passed as the owner photo');
+assert.match(avatar, /defaultAvatarUrlForGender/, 'stock face helper remains for explicit opt-in');
 assert.match(avatar, /setSrc\(primary \|\| genderFallback\)/, 'resets src when URL/gender changes');
 assert.match(avatar, /referrerPolicy="no-referrer"/, 'hotlink-safe referrer for Google/CDN avatars');
-assert.match(avatar, /genderFallback && src !== genderFallback/, 'onError tries gender stock before initials');
+assert.match(avatar, /genderFallback && src !== genderFallback/, 'opt-in stock is tried only when enabled');
 
 assert.match(api, /export \{ resolvePublicAvatarUrl, resolvePublicMediaUrl \} from '\.\/mediaUrl'/, 'api re-exports media URL helpers');
 const mediaFn = mediaUrl.match(/export function resolvePublicMediaUrl[\s\S]*?^}/m)?.[0] || '';
@@ -29,10 +32,20 @@ assert.match(mediaFn, /raw\.startsWith\('\/pets\/'\)/, 'stock pet JPGs stay on w
 assert.match(mediaFn, /raw\.startsWith\('\/brand\/'\)/, 'brand assets stay on web origin');
 
 assert.match(playdateMap, /ownerAvatarUrl/, 'UI pet keeps owner avatar from API');
-assert.match(playdateMap, /ownerGender/, 'UI pet keeps owner gender for avatar fallback');
+assert.match(playdateMap, /isGenderDefaultAvatarPath/, 'playmate rows drop shared gender stock photos');
+assert.match(playdateMap, /ownerGender/, 'UI pet keeps owner gender');
 assert.match(inbox, /peerAvatarUrl: peer\.ownerAvatarUrl/, 'playmate inbox prefers owner face');
+assert.doesNotMatch(
+  inbox,
+  /peerAvatarUrl: peer\.ownerAvatarUrl \|\| peer\.imageUrl/,
+  'playmate inbox must not use the pet photo as the owner face'
+);
 assert.match(chatPage, /InboxPeerAvatar/, 'chat list uses InboxPeerAvatar for owner face');
-assert.match(chatPage, /gender=\{peer\?\.ownerGender\}/, 'list passes owner gender into avatar');
+assert.doesNotMatch(
+  chatPage,
+  /gender=\{peer\?\.ownerGender\}/,
+  'chat list does not paint one shared gender face on every owner'
+);
 
 assert.match(ci, /inboxPeerAvatar\.selftest/, 'CI runs inbox avatar selftest');
 

@@ -538,4 +538,61 @@ assert.equal(
   `known chip/stat selectors must not hardcode light fills: ${leftoverLightFills.map((m) => m[0].slice(0, 80)).join(' | ')}`,
 );
 
+/* Admin Jalali calendar — dark day cells must not stay mint-mixed-with-white. */
+assert.match(
+  adminCss,
+  /\.wdg-cal-day\s*\{[^}]*color-mix\(in srgb, var\(--admin-promo-mint\) 35%, #fff\)/,
+  'light calendar day cells keep the mint wash',
+);
+assert.match(
+  adminCss,
+  /\.wdg-cal-day\.is-today\s*\{[^}]*color-mix\(in srgb, var\(--admin-mint\) 28%, #fff\)/,
+  'light today cell keeps the mint wash',
+);
+assert.match(darkCss, /html\[data-theme=['"]dark['"]\] \.admin-app \.wdg-cal-day \{[^}]*background:\s*#242236/, 'dark day cells use card fill');
+assert.match(darkCss, /html\[data-theme=['"]dark['"]\] \.admin-app \.wdg-cal-day-primary \{[^}]*color:\s*#f4f3f8/, 'dark day numbers are light');
+assert.match(darkCss, /\.wdg-cal-day\.is-today \{[^}]*background:\s*#2c2840/, 'dark today is a dark fill');
+assert.match(darkCss, /\.wdg-cal-day\.is-today \{[^}]*border-color:\s*#2dd4b0/, 'dark today uses a teal border');
+assert.match(darkCss, /\.wdg-cal-day\.is-selected \{[^}]*background:\s*#322e48/, 'dark selected is a dark fill');
+assert.match(darkCss, /\.wdg-cal-day\.is-selected \{[^}]*border-color:\s*#a89ad4/, 'dark selected uses a purple border');
+assert.match(darkCss, /\.wdg-cal-day\.is-out \{[^}]*background:\s*#1c192d/, 'dark out-of-month stays on the modal');
+assert.match(darkCss, /\.wdg-cal-day\.is-out \{[^}]*opacity:\s*1/, 'dark out-of-month is not faded away');
+assert.match(darkCss, /\.wdg-cal-code--or \{[^}]*color:\s*#5eead4/, 'dark order codes are teal');
+assert.match(darkCss, /\.wdg-cal-code--re \{[^}]*color:\s*#c4b5fd/, 'dark registration codes are light purple');
+assert.match(darkCss, /\.wdg-cal-code--em \{[^}]*color:\s*#7dd3fc/, 'dark email codes are sky');
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\] \.admin-app \.wdg-cal-day \{[^}]*#fff\b/,
+  'dark day cells must not mix back to white',
+);
+
+function relLuminance(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * ch[0]! + 0.7152 * ch[1]! + 0.0722 * ch[2]!;
+}
+function contrastRatio(fg: string, bg: string): number {
+  const hi = Math.max(relLuminance(fg), relLuminance(bg));
+  const lo = Math.min(relLuminance(fg), relLuminance(bg));
+  return (hi + 0.05) / (lo + 0.05);
+}
+const calendarPairs: Array<[string, string, string]> = [
+  ['day number', '#f4f3f8', '#242236'],
+  ['today number', '#f4f3f8', '#2c2840'],
+  ['selected number', '#f4f3f8', '#322e48'],
+  ['out-of-month number', '#c4bfd4', '#1c192d'],
+  ['order code', '#5eead4', '#242236'],
+  ['registration code', '#c4b5fd', '#242236'],
+  ['email code', '#7dd3fc', '#242236'],
+  ['order code on today', '#5eead4', '#2c2840'],
+  ['registration code on selected', '#c4b5fd', '#322e48'],
+];
+for (const [name, fg, bg] of calendarPairs) {
+  const ratio = contrastRatio(fg, bg);
+  assert.ok(ratio >= 4.5, `${name} contrast ${ratio.toFixed(2)} < 4.5 (${fg} on ${bg})`);
+}
+
 console.log('theme.selftest: ok');

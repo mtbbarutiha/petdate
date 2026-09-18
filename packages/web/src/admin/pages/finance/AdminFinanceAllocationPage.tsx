@@ -6,12 +6,28 @@ import type {
   FinanceOsSbgExpense,
   FinanceOsSbgPerson,
 } from '@petdate/shared';
-import { Building2, Cpu, FileText, Users } from 'lucide-react';
+import { Building2, Cpu, FileText, Plus, Users } from 'lucide-react';
 import { adminFetch, formatNumFa, formatYearFa } from '../../api';
 import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
+import {
+  CommitmentDialog,
+  EquipmentDialog,
+  ExpenseDialog,
+  InvoiceDialog,
+  OfficeCreateDialog,
+  PersonDialog,
+} from './FinanceAllocationDialogs';
+import type {
+  CommitmentForm,
+  EquipmentForm,
+  ExpenseForm,
+  InvoiceForm,
+  OfficeCreateBody,
+  PersonForm,
+} from './financeAllocationPayload';
 import { appAlert, appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
@@ -114,6 +130,12 @@ export function AdminFinanceAllocationPage() {
   const [officeDrafts, setOfficeDrafts] = useState<OfficeDraft[]>([]);
   const [peopleDrafts, setPeopleDrafts] = useState<PersonDraft[]>([]);
   const [equipmentDrafts, setEquipmentDrafts] = useState<EquipmentDraft[]>([]);
+  const [officeOpen, setOfficeOpen] = useState(false);
+  const [personForm, setPersonForm] = useState<PersonForm | null>(null);
+  const [equipmentForm, setEquipmentForm] = useState<EquipmentForm | null>(null);
+  const [expenseForm, setExpenseForm] = useState<ExpenseForm | null>(null);
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceForm | null>(null);
+  const [commitmentForm, setCommitmentForm] = useState<CommitmentForm | null>(null);
 
   const load = useCallback(async (opts?: { syncDrafts?: boolean }) => {
     try {
@@ -365,7 +387,7 @@ export function AdminFinanceAllocationPage() {
   };
 
   const submitAlloc = async () => {
-    if (!allocTarget || !editMode) return;
+    if (!allocTarget || !canWrite) return;
     const splits = splitText
       .split('\n')
       .map((l) => l.trim())
@@ -391,7 +413,7 @@ export function AdminFinanceAllocationPage() {
   };
 
   const issueInvoice = async () => {
-    if (!editMode || !data) return;
+    if (!canWrite || !data) return;
     const lines = allocated
       .flatMap((e) => e.splits.filter((s) => s.business === invoiceBiz).map((s) => ({
         desc: e.desc,
@@ -417,7 +439,7 @@ export function AdminFinanceAllocationPage() {
   };
 
   const saveBank = async () => {
-    if (!editMode) return;
+    if (!canWrite) return;
     setBusy(true);
     try {
       await adminFetch('/api/admin/finance-os/allocation/bank-balance', {
@@ -433,7 +455,7 @@ export function AdminFinanceAllocationPage() {
   };
 
   const markDone = async (id: number) => {
-    if (!editMode) return;
+    if (!canWrite) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/finance-os/allocation/commitments/${id}/done`, { method: 'POST', body: '{}' });
@@ -443,6 +465,164 @@ export function AdminFinanceAllocationPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const refresh = async () => {
+    const bundle = await load({ syncDrafts: true });
+    if (bundle) applyDrafts(bundle);
+  };
+
+  const writeJson = async (path: string, method: string, body?: unknown) => {
+    setBusy(true);
+    try {
+      await adminFetch(path, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+      await refresh();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDelete = async (message: string, path: string) => {
+    const ok = await appConfirm(message, { variant: 'admin' });
+    if (!ok) return;
+    await writeJson(path, 'DELETE');
+  };
+
+  const submitOffice = async (body: OfficeCreateBody) => {
+    if (!canWrite) return;
+    if (!body.name) {
+      await appAlert(tr('نام دفتر الزامی است'), { variant: 'admin' });
+      return;
+    }
+    if (await writeJson('/api/admin/finance-os/allocation/offices', 'POST', body)) setOfficeOpen(false);
+  };
+
+  const submitPerson = async (id: number | null, body: { name: string }) => {
+    if (!body.name) {
+      await appAlert(tr('نام الزامی است'), { variant: 'admin' });
+      return;
+    }
+    const ok = id
+      ? await writeJson(`/api/admin/finance-os/allocation/people/${id}`, 'PATCH', body)
+      : await writeJson('/api/admin/finance-os/allocation/people', 'POST', body);
+    if (ok) setPersonForm(null);
+  };
+
+  const submitEquipment = async (id: number | null, body: { name: string }) => {
+    if (!body.name) {
+      await appAlert(tr('نام الزامی است'), { variant: 'admin' });
+      return;
+    }
+    const ok = id
+      ? await writeJson(`/api/admin/finance-os/allocation/equipment/${id}`, 'PATCH', body)
+      : await writeJson('/api/admin/finance-os/allocation/equipment', 'POST', body);
+    if (ok) setEquipmentForm(null);
+  };
+
+  const submitExpense = async (id: number | null, body: { desc: string; amount: number }) => {
+    if (!body.desc) {
+      await appAlert(tr('شرح الزامی است'), { variant: 'admin' });
+      return;
+    }
+    if (!body.amount) {
+      await appAlert(tr('مبلغ الزامی است'), { variant: 'admin' });
+      return;
+    }
+    const ok = id
+      ? await writeJson(`/api/admin/finance-os/allocation/expenses/${id}`, 'PATCH', body)
+      : await writeJson('/api/admin/finance-os/allocation/expenses', 'POST', body);
+    if (ok) setExpenseForm(null);
+  };
+
+  const submitInvoice = async (id: number | null, body: { business: string }) => {
+    if (!body.business) return;
+    const ok = id
+      ? await writeJson(`/api/admin/finance-os/allocation/invoices/${id}`, 'PATCH', body)
+      : await writeJson('/api/admin/finance-os/allocation/invoices', 'POST', body);
+    if (ok) setInvoiceForm(null);
+  };
+
+  const submitCommitment = async (id: number | null, body: { desc: string; amount: number }) => {
+    if (!body.desc) {
+      await appAlert(tr('شرح الزامی است'), { variant: 'admin' });
+      return;
+    }
+    if (!body.amount) {
+      await appAlert(tr('مبلغ الزامی است'), { variant: 'admin' });
+      return;
+    }
+    const ok = id
+      ? await writeJson(`/api/admin/finance-os/allocation/commitments/${id}`, 'PATCH', body)
+      : await writeJson('/api/admin/finance-os/allocation/commitments', 'POST', body);
+    if (ok) setCommitmentForm(null);
+  };
+
+  const openPersonCreate = () => {
+    setPersonForm({ id: null, name: '', role: '', office: data?.offices[0]?.name || '', allocationMethod: 'auto' });
+  };
+
+  const openEquipmentCreate = () => {
+    setEquipmentForm({
+      id: null,
+      name: '',
+      category: '',
+      purchasePrice: '',
+      currentValue: '',
+      monthlyRate: '',
+      assignedBusiness: businesses.find((b) => !NON_ALLOCATABLE_BUSINESSES.has(b.name))?.name || '',
+      assignedPerson: '',
+    });
+  };
+
+  const openExpenseCreate = () => {
+    setExpenseForm({
+      id: null,
+      date: new Date().toISOString().slice(0, 10),
+      desc: '',
+      category: '',
+      amount: '',
+      relatedPerson: '',
+      office: data?.offices[0]?.name || '',
+    });
+  };
+
+  const openExpenseEdit = (e: FinanceOsSbgExpense) => {
+    setExpenseForm({
+      id: e.id,
+      date: String(e.date || '').slice(0, 10),
+      desc: e.desc,
+      category: e.category,
+      amount: String(Math.abs(e.amount)),
+      relatedPerson: e.relatedPerson,
+      office: e.office || '',
+    });
+  };
+
+  const openInvoiceCreate = () => {
+    const biz = (data?.businesses || []).find((b) => !NON_ALLOCATABLE_BUSINESSES.has(b.name));
+    setInvoiceForm({
+      id: null,
+      business: biz?.name || invoiceBiz,
+      jy: '1405',
+      jm: '7',
+      status: 'draft',
+      lines: [{ desc: '', category: '', amount: '' }],
+    });
+  };
+
+  const openCommitmentCreate = () => {
+    setCommitmentForm({
+      id: null,
+      desc: '',
+      category: '',
+      amount: '',
+      dueDate: new Date().toISOString().slice(0, 10),
+      status: 'pending',
+    });
   };
 
   const patchOffice = (officeId: number, patch: Partial<OfficeDraft>) => {
@@ -538,6 +718,19 @@ export function AdminFinanceAllocationPage() {
 
       {data && tab === 'offices' ? (
         <div style={{ display: 'grid', gap: 16 }}>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn admin-btn--primary" data-testid="admin-office-create" disabled={!canWrite || busy} onClick={() => setOfficeOpen(true)}>
+              <Plus size={16} /> {tr('ایجاد دفتر')}
+            </button>
+          </div>
+          {!officesView.length ? (
+            <section className="admin-card admin-empty">
+              <p>{tr('دفتری ثبت نشده')}</p>
+              <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={() => setOfficeOpen(true)}>
+                {tr('ایجاد دفتر')}
+              </button>
+            </section>
+          ) : null}
           {officesView.map((o) => {
             const live = data.offices.find((x) => x.id === o.id);
             return (
@@ -701,9 +894,21 @@ export function AdminFinanceAllocationPage() {
       ) : null}
 
       {data && tab === 'people' ? (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openPersonCreate}>
+              <Plus size={16} /> {tr('افزودن فرد')}
+            </button>
+          </div>
+          {!peopleView.length ? (
+            <section className="admin-card admin-empty">
+              <p>{tr('فردی ثبت نشده')}</p>
+              <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openPersonCreate}>{tr('افزودن فرد')}</button>
+            </section>
+          ) : (
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
-            <thead><tr><th>{tr('نام')}</th><th>{tr('سمت')}</th><th>{tr('دفتر')}</th><th>{tr('روش')}</th><th>{tr('تخصیص زمان (آخرین)')}</th>{editMode ? <th></th> : null}</tr></thead>
+            <thead><tr><th>{tr('نام')}</th><th>{tr('سمت')}</th><th>{tr('دفتر')}</th><th>{tr('روش')}</th><th>{tr('تخصیص زمان (آخرین)')}</th><th>{tr('عملیات')}</th></tr></thead>
             <tbody>
               {peopleView.map((p) => {
                 const live = data.sbgPeople.find((x) => x.id === p.id);
@@ -783,33 +988,44 @@ export function AdminFinanceAllocationPage() {
                         ? last.allocations.map((a) => `${a.business} ${formatNumFa(a.percent)}${tr('٪')}`).join(' · ')
                         : '—'}
                     </td>
-                    {editMode ? (
-                      <td>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--primary"
-                          disabled={busy}
-                          onClick={() => void savePersonNow(p.id)}
-                        >
-                          {tr('ذخیره')}
-                        </button>
-                      </td>
-                    ) : null}
+                    <td>
+                      <div className="admin-header-actions">
+                        {editMode ? (
+                          <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void savePersonNow(p.id)}>{tr('ذخیره')}</button>
+                        ) : null}
+                        <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => setPersonForm({ id: p.id, name: p.name, role: p.role, office: p.office, allocationMethod: p.allocationMethod })}>{tr('ویرایش')}</button>
+                        <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این فرد؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/people/${p.id}`)}>{tr('حذف')}</button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+          )}
+        </div>
       ) : null}
 
       {data && tab === 'equipment' ? (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openEquipmentCreate}>
+              <Plus size={16} /> {tr('افزودن تجهیز')}
+            </button>
+          </div>
+          {!equipmentView.length ? (
+            <section className="admin-card admin-empty">
+              <p>{tr('تجهیزی ثبت نشده')}</p>
+              <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openEquipmentCreate}>{tr('افزودن تجهیز')}</button>
+            </section>
+          ) : (
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
             <thead>
               <tr>
                 <th>{tr('کد')}</th><th>{tr('نام')}</th><th>{tr('دسته')}</th><th>{tr('خرید')}</th><th>{tr('ارزش فعلی')}</th>
-                <th>{tr('نرخ ماهانه')}</th><th>{tr('بیزنس')}</th><th>{tr('فرد')}</th>{editMode ? <th></th> : null}
+                <th>{tr('نرخ ماهانه')}</th><th>{tr('بیزنس')}</th><th>{tr('فرد')}</th><th>{tr('عملیات')}</th>
               </tr>
             </thead>
             <tbody>
@@ -931,18 +1147,17 @@ export function AdminFinanceAllocationPage() {
                         />
                       ) : (eq.assignedPerson || '—')}
                     </td>
-                    {editMode ? (
-                      <td>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--primary"
-                          disabled={busy}
-                          onClick={() => void saveEquipmentNow(eq.id)}
-                        >
-                          {tr('ذخیره')}
-                        </button>
-                      </td>
-                    ) : null}
+                    <td>
+                      <div className="admin-header-actions">
+                        {editMode ? (
+                          <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void saveEquipmentNow(eq.id)}>{tr('ذخیره')}</button>
+                        ) : null}
+                        <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => setEquipmentForm({
+                          id: eq.id, name: eq.name, category: eq.category, purchasePrice: eq.purchasePrice, currentValue: eq.currentValue, monthlyRate: eq.monthlyRate, assignedBusiness: eq.assignedBusiness, assignedPerson: eq.assignedPerson,
+                        })}>{tr('ویرایش')}</button>
+                        <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این تجهیز؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/equipment/${eq.id}`)}>{tr('حذف')}</button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -953,15 +1168,22 @@ export function AdminFinanceAllocationPage() {
             {formatMoney(data.equipment.reduce((s, e) => s + e.currentValue, 0))}
           </p>
         </div>
+          )}
+        </div>
       ) : null}
 
       {data && tab === 'allocation' ? (
         <div style={{ display: 'grid', gap: 16 }}>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openExpenseCreate}>
+              <Plus size={16} /> {tr('ایجاد تخصیص')}
+            </button>
+          </div>
           <section className="admin-card" style={{ padding: 16 }}>
             <div className="admin-card-head"><h2>{tr('در انتظار تخصیص')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>{tr('تاریخ')}</th><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('فرد')}</th><th></th></tr></thead>
+                <thead><tr><th>{tr('تاریخ')}</th><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('دفتر')}</th><th>{tr('فرد')}</th><th>{tr('عملیات')}</th></tr></thead>
                 <tbody>
                   {pending.map((e) => (
                     <tr key={e.id}>
@@ -969,15 +1191,18 @@ export function AdminFinanceAllocationPage() {
                       <td>{e.desc}</td>
                       <td>{e.category}</td>
                       <td>{formatMoney(Math.abs(e.amount))}</td>
+                      <td>{e.office || '—'}</td>
                       <td>{e.relatedPerson || '—'}</td>
                       <td>
-                        {editMode ? (
-                          <button type="button" className="admin-btn admin-btn--primary" onClick={() => openAlloc(e)}>{tr('تخصیص')}</button>
-                        ) : null}
+                        <div className="admin-header-actions">
+                          <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={() => openAlloc(e)}>{tr('تخصیص')}</button>
+                          <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => openExpenseEdit(e)}>{tr('ویرایش')}</button>
+                          <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این هزینه؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/expenses/${e.id}`)}>{tr('حذف')}</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
-                  {!pending.length ? <tr><td colSpan={6} className="admin-muted">{tr('همه تخصیص شده‌اند')}</td></tr> : null}
+                  {!pending.length ? <tr><td colSpan={7} className="admin-muted">{tr('همه تخصیص شده‌اند')}</td></tr> : null}
                 </tbody>
               </table>
             </div>
@@ -986,13 +1211,21 @@ export function AdminFinanceAllocationPage() {
             <div className="admin-card-head"><h2>{tr('تخصیص‌یافته')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>{tr('شرح')}</th><th>{tr('مبلغ')}</th><th>{tr('تقسیم')}</th></tr></thead>
+                <thead><tr><th>{tr('شرح')}</th><th>{tr('مبلغ')}</th><th>{tr('دفتر')}</th><th>{tr('فرد')}</th><th>{tr('تقسیم')}</th><th>{tr('عملیات')}</th></tr></thead>
                 <tbody>
                   {allocated.map((e) => (
                     <tr key={e.id}>
                       <td>{e.desc}</td>
                       <td>{formatMoney(Math.abs(e.amount))}</td>
+                      <td>{e.office || '—'}</td>
+                      <td>{e.relatedPerson || '—'}</td>
                       <td>{e.splits.map((s) => `${s.business} ${formatMoney(s.amount)}`).join(' · ')}</td>
+                      <td>
+                        <div className="admin-header-actions">
+                          <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => openExpenseEdit(e)}>{tr('ویرایش')}</button>
+                          <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این هزینه؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/expenses/${e.id}`)}>{tr('حذف')}</button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1004,7 +1237,7 @@ export function AdminFinanceAllocationPage() {
                   <option key={b.id}>{b.name}</option>
                 ))}
               </select>
-              {editMode ? (
+              {canWrite ? (
                 <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void issueInvoice()}>
                   <FileText size={16} /> {tr('صدور فاکتور برای')} {invoiceBiz}
                 </button>
@@ -1015,9 +1248,15 @@ export function AdminFinanceAllocationPage() {
       ) : null}
 
       {data && tab === 'invoices' ? (
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div className="admin-header-actions">
+            <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openInvoiceCreate}>
+              <Plus size={16} /> {tr('ایجاد فاکتور')}
+            </button>
+          </div>
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
-            <thead><tr><th>{tr('شماره')}</th><th>{tr('بیزنس')}</th><th>{tr('دوره')}</th><th>{tr('جمع')}</th><th>{tr('وضعیت')}</th><th>{tr('خطوط')}</th></tr></thead>
+            <thead><tr><th>{tr('شماره')}</th><th>{tr('بیزنس')}</th><th>{tr('دوره')}</th><th>{tr('جمع')}</th><th>{tr('وضعیت')}</th><th>{tr('خطوط')}</th><th>{tr('عملیات')}</th></tr></thead>
             <tbody>
               {data.invoices.map((inv) => (
                 <tr key={inv.id}>
@@ -1027,11 +1266,25 @@ export function AdminFinanceAllocationPage() {
                   <td>{formatMoney(inv.total)}</td>
                   <td>{inv.status === 'issued' ? tr('صادر شده') : inv.status === 'paid' ? tr('پرداخت‌شده') : tr('پیش‌نویس')}</td>
                   <td>{formatNumFa(inv.lines.length)}</td>
+                  <td>
+                    <div className="admin-header-actions">
+                      <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => setInvoiceForm({
+                        id: inv.id,
+                        business: inv.business,
+                        jy: String(inv.jy),
+                        jm: String(inv.jm),
+                        status: inv.status,
+                        lines: inv.lines.length ? inv.lines.map((l) => ({ desc: l.desc, category: l.category, amount: String(l.amount) })) : [{ desc: '', category: '', amount: '' }],
+                      })}>{tr('ویرایش')}</button>
+                      <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این فاکتور؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/invoices/${inv.id}`)}>{tr('حذف')}</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {!data.invoices.length ? <tr><td colSpan={6} className="admin-muted">{tr('فاکتوری نیست')}</td></tr> : null}
+              {!data.invoices.length ? <tr><td colSpan={7} className="admin-muted">{tr('فاکتوری نیست')}</td></tr> : null}
             </tbody>
           </table>
+        </div>
         </div>
       ) : null}
 
@@ -1045,10 +1298,11 @@ export function AdminFinanceAllocationPage() {
                 dir="ltr"
                 style={{ width: 220 }}
                 value={bankDraft}
-                disabled={!editMode}
+                disabled={!canWrite}
+                aria-label={tr('موجودی بانک / صندوق هلدینگ')}
                 onChange={(e) => setBankDraft(e.target.value)}
               />
-              {editMode ? (
+              {canWrite ? (
                 <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void saveBank()}>
                   {tr('ذخیره موجودی')}
                 </button>
@@ -1057,10 +1311,15 @@ export function AdminFinanceAllocationPage() {
             </div>
           </section>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>{tr('تعهدات')}</h2></div>
+            <div className="admin-card-head">
+              <h2>{tr('تعهدات')}</h2>
+              <button type="button" className="admin-btn admin-btn--primary" disabled={!canWrite || busy} onClick={openCommitmentCreate}>
+                <Plus size={16} /> {tr('ایجاد تعهد')}
+              </button>
+            </div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('سررسید')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
+                <thead><tr><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('سررسید')}</th><th>{tr('وضعیت')}</th><th>{tr('عملیات')}</th></tr></thead>
                 <tbody>
                   {data.commitments.map((c) => (
                     <tr key={c.id}>
@@ -1070,14 +1329,19 @@ export function AdminFinanceAllocationPage() {
                       <td dir="ltr">{c.dueDate}</td>
                       <td>{c.status === 'done' ? tr('انجام‌شده') : tr('در انتظار')}</td>
                       <td>
-                        {editMode && c.status === 'pending' ? (
-                          <button type="button" className="admin-btn" disabled={busy} onClick={() => void markDone(c.id)}>
-                            {tr('تسویه از موجودی')}
-                          </button>
-                        ) : null}
+                        <div className="admin-header-actions">
+                          {canWrite && c.status === 'pending' ? (
+                            <button type="button" className="admin-btn" disabled={busy} onClick={() => void markDone(c.id)}>{tr('تسویه از موجودی')}</button>
+                          ) : null}
+                          <button type="button" className="admin-btn" disabled={!canWrite || busy} onClick={() => setCommitmentForm({
+                            id: c.id, desc: c.desc, category: c.category, amount: String(c.amount), dueDate: c.dueDate, status: c.status,
+                          })}>{tr('ویرایش')}</button>
+                          <button type="button" className="admin-btn admin-btn--danger" disabled={!canWrite || busy} onClick={() => void confirmDelete(tr('حذف این تعهد؟ این کار قابل بازگشت نیست.'), `/api/admin/finance-os/allocation/commitments/${c.id}`)}>{tr('حذف')}</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {!data.commitments.length ? <tr><td colSpan={6} className="admin-muted">{tr('تعهدی ثبت نشده')}</td></tr> : null}
                 </tbody>
               </table>
             </div>
@@ -1104,6 +1368,12 @@ export function AdminFinanceAllocationPage() {
           </div>
         ) : null}
       </AdminModal>
+      {officeOpen ? <OfficeCreateDialog businesses={businesses} busy={busy} onClose={() => setOfficeOpen(false)} onSubmit={(body) => void submitOffice(body)} /> : null}
+      {personForm ? <PersonDialog initial={personForm} offices={(data?.offices || []).map((o) => o.name)} busy={busy} onClose={() => setPersonForm(null)} onSubmit={(id, body) => void submitPerson(id, body)} /> : null}
+      {equipmentForm ? <EquipmentDialog initial={equipmentForm} businesses={businesses} people={(data?.sbgPeople || []).map((p) => p.name)} busy={busy} onClose={() => setEquipmentForm(null)} onSubmit={(id, body) => void submitEquipment(id, body)} /> : null}
+      {expenseForm ? <ExpenseDialog initial={expenseForm} offices={(data?.offices || []).map((o) => o.name)} people={(data?.sbgPeople || []).map((p) => p.name)} busy={busy} onClose={() => setExpenseForm(null)} onSubmit={(id, body) => void submitExpense(id, body)} /> : null}
+      {invoiceForm ? <InvoiceDialog initial={invoiceForm} businesses={(data?.businesses || []).filter((b) => !NON_ALLOCATABLE_BUSINESSES.has(b.name))} busy={busy} onClose={() => setInvoiceForm(null)} onSubmit={(id, body) => void submitInvoice(id, body)} /> : null}
+      {commitmentForm ? <CommitmentDialog initial={commitmentForm} busy={busy} onClose={() => setCommitmentForm(null)} onSubmit={(id, body) => void submitCommitment(id, body)} /> : null}
     </div>
   );
 }
