@@ -243,7 +243,17 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v59-logged-in-preload/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v60-landing-css-restore/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(
+  indexHtml,
+  /\.pepito-service-blob\{[^}]*width:80px;height:72px/,
+  'critical CSS caps service blob size so FOUC cannot inflate SVG curves'
+);
+assert.match(
+  indexHtml,
+  /\.pepito-about\{[^}]*display:grid/,
+  'critical CSS reserves about two-column grid before pepito.css'
+);
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -290,20 +300,31 @@ assert.match(vite, /vendor-lucide/, 'lucide stays in its own chunk');
 assert.match(vite, /vendor-tiptap/, '@tiptap/react must not share vendor-react');
 assert.match(vite, /@tiptap/, 'tiptap matcher runs before /react/');
 assert.match(vite, /resolveDependencies/, 'lucide is not modulepreloaded');
-assert.match(vite, /petdate-defer-css/, 'hashed CSS is deferred off first paint');
-assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS has a load fallback');
-assert.match(vite, /onload="this.media='all'"/, 'hashed CSS applies as soon as it loads');
+assert.doesNotMatch(vite, /petdate-defer-css/, 'hashed CSS must not be media=print deferred (landing FOUC)');
+assert.doesNotMatch(vite, /pd-defer-css-fallback/, 'no print→all CSS fallback (render-blocking sheets)');
+assert.doesNotMatch(vite, /onload="this.media='all'"/, 'stylesheets stay render-blocking');
 assert.doesNotMatch(vite, /setTimeout\(inject,\s*8000\)/, 'must not wait 8s before painting CSS');
+assert.doesNotMatch(vite, /media="print"/, 'vite must not mark stylesheets as print');
 
 assert.doesNotMatch(main, /styles\/chat\.css/, 'chat.css is not on the landing CSS graph');
-assert.doesNotMatch(main, /styles\/pepito\.css/, 'pepito CSS is not a static main import (route-lazy)');
-assert.doesNotMatch(main, /styles\/global\.css/, 'global CSS is not a static main import (route-lazy)');
-assert.doesNotMatch(main, /styles\/theme-dark\.css/, 'theme-dark CSS is not a static main import (route-lazy)');
-assert.match(appTsx, /loadAppCss|EnsureAppCss/, 'non-landing routes load app CSS');
+assert.match(main, /styles\/pepito\.css/, 'pepito CSS is a static main import (landing layout)');
+assert.match(main, /styles\/global\.css/, 'global CSS is a static main import (landing layout)');
+assert.match(main, /styles\/theme-dark\.css/, 'theme-dark CSS is a static main import (landing layout)');
+assert.match(appTsx, /loadAppCss|EnsureAppCss/, 'routes still call loadAppCss (idempotent)');
 assert.match(
   readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
   /scheduleLandingAppCss/,
-  'landing schedules chrome CSS after input/idle'
+  'landing arms chrome CSS helper on mount'
+);
+assert.match(
+  readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
+  /void loadAppCss\(\)/,
+  'landing CSS helper loads immediately (no input/8s defer)'
+);
+assert.doesNotMatch(
+  readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
+  /setTimeout\(go,\s*8000\)/,
+  'landing must not wait 8s before pepito.css'
 );
 assert.match(
   readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
@@ -416,8 +437,8 @@ assert.match(
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /hydrateShopCatalogOnce/, 'landing hydrates shop catalog from below-fold only');
 assert.match(below, /IntersectionObserver/, 'landing shop catalog waits for #shop intersection');
-assert.match(below, /scheduleLandingAppCss/, 'below-fold arms deferred chrome CSS');
-assert.match(welcome, /scheduleLandingAppCss/, 'WelcomePage arms deferred chrome CSS on mount (not only below-fold)');
+assert.match(below, /scheduleLandingAppCss/, 'below-fold arms chrome CSS');
+assert.match(welcome, /scheduleLandingAppCss/, 'WelcomePage arms chrome CSS on mount (not only below-fold)');
 assert.doesNotMatch(below, /if \(newsIndex === 0\) return/, 'news arrows must scroll back to page 0');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');

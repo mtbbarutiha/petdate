@@ -5,34 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import { applySeoToHtml, normalizePath } from './src/lib/pageSeo';
 
-/** Defer hashed CSS so first paint is the inline critical block (FCP).
- *  The sheet still applies on load — waiting for click/8s shipped an unstyled site. */
-function deferNonCriticalCss(): Plugin {
-  return {
-    name: 'petdate-defer-css',
-    transformIndexHtml: {
-      order: 'post',
-      handler(html) {
-        const next = html.replace(
-          /<link([^>]*rel="stylesheet"[^>]*href="(\/assets\/[^"]+\.css)"[^>]*)>/g,
-          (full, attrs: string, href: string) => {
-            if (/\smedia=/.test(attrs)) return full;
-            return `<link${attrs} media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${href}"></noscript>`;
-          }
-        );
-        if (next.includes('pd-defer-css-fallback')) return next;
-        if (!next.includes('onload="this.media=\'all\'"')) return next;
-        /* Cached print stylesheets can skip onload on some WebKit builds — swap
-         * media=all as soon as the sheet exists, with a short idle fallback.
-         * Does not make CSS render-blocking. */
-        const fallback =
-          '<script id="pd-defer-css-fallback">(function(){function arm(){var n=document.querySelectorAll(\'link[rel="stylesheet"][media="print"]\');for(var i=0;i<n.length;i++){(function(l){function go(){l.media="all"}if(l.sheet)go();else l.addEventListener("load",go);setTimeout(go,1500)})(n[i])}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arm);else arm()})();</script>';
-        return next.replace('</head>', `${fallback}</head>`);
-      },
-    },
-  };
-}
-
 /** Inject per-route meta into the SPA shell (dev/preview + the built home HTML). */
 function petdateSeoHtml(): Plugin {
   return {
@@ -87,7 +59,6 @@ export default defineConfig({
   },
   plugins: [
     serveDevSeedHtml(),
-    deferNonCriticalCss(),
     petdateSeoHtml(),
     react(),
     VitePWA({
@@ -106,8 +77,8 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
-        // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v59-logged-in-preload',
+        // Bump when guest marketing / landing CSS graph changes — v59 deferred pepito.
+        cacheId: 'petdate-web-v60-landing-css-restore',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         // /t (event tickets), /rx (prescriptions), /inv (invoices) are Express HTML —

@@ -1,7 +1,8 @@
 /**
- * App chrome CSS (global + pepito + theme-dark) — not on the landing entry graph.
- * Homepage first paint uses the inlined critical block in index.html; these sheets
- * load after input / long idle on `/`, or immediately on other routes.
+ * App chrome CSS (global + pepito + theme-dark).
+ * Landing first paint needs the full sheets — incomplete critical CSS in
+ * index.html left the hero/nav broken until input/scroll/8s idle armed this.
+ * Shop CSS stays a separate lazy chunk (not on the guest homepage graph).
  */
 let appCssPromise: Promise<void> | null = null;
 let shopCssPromise: Promise<void> | null = null;
@@ -28,21 +29,11 @@ export function loadShopCss(): Promise<void> {
   return shopCssPromise;
 }
 
-/** Homepage: keep full chrome CSS off the Lighthouse unused-css / critical path. */
+/**
+ * Homepage: load full chrome CSS immediately on first paint.
+ * Do not wait for scroll / pointer / long idle — that shipped an unstyled landing
+ * until the user interacted (touchstart while scrolling fixed it).
+ */
 export function scheduleLandingAppCss(): void {
-  if (typeof window === 'undefined') return;
-  let done = false;
-  const go = () => {
-    if (done) return;
-    done = true;
-    void loadAppCss();
-  };
-  const arm = () => {
-    window.setTimeout(go, 8000);
-    for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
-      window.addEventListener(ev, go, { once: true, passive: true });
-    }
-  };
-  if (document.readyState === 'complete') arm();
-  else window.addEventListener('load', arm, { once: true });
+  void loadAppCss();
 }
