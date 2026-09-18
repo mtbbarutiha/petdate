@@ -33,7 +33,7 @@ import {
   probeRedisTopology,
   redisSnapshotToServiceCheck,
 } from '../admin-redis-monitoring';
-import { dbService, getResolvedDatabasePath, getStorageDriver, type UserProfilePatch } from '../db';
+import { dbService, getDb, getResolvedDatabasePath, getStorageDriver, type UserProfilePatch } from '../db';
 import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
@@ -88,7 +88,7 @@ import {
   requireAdminAuth,
   requirePermission,
 } from '../admin-auth';
-import { actorHasPermission, resolveAdminActor } from '../hr-service';
+import { actorHasPermission, consumePersonnelGateReason, resolveAdminActor } from '../hr-service';
 import {
   listAdminHeaderNotifications,
   markAdminHeaderNotificationRead,
@@ -100,7 +100,9 @@ import {
   layoutPrefKey,
   setAdminPref,
 } from '../admin-user-prefs';
+import { isIpBanned, queueMail, recordLoginEvent } from '../admin-ops-service';
 import { hrAdminRouter } from './admin-hr';
+import { adminOpsRouter } from './admin-ops';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
@@ -137,11 +139,21 @@ adminRouter.post('/auth/login', adminLoginLimit, (req, res) => {
     typeof req.body?.username === 'string' && req.body.username.trim()
       ? req.body.username.trim()
       : undefined;
-  const resolved = resolveAdminActor({ password, username });
-  if (!resolved) {
-    res.status(401).json({ error: 'رمز عبور اشتباه است' });
+  const ip = String(req.ip || req.socket?.remoteAddress || '');
+  const ua = req.header('user-agent') || '';
+  if (ip && isIpBanned(ip)) {
+    recordLoginEvent({ ip, username, ok: false, userAgent: ua });
+    res.status(403).json({ error: 'این IP در فهرست مسدود ادمین است' });
     return;
   }
+  const resolved = resolveAdminActor({ password, username });
+  if (!resolved) {
+    recordLoginEvent({ ip, username, ok: false, userAgent: ua });
+    const gate = consumePersonnelGateReason();
+    res.status(gate ? 403 : 401).json({ error: gate || 'رمز عبور اشتباه است' });
+    return;
+  }
+  recordLoginEvent({ ip, username: resolved.username, ok: true, userAgent: ua });
   res.json({
     ok: true,
     role: resolved.role,
@@ -188,7 +200,8 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/magazine') ||
     req.path.startsWith('/hero') ||
     req.path.startsWith('/content') ||
-    req.path.startsWith('/consultations')
+    req.path.startsWith('/consultations') ||
+    req.path.startsWith('/ops')
   ) {
     next();
     return;
@@ -226,6 +239,7 @@ adminRouter.use((req, res, next) => {
 });
 
 adminRouter.use('/hr', hrAdminRouter);
+adminRouter.use('/ops', adminOpsRouter);
 adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
 adminRouter.use('/finance-os', financeOsAdminRouter);
@@ -540,6 +554,21 @@ adminRouter.get('/users/geo', (req, res) => {
       ? false
       : true;
   res.json(adminPlatform.getUsersGeoDistribution({ activeOnly }));
+});
+
+adminRouter.post('/users/:id/verify-otp', (req, res) => {
+  const id = Number(req.params.id);
+  const user = dbService.getUserById(id);
+  if (!user) { res.status(404).json({ error: 'کاربر پیدا نشد' }); return; }
+  const phone = String(req.body?.phone || user.phone || '');
+  const code = String(req.body?.code || '');
+  const otp = require('../services/phone-otp') as typeof import('../services/phone-otp');
+  if (req.body?.send) {
+    void otp.sendPhoneOtp(id, phone).then((result) => res.json(result));
+    return;
+  }
+  const result = otp.verifyPhoneOtp(id, phone, code);
+  res.status(result.ok ? 200 : 400).json(result);
 });
 
 adminRouter.patch('/users/:id', (req, res) => {
@@ -1264,7 +1293,9 @@ adminRouter.post('/shop/products', (req, res) => {
     images: Array.isArray(body.images) ? body.images.map(String) : undefined,
     badge: body.badge ?? null,
     inStock: body.inStock !== false, stockQty: Number(body.stockQty ?? 0),
-    params: body.params && typeof body.params === 'object' ? body.params : {},
+    params: body.params && typeof body.params === 'object'
+      ? { ...body.params, __createdBy: body.params.__createdBy || req.adminActor?.username || '' }
+      : { __createdBy: req.adminActor?.username || '' },
     description: body.description ? String(body.description) : '', featured: Boolean(body.featured),
   });
   res.status(201).json(product);
@@ -1370,6 +1401,7 @@ adminRouter.post('/shop/brands', (req, res) => {
     sortOrder: body.sortOrder != null ? Number(body.sortOrder) : 100,
     featured: Boolean(body.featured),
     active: body.active !== false,
+    categorySlugs: Array.isArray(body.categorySlugs) ? body.categorySlugs.map(String) : [],
   }));
 });
 
@@ -1392,6 +1424,8 @@ adminRouter.post('/shop/categories', (req, res) => {
     description: body.description ? String(body.description) : '',
     emoji: body.emoji ? String(body.emoji) : '🛒',
     sortOrder: body.sortOrder != null ? Number(body.sortOrder) : 100,
+    parentSlug: body.parentSlug ? String(body.parentSlug) : '',
+    redirectSlug: body.redirectSlug ? String(body.redirectSlug) : '',
   }));
 });
 
@@ -1403,7 +1437,43 @@ adminRouter.delete('/shop/categories/:slug', (req, res) => {
 adminRouter.get('/shop/orders', (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const q = typeof req.query.q === 'string' ? req.query.q : undefined;
-  res.json({ orders: adminPlatform.listShopOrders({ status, q, limit: 150 }) });
+  res.json({
+    orders: adminPlatform.listShopOrders({
+      status,
+      q,
+      limit: 150,
+      username: typeof req.query.username === 'string' ? req.query.username : undefined,
+      mobile: typeof req.query.mobile === 'string' ? req.query.mobile : undefined,
+      product: typeof req.query.product === 'string' ? req.query.product : undefined,
+      paymentStatus: typeof req.query.paymentStatus === 'string' ? req.query.paymentStatus : undefined,
+      day: typeof req.query.day === 'string' ? req.query.day : undefined,
+    }),
+  });
+});
+
+adminRouter.patch('/shop/orders/:id/shipping', (req, res) => {
+  const id = Number(req.params.id);
+  const order = adminPlatform.getShopOrder(id);
+  if (!order) { res.status(404).json({ error: 'سفارش پیدا نشد' }); return; }
+  const d = getDb();
+  d.prepare(
+    `UPDATE shop_orders SET
+       shipping_carrier = COALESCE(?, shipping_carrier),
+       tracking_code = COALESCE(?, tracking_code),
+       payment_actor = COALESCE(?, payment_actor),
+       paid_final = COALESCE(?, paid_final),
+       payment_status = COALESCE(?, payment_status),
+       updated_at = datetime('now')
+     WHERE id = ?`
+  ).run(
+    req.body?.shippingCarrier != null ? String(req.body.shippingCarrier) : null,
+    req.body?.trackingCode != null ? String(req.body.trackingCode) : null,
+    req.body?.paymentActor != null ? String(req.body.paymentActor) : (req.adminActor?.username || null),
+    req.body?.paidFinal != null ? (req.body.paidFinal ? 1 : 0) : null,
+    req.body?.paymentStatus != null ? String(req.body.paymentStatus) : null,
+    id
+  );
+  res.json(adminPlatform.getShopOrder(id));
 });
 
 adminRouter.patch('/shop/orders/:id/status', (req, res) => {
@@ -1855,12 +1925,30 @@ adminRouter.get('/mail/inbox/:id', async (req, res) => {
 });
 
 adminRouter.post('/mail/inbox/:id/reply', adminMailSendLimit, async (req, res) => {
-  if (!isSmtpConfigured()) {
-    res.status(503).json({ error: 'SMTP پیکربندی نشده' });
+  const actor = req.adminActor;
+  if (!actor || !actorHasPermission(actor, 'admin.full')) {
+    res.status(403).json({ error: 'خواندن و پاسخ ایمیل حساس فقط برای مدیر کامل است' });
     return;
   }
-  if (!isInboxConfigured()) {
-    res.status(503).json({ error: 'صندوق ورودی روی سرور پیکربندی نشده' });
+  const body = typeof req.body?.body === 'string' ? req.body.body : '';
+  const text = body.trim();
+  if (!text || text.length > 20_000) {
+    res.status(400).json({ error: 'متن پاسخ الزامی است (حداکثر ۲۰۰۰۰ کاراکتر)' });
+    return;
+  }
+  if (!isSmtpConfigured() || !isInboxConfigured()) {
+    const queued = queueMail({
+      to: String(req.body?.to || 'inbox-reply'),
+      subject: typeof req.body?.subject === 'string' ? req.body.subject : 'Re:',
+      body: text,
+      purpose: 'admin_reply',
+      createdBy: actor.username || '',
+    });
+    res.status(202).json({
+      queued: true,
+      message: queued,
+      detail: 'SMTP یا صندوق پیکربندی نشده — پاسخ در صف ارسال ماند. از دکمه ارسال صف استفاده کنید.',
+    });
     return;
   }
   const original = await getInboxMessage(String(req.params.id || ''), { markSeen: true });
@@ -1870,12 +1958,6 @@ adminRouter.post('/mail/inbox/:id/reply', adminMailSendLimit, async (req, res) =
   }
   if (!isPlausibleEmail(original.from)) {
     res.status(400).json({ error: 'فرستنده پیام برای ریپلای معتبر نیست' });
-    return;
-  }
-  const body = typeof req.body?.body === 'string' ? req.body.body : '';
-  const text = body.trim();
-  if (!text || text.length > 20_000) {
-    res.status(400).json({ error: 'متن پاسخ الزامی است (حداکثر ۲۰۰۰۰ کاراکتر)' });
     return;
   }
   const subject =
@@ -1937,13 +2019,30 @@ adminRouter.post('/mail/test', adminMailSendLimit, async (req, res) => {
 });
 
 adminRouter.post('/mail/send', adminMailSendLimit, async (req, res) => {
-  if (!isSmtpConfigured()) {
-    res.status(503).json({ error: 'SMTP پیکربندی نشده' });
-    return;
-  }
+  const actor = req.adminActor;
   const to = typeof req.body?.to === 'string' ? req.body.to.trim().toLowerCase() : '';
   const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : '';
   const body = typeof req.body?.body === 'string' ? req.body.body : '';
+  const text = body.trim();
+  if (!isSmtpConfigured()) {
+    if (!actor || !actorHasPermission(actor, 'admin.full')) {
+      res.status(403).json({ error: 'صف ارسال ایمیل فقط برای مدیر کامل است' });
+      return;
+    }
+    if (!isPlausibleEmail(to) || !subject || !text) {
+      res.status(400).json({ error: 'گیرنده، موضوع و متن الزامی است' });
+      return;
+    }
+    const queued = queueMail({
+      to,
+      subject,
+      body: text,
+      purpose: 'admin_send',
+      createdBy: actor.username || '',
+    });
+    res.status(202).json({ queued: true, message: queued, detail: 'SMTP پیکربندی نشده — در صف ماند' });
+    return;
+  }
   const fromKind =
     typeof req.body?.from === 'string' ? req.body.from.trim().toLowerCase() : 'default';
   if (!isPlausibleEmail(to)) {
@@ -1954,7 +2053,6 @@ adminRouter.post('/mail/send', adminMailSendLimit, async (req, res) => {
     res.status(400).json({ error: 'موضوع الزامی است (حداکثر ۲۰۰ کاراکتر)' });
     return;
   }
-  const text = body.trim();
   if (!text || text.length > 20_000) {
     res.status(400).json({ error: 'متن ایمیل الزامی است (حداکثر ۲۰۰۰۰ کاراکتر)' });
     return;

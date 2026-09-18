@@ -3774,7 +3774,12 @@ export const dbService = {
         .prepare(
           `SELECT * FROM users
            WHERE verification_status = 'pending'
-           ORDER BY id ASC`
+              OR (
+                COALESCE(verification_status, 'none') NOT IN ('verified', 'rejected')
+                AND COALESCE(phone_verified, 0) = 0
+              )
+           ORDER BY CASE WHEN verification_status = 'pending' THEN 0 ELSE 1 END, id ASC
+           LIMIT 300`
         )
         .all() as Record<string, unknown>[]
     ).map(mapUser);

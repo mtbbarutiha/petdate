@@ -17,6 +17,7 @@ import {
   normalizeAdminPermissions,
   normalizeHrJobBoard,
   permissionsSatisfy,
+  requirePersonnelContract,
   type AdminAccount,
   type AdminRoleDef,
   type HrBenefitDef,
@@ -2001,6 +2002,76 @@ function permissionsForRoleKey(roleKey: string): string[] {
   return [...(ADMIN_ROLE_PERMISSIONS[roleKey as keyof typeof ADMIN_ROLE_PERMISSIONS] || [])];
 }
 
+function actorNeedsPersonnelContract(actor: AdminAuthActor): boolean {
+  if (process.env.PETDATE_REQUIRE_PERSONNEL === '0') return false;
+  const full = actor.role === 'admin' || actor.permissions.includes('admin.full');
+  if (full) {
+    if (
+      (actor.kind === 'env_admin' || actor.kind === 'env_support') &&
+      process.env.NODE_ENV !== 'production' &&
+      process.env.PETDATE_REQUIRE_PERSONNEL !== '1'
+    ) {
+      return false;
+    }
+    return true;
+  }
+  return process.env.PETDATE_REQUIRE_PERSONNEL === '1';
+}
+
+export function personnelContractSnapshot(username: string): {
+  hasEmployee: boolean;
+  contractStart: string;
+  contractEnd: string;
+  accessStatus: string;
+} {
+  const uname = username.trim().toLowerCase();
+  if (!uname) return { hasEmployee: false, contractStart: '', contractEnd: '', accessStatus: '' };
+  try {
+    ensureHrSchema();
+    const row = db()
+      .prepare(
+        `SELECT e.access_status, lc.start_date, lc.end_date
+         FROM hr_employees e
+         LEFT JOIN hr_contracts lc ON lc.id = (
+           SELECT c.id FROM hr_contracts c
+           WHERE c.employee_id = e.id
+           ORDER BY c.start_date DESC, c.id DESC
+           LIMIT 1
+         )
+         WHERE lower(trim(e.username)) = ?
+         LIMIT 1`
+      )
+      .get(uname) as Record<string, unknown> | undefined;
+    if (!row) return { hasEmployee: false, contractStart: '', contractEnd: '', accessStatus: '' };
+    return {
+      hasEmployee: true,
+      contractStart: String(row.start_date || ''),
+      contractEnd: String(row.end_date || ''),
+      accessStatus: String(row.access_status || ''),
+    };
+  } catch {
+    return { hasEmployee: false, contractStart: '', contractEnd: '', accessStatus: '' };
+  }
+}
+
+let lastPersonnelGateReason = '';
+
+export function consumePersonnelGateReason(): string {
+  const reason = lastPersonnelGateReason;
+  lastPersonnelGateReason = '';
+  return reason;
+}
+
+function gatePersonnelActor(actor: AdminAuthActor): AdminAuthActor | null {
+  if (!actorNeedsPersonnelContract(actor)) return actor;
+  const decision = requirePersonnelContract(personnelContractSnapshot(actor.username || ''));
+  if (!decision.ok) {
+    lastPersonnelGateReason = decision.reason;
+    return null;
+  }
+  return actor;
+}
+
 export function resolveAdminActor(opts: {
   password?: string;
   username?: string;
@@ -2028,14 +2099,14 @@ export function resolveAdminActor(opts: {
       const roleKey = String(row.role_key || 'support');
       const username = String(row.username);
       const displayName = String(row.display_name || row.username);
-      return {
+      return gatePersonnelActor({
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
         displayName,
         username,
         avatarUrl: avatarUrlForAdminActor({ username, displayName }),
-      };
+      });
     }
   }
 
@@ -2044,7 +2115,7 @@ export function resolveAdminActor(opts: {
     const fromDb = getAdminRoleByKey('admin');
     const displayName = 'مدیر سیستم';
     const username = 'admin';
-    return {
+    return gatePersonnelActor({
       kind: 'env_admin',
       role: 'admin',
       permissions: fromDb?.permissions?.length
@@ -2053,7 +2124,7 @@ export function resolveAdminActor(opts: {
       displayName,
       username,
       avatarUrl: avatarUrlForAdminActor({ username, displayName }),
-    };
+    });
   }
 
   // Optional SUPPORT_PASSWORD shortcut
@@ -2061,7 +2132,7 @@ export function resolveAdminActor(opts: {
     const fromDb = getAdminRoleByKey('support');
     const displayName = 'پشتیبانی';
     const username = 'support';
-    return {
+    return gatePersonnelActor({
       kind: 'env_support',
       role: 'support',
       permissions: fromDb?.permissions?.length
@@ -2070,7 +2141,7 @@ export function resolveAdminActor(opts: {
       displayName,
       username,
       avatarUrl: avatarUrlForAdminActor({ username, displayName }),
-    };
+    });
   }
 
   // Try matching any account password without username (last resort for single-field login)
@@ -2082,14 +2153,14 @@ export function resolveAdminActor(opts: {
       const roleKey = String(row.role_key || 'support');
       const username = String(row.username);
       const displayName = String(row.display_name || row.username);
-      return {
+      return gatePersonnelActor({
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
         displayName,
         username,
         avatarUrl: avatarUrlForAdminActor({ username, displayName }),
-      };
+      });
     }
   }
 

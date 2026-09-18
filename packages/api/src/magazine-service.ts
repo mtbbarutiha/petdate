@@ -3,6 +3,7 @@
  * Kept separate from db.ts to limit merge conflicts.
  */
 import { getDb } from './db';
+import { countArticleLinks } from '@petdate/shared';
 
 function db() {
   return getDb();
@@ -25,6 +26,10 @@ export type MagazineArticle = {
   publishAt: string | null;
   metaTitle: string;
   metaDescription: string;
+  primaryKeyword: string;
+  secondaryKeyword: string;
+  internalLinks: number;
+  externalLinks: number;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -44,6 +49,8 @@ export type MagazineArticleInput = {
   publishAt?: string | null;
   metaTitle?: string;
   metaDescription?: string;
+  primaryKeyword?: string;
+  secondaryKeyword?: string;
 };
 
 const STATUSES = new Set<MagazineStatus>(['draft', 'published', 'scheduled']);
@@ -78,6 +85,12 @@ export function ensureMagazineSchema(): void {
   d.exec(
     `CREATE INDEX IF NOT EXISTS idx_magazine_articles_featured ON magazine_articles(featured)`
   );
+  try {
+    const { ensureAdminOpsSchema } = require('./admin-ops-service') as typeof import('./admin-ops-service');
+    ensureAdminOpsSchema();
+  } catch {
+    /* additive */
+  }
 }
 
 function parseTags(raw: unknown): string[] {
@@ -123,6 +136,10 @@ function mapArticle(row: Record<string, unknown>): MagazineArticle {
     publishAt: row.publish_at != null ? String(row.publish_at) : null,
     metaTitle: String(row.meta_title || ''),
     metaDescription: String(row.meta_description || ''),
+    primaryKeyword: String(row.primary_keyword || ''),
+    secondaryKeyword: String(row.secondary_keyword || ''),
+    internalLinks: countArticleLinks(String(row.body_html || '')).internal,
+    externalLinks: countArticleLinks(String(row.body_html || '')).external,
     deletedAt: row.deleted_at != null ? String(row.deleted_at) : null,
     createdAt: String(row.created_at || ''),
     updatedAt: String(row.updated_at || ''),
@@ -330,7 +347,11 @@ export function createMagazineArticle(input: MagazineArticleInput): MagazineArti
       String(input.metaTitle ?? ''),
       String(input.metaDescription ?? '')
     );
-  return getMagazineArticleById(Number(r.lastInsertRowid))!;
+  const id = Number(r.lastInsertRowid);
+  db()
+    .prepare(`UPDATE magazine_articles SET primary_keyword = ?, secondary_keyword = ? WHERE id = ?`)
+    .run(String(input.primaryKeyword || ''), String(input.secondaryKeyword || ''), id);
+  return getMagazineArticleById(id)!;
 }
 
 export function updateMagazineArticle(
@@ -387,6 +408,19 @@ export function updateMagazineArticle(
         : existing.metaDescription,
       id
     );
+  try {
+    db()
+      .prepare(
+        `UPDATE magazine_articles SET primary_keyword = ?, secondary_keyword = ? WHERE id = ?`
+      )
+      .run(
+        input.primaryKeyword !== undefined ? String(input.primaryKeyword) : existing.primaryKeyword,
+        input.secondaryKeyword !== undefined ? String(input.secondaryKeyword) : existing.secondaryKeyword,
+        id
+      );
+  } catch {
+    /* column added lazily */
+  }
   return getMagazineArticleById(id);
 }
 

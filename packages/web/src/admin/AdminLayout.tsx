@@ -57,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
   { titleKey: 'admin.overview', items: [
     { to: '/admin/dashboard', icon: LayoutDashboard, labelKey: 'admin.platformDashboard' },
     { to: '/admin/analytics', icon: BarChart3, labelKey: 'admin.analytics', perm: 'platform.read' },
+    { to: '/admin/reports', icon: LineChart, labelKey: 'admin.reportsHub', perm: 'platform.read' },
     { to: '/admin/tag-manager', icon: Tags, labelKey: 'admin.tagManager', perm: 'platform.read' },
   ] },
   { titleKey: 'admin.sales', items: [
@@ -112,7 +113,6 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/crm/calls', icon: Headset, labelKey: 'admin.calls', perm: 'crm.read' },
     { to: '/admin/crm/sms', icon: MessageSquare, labelKey: 'admin.sms', perm: 'crm.read' },
     { to: '/admin/crm/experience', icon: Star, labelKey: 'admin.cx', perm: 'crm.read' },
-    { to: '/admin/crm/qa', icon: ClipboardCheck, labelKey: 'admin.qa', perm: 'crm.read' },
     { to: '/admin/crm/reports', icon: BarChart3, labelKey: 'admin.clubReports', perm: 'crm.read' },
     { to: '/admin/crm/settings', icon: Settings, labelKey: 'admin.clubSettings', perm: 'crm.read' },
   ]},
@@ -165,7 +165,6 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/finance/orders', icon: ShoppingBag, labelKey: 'admin.orderRevenue', perm: 'finance.read' },
     { to: '/admin/finance/sales', icon: LineChart, labelKey: 'admin.salesChart', perm: 'finance.read' },
     { to: '/admin/finance/pnl', icon: PieChart, labelKey: 'admin.pnl', perm: 'finance.read' },
-    { to: '/admin/finance/products', icon: Package, labelKey: 'admin.topProducts', perm: 'finance.read' },
   ]},
   { titleKey: 'admin.ats', items: [
     { to: '/admin/hr/recruitment', icon: LayoutDashboard, labelKey: 'admin.atsDashboard', perm: 'ats.read' },
@@ -194,6 +193,7 @@ const NAV_GROUPS: NavGroup[] = [
   { titleKey: 'admin.contentSystem', items: [
     { to: '/admin/support', icon: Headset, labelKey: 'admin.supportInbox', perm: 'support.inbox' },
     { to: '/admin/monitoring', icon: Activity, labelKey: 'admin.monitoring', perm: 'platform.read' },
+    { to: '/admin/security', icon: Shield, labelKey: 'admin.security', perm: 'platform.read', tone: 'sensitive' },
     { to: '/admin/logs', icon: ScrollText, labelKey: 'admin.errorLogs', perm: 'platform.read', tone: 'sensitive' },
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'content.write' },
     { to: '/admin/hero', icon: Image, labelKey: 'admin.heroPhotos', perm: 'content.write' },

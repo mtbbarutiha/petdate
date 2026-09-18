@@ -12,6 +12,7 @@ import {
 } from './drill';
 import type { ChartPoint, TimeGrain } from './types';
 import { tr } from '../../i18n';
+import { useDashboardDrill } from './DashboardDrillContext';
 
 type TimeDrillState = {
   grain: TimeGrain;
@@ -65,7 +66,7 @@ export function DrillToolbar({
             type="button"
             className={`wdg-drill-crumb${focusStack.length === 0 ? ' is-active' : ''}`}
             onClick={() => onCrumbClick?.(-1)}
-            disabled={focusStack.length === 0}
+            disabled={focusStack.length === 0 && grain === baseGrain}
             title={tr("بازگشت به نمای کلی")}
           >
             {tr('همه')}
@@ -146,6 +147,7 @@ export function DrillToolbar({
 }
 
 export function useTimeDrill(points: ChartPoint[]) {
+  const shared = useDashboardDrill();
   const baseGrain = useMemo(() => detectTimeGrain(points), [points]);
   const [state, setState] = useState<TimeDrillState>({ grain: baseGrain, focusStack: [] });
 
@@ -157,18 +159,35 @@ export function useTimeDrill(points: ChartPoint[]) {
     });
   }, [baseGrain]);
 
-  const effectiveGrain =
+  const localGrain =
     canDrillDown(state.grain, baseGrain) || state.grain === baseGrain ? state.grain : baseGrain;
+  const effectiveGrain = shared ? shared.state.grain : localGrain;
+  const focusStack = shared ? shared.state.focusStack : state.focusStack;
 
   const view = useMemo(
-    () => timeDrillView(points, effectiveGrain, baseGrain, state.focusStack),
-    [points, effectiveGrain, baseGrain, state.focusStack]
+    () => timeDrillView(points, effectiveGrain, shared ? shared.state.baseGrain : baseGrain, focusStack),
+    [points, effectiveGrain, baseGrain, focusStack, shared]
   );
 
-  const canUp = canDrillUp(effectiveGrain) || state.focusStack.length > 0;
-  const canDown = canDrillDown(effectiveGrain, baseGrain);
+  const canUp = shared
+    ? !shared.isInitial
+    : canDrillUp(effectiveGrain) || state.focusStack.length > 0;
+  const canDown = canDrillDown(effectiveGrain, shared ? shared.state.baseGrain : baseGrain);
+  const canInto = true;
 
   const drillUp = useCallback(() => {
+    if (shared) {
+      if (
+        shared.state.focusStack.length === 0 &&
+        shared.state.grain === 'month' &&
+        !shared.state.category
+      ) {
+        shared.dispatch({ type: 'reset' });
+        return;
+      }
+      shared.dispatch({ type: 'drillUp' });
+      return;
+    }
     setState((prev) => {
       if (prev.focusStack.length) {
         return {
@@ -176,55 +195,69 @@ export function useTimeDrill(points: ChartPoint[]) {
           focusStack: prev.focusStack.slice(0, -1),
         };
       }
-      if (!canDrillUp(prev.grain)) return prev;
+      if (!canDrillUp(prev.grain)) return { grain: baseGrain, focusStack: [] };
       return { ...prev, grain: drillUpGrain(prev.grain) };
     });
-  }, []);
+  }, [shared, baseGrain]);
 
   const drillDown = useCallback(() => {
+    if (shared) {
+      shared.dispatch({ type: 'drillDown' });
+      return;
+    }
     setState((prev) => {
       if (!canDrillDown(prev.grain, baseGrain)) return prev;
       return { ...prev, grain: drillDownGrain(prev.grain, baseGrain) };
     });
-  }, [baseGrain]);
+  }, [baseGrain, shared]);
 
-  /** Click a chart bucket: filter to that key and move one grain finer. */
+  /** Click a chart bucket: filter the whole board to that key and move one grain finer. */
   const drillInto = useCallback(
     (label: string) => {
-      if (!label || !canDrillDown(effectiveGrain, baseGrain)) return false;
+      if (!label) return false;
+      if (shared) {
+        shared.dispatch({ type: 'drillInto', label });
+        return true;
+      }
       setState((prev) => {
         const g =
           canDrillDown(prev.grain, baseGrain) || prev.grain === baseGrain ? prev.grain : baseGrain;
-        if (!canDrillDown(g, baseGrain)) return prev;
+        const canRefine = canDrillDown(g, baseGrain);
         return {
-          grain: drillDownGrain(g, baseGrain),
+          grain: canRefine ? drillDownGrain(g, baseGrain) : g,
           focusStack: [...prev.focusStack, label],
         };
       });
       return true;
     },
-    [effectiveGrain, baseGrain]
+    [baseGrain, shared]
   );
 
   const goToCrumb = useCallback((index: number) => {
+    if (shared) {
+      shared.dispatch({ type: 'crumb', index });
+      return;
+    }
     setState((prev) => {
-      const targetLen = index < 0 ? 0 : Math.min(index + 1, prev.focusStack.length);
+      if (index < 0) return { grain: baseGrain, focusStack: [] };
+      const targetLen = Math.min(index + 1, prev.focusStack.length);
       const remove = prev.focusStack.length - targetLen;
-      if (remove <= 0 && index >= 0) return prev;
+      if (remove <= 0) return prev;
       return {
         grain: climbGrain(prev.grain, remove),
         focusStack: prev.focusStack.slice(0, targetLen),
       };
     });
-  }, []);
+  }, [shared, baseGrain]);
 
   return {
-    baseGrain,
+    baseGrain: shared ? shared.state.baseGrain : baseGrain,
     grain: effectiveGrain,
-    focusStack: state.focusStack,
+    focusStack,
     view,
     canUp,
     canDown,
+    canInto,
     drillUp,
     drillDown,
     drillInto,
@@ -233,7 +266,9 @@ export function useTimeDrill(points: ChartPoint[]) {
 }
 
 export function useCategoryDrill(points: ChartPoint[]) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const shared = useDashboardDrill();
+  const [localSelected, setSelected] = useState<string | null>(null);
+  const selected = shared ? shared.state.category : localSelected;
   const { view, detail, missing } = useMemo(
     () => categoryDrillDetail(points, selected),
     [points, selected]
@@ -241,17 +276,24 @@ export function useCategoryDrill(points: ChartPoint[]) {
 
   useEffect(() => {
     if (selected && !points.some((p) => p.label === selected)) {
-      setSelected(null);
+      if (shared) shared.dispatch({ type: 'selectCategory', label: null });
+      else setSelected(null);
     }
-  }, [points, selected]);
+  }, [points, selected, shared]);
 
   return {
     selected,
     view,
     detail,
     missing,
-    select: (label: string) => setSelected(label),
-    clear: () => setSelected(null),
+    select: (label: string) => {
+      if (shared) shared.dispatch({ type: 'selectCategory', label });
+      else setSelected(label);
+    },
+    clear: () => {
+      if (shared) shared.dispatch({ type: 'selectCategory', label: null });
+      else setSelected(null);
+    },
   };
 }
 

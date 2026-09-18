@@ -145,6 +145,8 @@ export type ShopCategoryRow = {
   description: string;
   emoji: string;
   sortOrder: number;
+  parentSlug?: string;
+  redirectSlug?: string;
 };
 
 
@@ -156,6 +158,7 @@ export type ShopBrandRow = {
   sortOrder: number;
   featured: boolean;
   active: boolean;
+  categorySlugs?: string[];
 };
 
 export type ShopBrandInput = {
@@ -166,6 +169,7 @@ export type ShopBrandInput = {
   sortOrder?: number;
   featured?: boolean;
   active?: boolean;
+  categorySlugs?: string[];
 };
 
 export type ShopCategoryInput = {
@@ -175,6 +179,8 @@ export type ShopCategoryInput = {
   description?: string;
   emoji?: string;
   sortOrder?: number;
+  parentSlug?: string | null;
+  redirectSlug?: string | null;
 };
 
 export type ShopOrderRow = {
@@ -196,6 +202,12 @@ export type ShopOrderRow = {
   /** join — عکس پروفایل کاربر */
   userAvatarUrl?: string;
   userName?: string;
+  shippingCarrier?: string;
+  trackingCode?: string;
+  paymentActor?: string;
+  paidFinal?: boolean;
+  paymentStatus?: string;
+  userUsername?: string;
 };
 
 export type AnnouncementRow = {
@@ -254,6 +266,13 @@ function mapShopProduct(row: Record<string, unknown>): ShopProductRow {
 
 
 function mapShopBrand(row: Record<string, unknown>): ShopBrandRow {
+  let categorySlugs: string[] = [];
+  try {
+    const parsed = JSON.parse(String(row.category_slugs || '[]'));
+    categorySlugs = Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    categorySlugs = [];
+  }
   return {
     id: String(row.id),
     labelFa: String(row.label_fa),
@@ -262,6 +281,7 @@ function mapShopBrand(row: Record<string, unknown>): ShopBrandRow {
     sortOrder: Number(row.sort_order ?? 100),
     featured: Boolean(row.featured),
     active: row.active == null ? true : Boolean(row.active),
+    categorySlugs,
   };
 }
 
@@ -273,6 +293,8 @@ function mapShopCategory(row: Record<string, unknown>): ShopCategoryRow {
     description: String(row.description ?? ''),
     emoji: String(row.emoji ?? '🛒'),
     sortOrder: Number(row.sort_order ?? 100),
+    parentSlug: row.parent_slug ? String(row.parent_slug) : '',
+    redirectSlug: row.redirect_slug ? String(row.redirect_slug) : '',
   };
 }
 
@@ -304,6 +326,12 @@ function mapShopOrder(row: Record<string, unknown>): ShopOrderRow {
     updatedAt: String(row.updated_at ?? ''),
     userAvatarUrl: (row.user_avatar_url as string) || undefined,
     userName: (row.user_name as string) || undefined,
+    userUsername: (row.user_username as string) || undefined,
+    shippingCarrier: row.shipping_carrier ? String(row.shipping_carrier) : '',
+    trackingCode: row.tracking_code ? String(row.tracking_code) : '',
+    paymentActor: row.payment_actor ? String(row.payment_actor) : '',
+    paidFinal: Boolean(row.paid_final),
+    paymentStatus: row.payment_status ? String(row.payment_status) : '',
   };
 }
 
@@ -749,6 +777,13 @@ export const adminPlatform = {
         input.featured ? 1 : 0,
         input.active === false ? 0 : 1
       );
+    try {
+      db()
+        .prepare('UPDATE shop_brands SET category_slugs = ? WHERE id = ?')
+        .run(JSON.stringify(input.categorySlugs || []), input.id);
+    } catch {
+      /* column added by ensureAdminOpsSchema */
+    }
     return this.listShopBrands().find((b) => b.id === input.id)!;
   },
 
@@ -824,6 +859,13 @@ export const adminPlatform = {
         input.emoji ?? '🛒',
         input.sortOrder ?? 100
       );
+    try {
+      db()
+        .prepare('UPDATE shop_categories SET parent_slug = ?, redirect_slug = ? WHERE slug = ?')
+        .run(input.parentSlug || '', input.redirectSlug || '', input.slug);
+    } catch {
+      /* column optional until ops schema */
+    }
     return this.listShopCategories().find((c) => c.slug === input.slug)!;
   },
 
@@ -831,11 +873,21 @@ export const adminPlatform = {
     return db().prepare('DELETE FROM shop_categories WHERE slug = ?').run(slug).changes > 0;
   },
 
-  listShopOrders(filters?: { status?: string; q?: string; limit?: number }): ShopOrderRow[] {
+  listShopOrders(filters?: {
+    status?: string;
+    q?: string;
+    limit?: number;
+    username?: string;
+    mobile?: string;
+    product?: string;
+    paymentStatus?: string;
+    day?: string;
+  }): ShopOrderRow[] {
     const d = db();
     let sql = `SELECT so.*,
                       u.avatar_url AS user_avatar_url,
-                      u.name AS user_name
+                      u.name AS user_name,
+                      u.username AS user_username
                FROM shop_orders so
                LEFT JOIN users u ON u.id = so.user_id
                WHERE 1=1`;
@@ -843,6 +895,28 @@ export const adminPlatform = {
     if (filters?.status) {
       sql += ' AND so.status = ?';
       params.push(filters.status);
+    }
+    if (filters?.username?.trim()) {
+      sql += ' AND (IFNULL(u.username,\'\') LIKE ? OR IFNULL(u.name,\'\') LIKE ? OR IFNULL(so.customer_name,\'\') LIKE ?)';
+      const like = `%${filters.username.trim()}%`;
+      params.push(like, like, like);
+    }
+    if (filters?.mobile?.trim()) {
+      sql += ' AND (IFNULL(so.customer_phone,\'\') LIKE ? OR IFNULL(u.phone,\'\') LIKE ?)';
+      const like = `%${filters.mobile.trim()}%`;
+      params.push(like, like);
+    }
+    if (filters?.product?.trim()) {
+      sql += ' AND IFNULL(so.items_json,\'\') LIKE ?';
+      params.push(`%${filters.product.trim()}%`);
+    }
+    if (filters?.paymentStatus?.trim()) {
+      sql += ' AND (IFNULL(so.payment_status,\'\') = ? OR IFNULL(so.status,\'\') = ?)';
+      params.push(filters.paymentStatus.trim(), filters.paymentStatus.trim());
+    }
+    if (filters?.day?.trim()) {
+      sql += ' AND substr(so.created_at, 1, 10) = ?';
+      params.push(filters.day.trim().slice(0, 10));
     }
     if (filters?.q) {
       const qTrim = filters.q.trim();

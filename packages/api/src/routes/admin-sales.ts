@@ -3,6 +3,8 @@
  */
 import { Router } from 'express';
 import { requirePermission } from '../admin-auth';
+import { getCallListen, saveCallListen, saveCallQaCard } from '../admin-ops-service';
+import { callQaTotal } from '@petdate/shared';
 import {
   advanceSalesStage,
   assignSalesItem,
@@ -10,6 +12,10 @@ import {
   completeSalesFollowup,
   createSalesCall,
   createSalesFollowup,
+  ensureSalesCustomer,
+  listGoalAudience,
+  progressSalesFollowup,
+  updateSalesItemProfile,
   createSalesGoal,
   createSalesItem,
   createSalesOffer,
@@ -109,7 +115,7 @@ salesAdminRouter.get('/products', (req, res) => {
 
 salesAdminRouter.post('/products', requirePermission('sales.admin'), (req, res) => {
   try {
-    res.json({ product: upsertSalesProduct(req.body || {}) });
+    res.json({ product: upsertSalesProduct(req.body || {}, actor(req).username || '') });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }
@@ -138,6 +144,12 @@ salesAdminRouter.get('/items', (req, res) => {
       q: typeof req.query.q === 'string' ? req.query.q : undefined,
       stage: typeof req.query.stage === 'string' ? req.query.stage : undefined,
       unassignedOnly: req.query.unassignedOnly === '1',
+      ownerId: typeof req.query.ownerId === 'string' ? req.query.ownerId : undefined,
+      ownerName: typeof req.query.owner === 'string' ? req.query.owner : undefined,
+      leadId: typeof req.query.leadId === 'string' ? req.query.leadId : undefined,
+      phone: typeof req.query.phone === 'string' ? req.query.phone : undefined,
+      source: typeof req.query.source === 'string' ? req.query.source : undefined,
+      team: typeof req.query.team === 'string' ? req.query.team : undefined,
       limit: req.query.limit ? Number(req.query.limit) : 100,
     })
   );
@@ -150,6 +162,23 @@ salesAdminRouter.get('/items/:id', (req, res) => {
     return;
   }
   res.json(detail);
+});
+
+salesAdminRouter.patch('/items/:id/profile', requirePermission('sales.write'), (req, res) => {
+  try {
+    res.json({ item: updateSalesItemProfile(Number(req.params.id), req.body || {}, actor(req)) });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+salesAdminRouter.post('/items/:id/convert', requirePermission('sales.write'), (req, res) => {
+  try {
+    const path = String(req.body?.path || 'تکمیل نام توسط کارشناس');
+    res.json({ item: ensureSalesCustomer(Number(req.params.id), path, actor(req)) });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
 });
 
 salesAdminRouter.post('/items', requirePermission('sales.write'), (req, res) => {
@@ -274,14 +303,57 @@ salesAdminRouter.get('/calls', (req, res) => {
       limit: 200,
       dir,
       qaPendingOnly: req.query.qaPendingOnly === '1',
+      agent: typeof req.query.agent === 'string' ? req.query.agent : undefined,
+      day: typeof req.query.day === 'string' ? req.query.day : undefined,
+      evaluated: req.query.evaluated === 'yes' || req.query.evaluated === 'no' ? req.query.evaluated : undefined,
+      customerScore: typeof req.query.customerScore === 'string' ? req.query.customerScore : undefined,
     }),
   });
+});
+
+salesAdminRouter.post('/calls/:id/listen', requirePermission('sales.write'), (req, res) => {
+  const callId = Number(req.params.id);
+  const saved = saveCallListen(callId, {
+    liveListen: req.body?.liveListen != null ? Boolean(req.body.liveListen) : undefined,
+    recordingUrl: typeof req.body?.recordingUrl === 'string' ? req.body.recordingUrl : undefined,
+  });
+  res.json({
+    ...saved,
+    stub: 'PBX زنده وصل نیست — پرچم شنود و آدرس ضبط ذخیره می‌شود و در پلیر پخش می‌گردد.',
+  });
+});
+
+salesAdminRouter.get('/calls/:id/listen', (req, res) => {
+  res.json(getCallListen(Number(req.params.id)));
+});
+
+salesAdminRouter.post('/calls/:id/qa', requirePermission('sales.write'), (req, res) => {
+  try {
+    const scores = Array.isArray(req.body?.scores) ? req.body.scores.map(Number) : [];
+    const total = callQaTotal(scores);
+    const call = scoreSalesCall(Number(req.params.id), total ?? 0, actor(req), req.body?.customerScore != null ? Number(req.body.customerScore) : null);
+    saveCallQaCard({
+      callId: call.id,
+      dir: call.dir,
+      scores,
+      total,
+      agentId: call.agentId,
+    });
+    res.json({ call, total, scores });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
 });
 
 salesAdminRouter.post('/calls/:id/score', requirePermission('sales.write'), (req, res) => {
   try {
     res.json({
-      call: scoreSalesCall(Number(req.params.id), Number(req.body?.score), actor(req)),
+      call: scoreSalesCall(
+        Number(req.params.id),
+        Number(req.body?.score),
+        actor(req),
+        req.body?.customerScore != null ? Number(req.body.customerScore) : null
+      ),
     });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -306,6 +378,10 @@ salesAdminRouter.post('/followups', requirePermission('sales.write'), (req, res)
 
 salesAdminRouter.post('/followups/:id/complete', requirePermission('sales.write'), (req, res) => {
   try {
+    if (req.body?.note || req.body?.nextAt) {
+      res.json(progressSalesFollowup(Number(req.params.id), req.body || {}, actor(req)));
+      return;
+    }
     res.json({ followup: completeSalesFollowup(Number(req.params.id)) });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -332,7 +408,11 @@ salesAdminRouter.post('/tickets', requirePermission('sales.write'), (req, res) =
 salesAdminRouter.patch('/tickets/:id', requirePermission('sales.write'), (req, res) => {
   try {
     res.json({
-      ticket: updateSalesTicketStatus(Number(req.params.id), String(req.body?.status || 'در حال بررسی')),
+      ticket: updateSalesTicketStatus(
+        Number(req.params.id),
+        String(req.body?.status || 'در حال بررسی'),
+        typeof req.body?.reason === 'string' ? req.body.reason : undefined
+      ),
     });
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -340,7 +420,13 @@ salesAdminRouter.patch('/tickets/:id', requirePermission('sales.write'), (req, r
 });
 
 salesAdminRouter.get('/customers', (req, res) => {
-  res.json(listSalesCustomers({ q: typeof req.query.q === 'string' ? req.query.q : undefined }));
+  res.json(listSalesCustomers({
+    q: typeof req.query.q === 'string' ? req.query.q : undefined,
+    phone: typeof req.query.phone === 'string' ? req.query.phone : undefined,
+    owner: typeof req.query.owner === 'string' ? req.query.owner : undefined,
+    path: typeof req.query.path === 'string' ? req.query.path : undefined,
+    status: typeof req.query.status === 'string' ? req.query.status : undefined,
+  }));
 });
 
 salesAdminRouter.get('/customers/:id', (req, res) => {
@@ -378,7 +464,7 @@ salesAdminRouter.post('/patterns', requirePermission('sales.admin'), (req, res) 
 });
 
 salesAdminRouter.get('/goals', (_req, res) => {
-  res.json({ goals: listSalesGoals() });
+  res.json({ goals: listSalesGoals(), audience: listGoalAudience() });
 });
 
 salesAdminRouter.post('/goals', requirePermission('sales.admin'), (req, res) => {
@@ -402,6 +488,11 @@ salesAdminRouter.get('/pet-purchase-requests', (req, res) => {
     listPetPurchaseLeads({
       status: typeof req.query.status === 'string' ? req.query.status : undefined,
       q: typeof req.query.q === 'string' ? req.query.q : undefined,
+      phone: typeof req.query.phone === 'string' ? req.query.phone : undefined,
+      owner: typeof req.query.owner === 'string' ? req.query.owner : undefined,
+      source: typeof req.query.source === 'string' ? req.query.source : undefined,
+      leadId: typeof req.query.leadId === 'string' ? req.query.leadId : undefined,
+      sort: typeof req.query.sort === 'string' ? req.query.sort : undefined,
       limit: req.query.limit ? Number(req.query.limit) : 100,
     })
   );

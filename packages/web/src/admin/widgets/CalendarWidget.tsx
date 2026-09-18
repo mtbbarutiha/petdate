@@ -3,7 +3,9 @@
  * Pepito light RTL — mint today, purple accent selection.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { calendarEventCodes } from '@petdate/shared';
 import {
   GREGORIAN_MONTHS_FA,
   IRANIAN_WEEKDAY_LABELS,
@@ -19,6 +21,7 @@ import {
 import { usePrefersReducedMotion } from '../motionCharts';
 import type { WidgetRenderContext } from './types';
 import { useDashboardSelectedDate } from './DashboardSelectedDate';
+import { adminFetch } from '../api';
 import { tr } from '../../i18n';
 
 export type CalendarMode = 'jalali' | 'gregorian';
@@ -171,11 +174,27 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
   const [jm, setJm] = useState(todayJ.month);
   const [gy, setGy] = useState(now.getFullYear());
   const [gm, setGm] = useState(now.getMonth() + 1);
+  const [codes, setCodes] = useState<Record<string, { orders: number; registrations: number; emails: number }>>({});
 
   const cells = useMemo(() => {
     if (mode === 'jalali') return buildJalaliGrid(jy, jm, now);
     return buildGregorianGrid(gy, gm, now);
   }, [mode, jy, jm, gy, gm, now]);
+
+  useEffect(() => {
+    if (!cells.length) return;
+    const from = localDateToIso(cells[0]!.date);
+    const to = localDateToIso(cells[cells.length - 1]!.date);
+    void adminFetch<{ days: Array<{ day: string; orders: number; registrations: number; emails: number }> }>(
+      `/api/admin/ops/calendar-events?from=${from}&to=${to}`
+    )
+      .then((data) => {
+        const next: Record<string, { orders: number; registrations: number; emails: number }> = {};
+        for (const row of data.days || []) next[row.day] = row;
+        setCodes(next);
+      })
+      .catch(() => setCodes({}));
+  }, [cells]);
 
   const titlePrimary =
     mode === 'jalali'
@@ -325,6 +344,19 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
             >
               <span className="wdg-cal-day-primary">{fmtPrimaryDay(c.primary, mode)}</span>
               <span className="wdg-cal-day-secondary">{fmtSecondaryDay(c.secondary, mode)}</span>
+              <span className="wdg-cal-codes">
+                {calendarEventCodes(iso, codes[iso] || { orders: 0, registrations: 0, emails: 0 }).map((ev) => (
+                  <Link
+                    key={ev.code}
+                    className={`wdg-cal-code wdg-cal-code--${ev.code}`}
+                    to={ev.href}
+                    onClick={(e) => e.stopPropagation()}
+                    title={ev.text}
+                  >
+                    {ev.text}
+                  </Link>
+                ))}
+              </span>
             </button>
           );
         })}

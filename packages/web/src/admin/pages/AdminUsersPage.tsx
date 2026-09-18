@@ -679,7 +679,22 @@ export function AdminUsersPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">{tr('احراز هویت')}</label>
+                <label className="form-label">{tr('احراز هویت OTP')}</label>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <button type="button" className="admin-btn" onClick={() => {
+                    const phone = editForm.phone || '';
+                    void adminFetch(`/api/admin/users/${editing?.id}/verify-otp`, { method: 'POST', body: JSON.stringify({ send: true, phone }) })
+                      .then(() => window.alert(tr('کد OTP ارسال شد')))
+                      .catch((e) => window.alert(e instanceof Error ? e.message : 'خطا'));
+                  }}>{tr('ارسال OTP')}</button>
+                  <button type="button" className="admin-btn admin-btn--primary" onClick={() => {
+                    const code = window.prompt(tr('کد OTP')) || '';
+                    if (!code) return;
+                    void adminFetch(`/api/admin/users/${editing?.id}/verify-otp`, { method: 'POST', body: JSON.stringify({ phone: editForm.phone, code }) })
+                      .then(() => window.alert(tr('احراز شد')))
+                      .catch((e) => window.alert(e instanceof Error ? e.message : 'خطا'));
+                  }}>{tr('تایید OTP')}</button>
+                </div>
                 <select
                   className="form-select"
                   value={editForm.verificationStatus}

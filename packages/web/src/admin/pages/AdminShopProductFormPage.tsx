@@ -37,6 +37,11 @@ type FormState = {
   sellerScore: string;
   pros: string;
   cons: string;
+  campaign: string;
+  discountCode: string;
+  discountStarts: string;
+  discountEnds: string;
+  googleRank: string;
 };
 
 const empty: FormState = {
@@ -71,6 +76,11 @@ const empty: FormState = {
   sellerScore: '94',
   pros: '',
   cons: '',
+  campaign: '',
+  discountCode: '',
+  discountStarts: '',
+  discountEnds: '',
+  googleRank: '',
 };
 
 function linesToList(raw: string): string[] {
@@ -171,6 +181,11 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
         shippingNote: String(prod.shippingNote ?? params.__shippingNote ?? ''),
         returnPolicy: String(prod.returnPolicy ?? params.__returnPolicy ?? ''),
         sellerScore: String(prod.sellerScore ?? params.__sellerScore ?? '94'),
+        campaign: String(params.__campaign || ''),
+        discountCode: String(params.__discountCode || ''),
+        discountStarts: String(params.__discountStarts || ''),
+        discountEnds: String(params.__discountEnds || ''),
+        googleRank: String(params.__googleRank || ''),
         pros,
         cons,
       });
@@ -233,6 +248,16 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
     if (form.shippingNote.trim()) params.__shippingNote = form.shippingNote.trim();
     if (form.returnPolicy.trim()) params.__returnPolicy = form.returnPolicy.trim();
     if (form.sellerScore.trim()) params.__sellerScore = form.sellerScore.trim();
+    if (form.campaign.trim()) params.__campaign = form.campaign.trim();
+    else delete params.__campaign;
+    if (form.discountCode.trim()) params.__discountCode = form.discountCode.trim();
+    else delete params.__discountCode;
+    if (form.discountStarts.trim()) params.__discountStarts = form.discountStarts.trim();
+    if (form.discountEnds.trim()) params.__discountEnds = form.discountEnds.trim();
+    if (form.googleRank.trim()) {
+      params.__googleRank = form.googleRank.trim();
+      params.__googleRankAt = new Date().toISOString();
+    }
 
     const payload = {
       id: form.id || undefined,
@@ -382,6 +407,26 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
               onChange={(e) => set({ compareAtToman: e.target.value })}
               placeholder={tr("اختیاری")}
             />
+          </label>
+          <label>
+            <span className="form-label">{tr('کمپین')}</span>
+            <input className="form-input" value={form.campaign} onChange={(e) => set({ campaign: e.target.value })} />
+          </label>
+          <label>
+            <span className="form-label">{tr('کد تخفیف')}</span>
+            <input className="form-input" value={form.discountCode} onChange={(e) => set({ discountCode: e.target.value })} />
+          </label>
+          <label>
+            <span className="form-label">{tr('شروع تخفیف')}</span>
+            <input className="form-input" type="datetime-local" value={form.discountStarts} onChange={(e) => set({ discountStarts: e.target.value })} />
+          </label>
+          <label>
+            <span className="form-label">{tr('پایان تخفیف')}</span>
+            <input className="form-input" type="datetime-local" value={form.discountEnds} onChange={(e) => set({ discountEnds: e.target.value })} />
+          </label>
+          <label>
+            <span className="form-label">{tr('رتبه گوگل (ذخیره‌شده)')}</span>
+            <input className="form-input" value={form.googleRank} onChange={(e) => set({ googleRank: e.target.value })} placeholder={tr('API زنده نیست — رتبه را دستی وارد کنید')} />
           </label>
           <label>
             <span className="form-label">{tr('بهای تمام‌شده (COGS)')}</span>

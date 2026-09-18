@@ -13,6 +13,7 @@ type Brand = {
   sortOrder: number;
   featured: boolean;
   active: boolean;
+  categorySlugs?: string[];
 };
 
 const emptyForm = {
@@ -23,6 +24,7 @@ const emptyForm = {
   sortOrder: 100,
   featured: false,
   active: true,
+  categorySlugs: [] as string[],
 };
 
 export function AdminShopBrandsPage() {
@@ -31,6 +33,7 @@ export function AdminShopBrandsPage() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [cats, setCats] = useState<Array<{ slug: string; labelFa: string }>>([]);
 
   const load = useCallback(async () => {
     try {
@@ -44,6 +47,9 @@ export function AdminShopBrandsPage() {
 
   useEffect(() => {
     void load();
+    void adminFetch<{ categories: Array<{ slug: string; labelFa: string }> }>('/api/admin/shop/categories')
+      .then((d) => setCats(d.categories || []))
+      .catch(() => undefined);
   }, [load]);
 
   const save = async (e: FormEvent) => {
@@ -60,6 +66,7 @@ export function AdminShopBrandsPage() {
           sortOrder: Number(form.sortOrder) || 100,
           featured: Boolean(form.featured),
           active: Boolean(form.active),
+          categorySlugs: form.categorySlugs,
         }),
       });
       setForm(emptyForm);
@@ -81,6 +88,7 @@ export function AdminShopBrandsPage() {
       sortOrder: b.sortOrder,
       featured: b.featured,
       active: b.active,
+      categorySlugs: b.categorySlugs || [],
     });
     setOpen(true);
   };
@@ -237,6 +245,26 @@ export function AdminShopBrandsPage() {
               placeholder="/shop/brands/example.png"
             />
           </label>
+          <fieldset>
+            <legend className="form-label">{tr('دسته‌های محصول این برند')}</legend>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {cats.map((c) => (
+                <label key={c.slug} className="admin-check">
+                  <input
+                    type="checkbox"
+                    checked={form.categorySlugs.includes(c.slug)}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...form.categorySlugs, c.slug]
+                        : form.categorySlugs.filter((s) => s !== c.slug);
+                      setForm({ ...form, categorySlugs: next });
+                    }}
+                  />
+                  {c.labelFa}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <label>
             <span className="form-label">{tr('ترتیب')}</span>
             <input

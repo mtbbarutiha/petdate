@@ -27,6 +27,7 @@ export interface ShopCategory {
   petType: Exclude<ShopPetType, 'all'>;
   description: string;
   emoji: string;
+  parentSlug?: string;
 }
 
 export interface ShopBrand {
@@ -136,6 +137,24 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   // —— جوندگان ——
   { slug: 'rodent-supplies', labelFa: 'لوازم جوندگان', petType: 'rodent', description: 'غذا و لوازم جوندگان', emoji: '🐹' },
 ];
+
+/** Two-level groups. Child slugs stay stable so public URLs from #579 keep working. */
+export const SHOP_CATEGORY_GROUPS: ShopCategory[] = [
+  { slug: 'dry-food', labelFa: 'غذای خشک', petType: 'dog', description: 'غذای خشک سگ، گربه و پرنده', emoji: '🥣' },
+  { slug: 'treats', labelFa: 'تشویقی', petType: 'cat', description: 'تشویقی سگ و گربه', emoji: '🍖' },
+];
+
+const CATEGORY_PARENT: Record<string, string> = {
+  'dog-food': 'dry-food',
+  'cat-food': 'dry-food',
+  'bird-food': 'dry-food',
+  'dog-treats': 'treats',
+  'cat-treats': 'treats',
+};
+
+export function categoryChildSlugs(parentSlug: string): string[] {
+  return Object.entries(CATEGORY_PARENT).filter(([, parent]) => parent === parentSlug).map(([child]) => child);
+}
 
 const B = '/shop/brands';
 
@@ -641,7 +660,11 @@ export function productReturnPolicy(p: ShopProduct): string {
 }
 
 export function getCategory(slug: string): ShopCategory | undefined {
-  return liveCategories.find((c) => c.slug === slug) ?? SHOP_CATEGORIES.find((c) => c.slug === slug);
+  return (
+    liveCategories.find((c) => c.slug === slug) ??
+    SHOP_CATEGORIES.find((c) => c.slug === slug) ??
+    SHOP_CATEGORY_GROUPS.find((c) => c.slug === slug)
+  );
 }
 
 export function getBrand(id: string): ShopBrand | undefined {
@@ -685,8 +708,18 @@ export function categoriesForPet(pet: ShopPetType): ShopCategory[] {
   const cats = liveCategories.length ? liveCategories : SHOP_CATEGORIES;
   const used = new Set((liveProducts.length ? liveProducts : SHOP_PRODUCTS).map((p) => p.categorySlug));
   const withProducts = cats.filter((c) => used.has(c.slug));
-  if (pet === 'all') return withProducts;
-  return withProducts.filter((c) => c.petType === pet);
+  const grouped = new Set(Object.keys(CATEGORY_PARENT));
+  const parents = SHOP_CATEGORY_GROUPS.filter((group) => {
+    const kids = categoryChildSlugs(group.slug);
+    return kids.some((slug) => {
+      if (!used.has(slug)) return false;
+      if (pet === 'all') return true;
+      const child = cats.find((c) => c.slug === slug);
+      return child?.petType === pet;
+    });
+  });
+  const leaves = withProducts.filter((c) => !grouped.has(c.slug) && (pet === 'all' || c.petType === pet));
+  return [...parents, ...leaves];
 }
 
 export interface ShopFilters {
@@ -790,7 +823,12 @@ export function filterProducts(filters: ShopFilters = {}): ShopProduct[] {
 
   return source.filter((p) => {
     if (petType !== 'all' && !p.petTypes.includes(petType)) return false;
-    if (categorySlug && p.categorySlug !== categorySlug) return false;
+    if (categorySlug) {
+      const kids = categoryChildSlugs(categorySlug);
+      if (kids.length) {
+        if (p.categorySlug !== categorySlug && !kids.includes(p.categorySlug)) return false;
+      } else if (p.categorySlug !== categorySlug) return false;
+    }
     if (brandId && p.brandId !== brandId) return false;
     if (minPrice != null && p.priceToman < minPrice) return false;
     if (maxPrice != null && p.priceToman > maxPrice) return false;

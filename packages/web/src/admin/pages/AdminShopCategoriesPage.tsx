@@ -5,14 +5,14 @@ import { AdminModal } from '../AdminModal';
 import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
-type Cat = { slug: string; labelFa: string; petType: string; description: string; emoji: string; sortOrder: number };
+type Cat = { slug: string; labelFa: string; petType: string; description: string; emoji: string; sortOrder: number; parentSlug?: string; redirectSlug?: string };
 
 export function AdminShopCategoriesPage() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' });
+  const [form, setForm] = useState({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒', parentSlug: '', redirectSlug: '' });
   const load = useCallback(async () => {
     try {
       const data = await adminFetch<{ categories: Cat[] }>('/api/admin/shop/categories');
@@ -25,7 +25,7 @@ export function AdminShopCategoriesPage() {
     setBusy(true);
     try {
       await adminFetch('/api/admin/shop/categories', { method: 'POST', body: JSON.stringify(form) });
-      setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' });
+      setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒', parentSlug: '', redirectSlug: '' });
       setOpen(false);
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
@@ -40,17 +40,17 @@ export function AdminShopCategoriesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div><h1>{tr('دسته‌بندی فروشگاه')}</h1><p>{formatNumFa(cats.length)} {tr('دسته')}</p></div>
-        <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' }); setOpen(true); }}>
+        <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒', parentSlug: '', redirectSlug: '' }); setOpen(true); }}>
           <Plus size={16} /> {tr('افزودن دسته')}
         </button>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th></th><th>{tr('عنوان')}</th><th>slug</th><th>{tr('نوع')}</th><th></th></tr></thead>
+        <thead><tr><th></th><th>{tr('عنوان')}</th><th>slug</th><th>{tr('والد')}</th><th>{tr('نوع')}</th><th></th></tr></thead>
         <tbody>
           {cats.map((c) => (
             <tr key={c.slug}>
-              <td>{c.emoji}</td><td>{c.labelFa}</td><td className="admin-mono">{c.slug}</td><td>{c.petType}</td>
+              <td>{c.emoji}</td><td>{c.labelFa}</td><td className="admin-mono">{c.slug}</td><td>{c.parentSlug || '—'}</td><td>{c.petType}</td>
               <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(c.slug)}>{tr('حذف')}</button></td>
             </tr>
           ))}
@@ -81,6 +81,15 @@ export function AdminShopCategoriesPage() {
               <option value="dog">{tr('سگ')}</option><option value="cat">{tr('گربه')}</option><option value="bird">{tr('پرنده')}</option>
             </select>
           </label>
+          <label><span className="form-label">{tr('دسته والد')}</span>
+            <select className="admin-select" value={form.parentSlug} onChange={(e) => setForm({ ...form, parentSlug: e.target.value })}>
+              <option value="">{tr('بدون والد (سطح اول)')}</option>
+              {cats.filter((c) => !c.parentSlug && c.slug !== form.slug).map((c) => (
+                <option key={c.slug} value={c.slug}>{c.labelFa}</option>
+              ))}
+            </select>
+          </label>
+          <label><span className="form-label">{tr('ریدایرکت اسلاگ')}</span><input className="form-input" value={form.redirectSlug} onChange={(e) => setForm({ ...form, redirectSlug: e.target.value })} /></label>
           <label><span className="form-label">{tr('ایموجی')}</span><input className="form-input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></label>
         </div>
       </AdminModal>

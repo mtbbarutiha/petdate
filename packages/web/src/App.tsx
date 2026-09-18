@@ -255,6 +255,12 @@ const AdminLogsPage = lazy(() =>
 const AdminMailPage = lazy(() =>
   import('./admin/pages/AdminMailPage').then((m) => ({ default: m.AdminMailPage })),
 );
+const AdminSecurityPage = lazy(() =>
+  import('./admin/pages/AdminSecurityPage').then((m) => ({ default: m.AdminSecurityPage })),
+);
+const AdminReportsHubPage = lazy(() =>
+  import('./admin/pages/AdminReportsHubPage').then((m) => ({ default: m.AdminReportsHubPage })),
+);
 const AdminMonitoringPage = lazy(() =>
   import('./admin/pages/AdminMonitoringPage').then((m) => ({ default: m.AdminMonitoringPage })),
 );
@@ -337,11 +343,6 @@ const AdminFinanceOrdersPage = lazy(() =>
 const AdminFinanceWalletPage = lazy(() =>
   import('./admin/pages/AdminFinanceWalletPage').then((m) => ({
     default: m.AdminFinanceWalletPage,
-  })),
-);
-const AdminFinanceProductsPage = lazy(() =>
-  import('./admin/pages/AdminFinanceProductsPage').then((m) => ({
-    default: m.AdminFinanceProductsPage,
   })),
 );
 const AdminFinanceAccountsPage = lazy(() =>
@@ -449,7 +450,6 @@ const AdminCrmCallsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').t
 const AdminCrmCasesPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCasesPage })));
 const AdminCrmTicketingPage = lazy(() => import('./admin/pages/crm/AdminCrmTicketingPage').then((m) => ({ default: m.AdminCrmTicketingPage })));
 const AdminCrmSmsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSmsPage })));
-const AdminCrmQaPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmQaPage })));
 const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmReportsPage').then((m) => ({ default: m.AdminCrmReportsPage })));
 const AdminCrmSettingsPage = lazy(() => import('./admin/pages/crm/AdminCrmSettingsPage'));
 
@@ -567,7 +567,7 @@ export default function App() {
                 <Route path="finance/sales" element={<AdminFinanceSalesPage />} />
                 <Route path="finance/orders" element={<AdminFinanceOrdersPage />} />
                 <Route path="finance/wallet" element={<AdminFinanceWalletPage />} />
-                <Route path="finance/products" element={<AdminFinanceProductsPage />} />
+                <Route path="finance/products" element={<Navigate to="/admin/reports?tab=products" replace />} />
                 <Route path="finance/accounts" element={<AdminFinanceAccountsPage />} />
                 <Route path="finance/transactions" element={<AdminFinanceTransactionsPage />} />
                 <Route path="finance/allocation" element={<AdminFinanceAllocationPage />} />
@@ -577,6 +577,8 @@ export default function App() {
                 <Route path="magazine/:id" element={<AdminMagazineFormPage />} />
                 <Route path="hero" element={<AdminHeroPage />} />
                 <Route path="mail" element={<AdminMailPage />} />
+                <Route path="security" element={<AdminSecurityPage />} />
+                <Route path="reports" element={<AdminReportsHubPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
                 <Route path="analytics" element={<AdminSiteReportsPage />} />
@@ -627,7 +629,7 @@ export default function App() {
                 <Route path="crm/cases" element={<AdminCrmCasesPage />} />
                 <Route path="crm/tickets" element={<Navigate to="/admin/crm/ticketing" replace />} />
                 <Route path="crm/sms" element={<AdminCrmSmsPage />} />
-                <Route path="crm/qa" element={<AdminCrmQaPage />} />
+                <Route path="crm/qa" element={<Navigate to="/admin/sales/calls" replace />} />
                 <Route path="crm/reports" element={<AdminCrmReportsPage />} />
                 <Route path="crm/settings" element={<AdminCrmSettingsPage />} />
                 <Route path="ticketing" element={<Navigate to="/admin/crm/ticketing" replace />} />

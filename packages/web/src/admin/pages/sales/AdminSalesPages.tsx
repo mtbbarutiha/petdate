@@ -7,7 +7,7 @@ import type {
 import {
   SALES_CALL_RESULTS, SALES_LEAD_SOURCES, SALES_LOST_REASONS, SALES_MESSAGE_CHANNELS,
   SALES_PRIORITIES, SALES_STAGES, SALES_TICKET_CATEGORIES, SALES_TICKET_DEPTS,
-  SALES_TICKET_STATUSES, salesStageLabel,
+  SALES_TICKET_STATUSES, SALES_TICKET_REASONS, salesStageLabel,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
@@ -17,6 +17,7 @@ import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import { useSalesCallSimOptional } from './SalesCallSim';
 import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
+import { LeadWorkspaceModal, CallScorecardModal } from './SalesOpsUi';
 import { tr } from '../../../i18n';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
@@ -25,6 +26,12 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [stage, setStage] = useState('');
+  const [owner, setOwner] = useState('');
+  const [team, setTeam] = useState('');
+  const [leadId, setLeadId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [source, setSource] = useState('');
+  const [workspaceId, setWorkspaceId] = useState<number | null>(null);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [products, setProducts] = useState<SalesProduct[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,11 +53,16 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
       const qs = new URLSearchParams({ kind, limit: '100' });
       if (q.trim()) qs.set('q', q.trim());
       if (stage) qs.set('stage', stage);
+      if (owner.trim()) qs.set('owner', owner.trim());
+      if (team.trim()) qs.set('team', team.trim());
+      if (leadId.trim()) qs.set('leadId', leadId.trim());
+      if (phone.trim()) qs.set('phone', phone.trim());
+      if (source.trim()) qs.set('source', source.trim());
       if (unassignedOnly) qs.set('unassignedOnly', '1');
       const data = await adminFetch<{ total: number; items: SalesItem[] }>(`/api/admin/sales/items?${qs}`);
       setItems(data.items); setTotal(data.total); setError(null);
     } catch (e) { setError(e instanceof Error ? e.message : 'خطا'); }
-  }, [kind, q, stage, unassignedOnly]);
+  }, [kind, q, stage, unassignedOnly, owner, team, leadId, phone, source]);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     void adminFetch<{ products: SalesProduct[] }>('/api/admin/sales/products?activeOnly=1').then((d) => setProducts(d.products)).catch(() => undefined);
@@ -113,6 +125,14 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
           <option value="lost">{tr('ازدست‌رفته')}</option>
         </select>
         <label className="admin-check"><input type="checkbox" checked={unassignedOnly} onChange={(e) => setUnassignedOnly(e.target.checked)} /> {tr('فقط بدون تخصیص')}</label>
+        <input className="admin-input" placeholder={tr('کارشناس')} value={owner} onChange={(e) => setOwner(e.target.value)} />
+        <input className="admin-input" placeholder={tr('تیم فروش')} value={team} onChange={(e) => setTeam(e.target.value)} />
+        <input className="admin-input" placeholder={tr('شناسه لید')} value={leadId} onChange={(e) => setLeadId(e.target.value)} />
+        <input className="admin-input" placeholder={tr('موبایل')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <select className="admin-select" value={source} onChange={(e) => setSource(e.target.value)}>
+          <option value="">{tr('همه منابع')}</option>
+          {leadSources.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
         <DemoSeedToggle
           showDemoSeeds={showDemoSeeds}
           onChange={setShowDemoSeeds}
@@ -123,7 +143,9 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
         <thead><tr><th>{tr('نام')}</th><th>{tr('محصول')}</th><th>{tr('منبع')}</th><th>{tr('امتیاز')}</th><th>{tr('مرحله')}</th><th>{tr('پرداخت')}</th><th>{tr('کارشناس')}</th></tr></thead>
         <tbody>{visibleItems.map((i) => (
           <tr key={i.id}>
-            <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last} <DemoSeedBadge row={i} /></div><div className="admin-muted">{i.mobile}</div></td>
+            <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last} <DemoSeedBadge row={i} /></div><div className="admin-muted">{i.mobile}</div>
+              <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => setWorkspaceId(i.id)}>{tr('پرونده')}</button>
+            </td>
             <td>{i.product}<div className="admin-muted">{formatNumFa(i.value)} {tr('ت')}</div></td>
             <td>{i.source}</td><td>{formatNumFa(i.score)}</td><td>{salesStageLabel(i.stage)}</td><td>{i.payStatus}</td>
             <td>{i.ownerName ? (
@@ -135,6 +157,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
           </tr>
         ))}{!visibleItems.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}</tbody>
       </table></div>
+      <LeadWorkspaceModal itemId={workspaceId} onClose={() => setWorkspaceId(null)} onSaved={() => void load()} />
 
       <AdminModal
         open={open}
@@ -348,7 +371,6 @@ export function AdminSalesPipelinePage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SalesItem | null>(null);
   const [busy, setBusy] = useState(false);
-  const [dragId, setDragId] = useState<number | null>(null);
   const canWrite = adminCan('sales.write');
 
   const load = useCallback(async () => {
@@ -388,27 +410,6 @@ export function AdminSalesPipelinePage() {
     }
   };
 
-  const onDropAdvance = async (targetStage: number | 'lost') => {
-    if (dragId == null || !canWrite || targetStage === 'lost') {
-      setDragId(null);
-      return;
-    }
-    const item = stages.flatMap((s) => s.items).find((i) => i.id === dragId);
-    setDragId(null);
-    if (!item || typeof item.stage !== 'number') return;
-    // Preserve sales rules: only allow drop onto the immediate next stage.
-    if (targetStage !== item.stage + 1) return;
-    setBusy(true);
-    try {
-      await adminFetch(`/api/admin/sales/items/${item.id}/advance`, { method: 'POST', body: '{}' });
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'خطا');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const totalDeals = stages.reduce((n, s) => n + s.items.length, 0);
   const totalValue = stages.reduce((n, s) => n + s.value, 0);
   const canAdvanceSelected =
@@ -419,7 +420,7 @@ export function AdminSalesPipelinePage() {
       <header className="admin-header">
         <div>
           <h1>{tr('پایپ‌لاین')}</h1>
-          <p>{tr('قیف فروش Pet Date')}</p>
+          <p>{tr('قیف فروش — جابه‌جایی با کشیدن در مدیریت وظایف است، نه اینجا')}</p>
         </div>
         <div className="sales-pipe-summary" aria-live="polite">
           <span className="admin-topbar-chip">{formatNumFa(totalDeals)} {tr('معامله')}</span>
@@ -437,15 +438,6 @@ export function AdminSalesPipelinePage() {
               key={String(s.stage)}
               className={`sales-pipe-col sales-pipe-col--${tone}`}
               role="listitem"
-              onDragOver={(e) => {
-                if (!canWrite || dragId == null) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                void onDropAdvance(s.stage);
-              }}
             >
               <header className="sales-pipe-col-head">
                 <div className="sales-pipe-col-title">
@@ -461,14 +453,7 @@ export function AdminSalesPipelinePage() {
                     <button
                       key={i.id}
                       type="button"
-                      className={`sales-pipe-card${dragId === i.id ? ' is-dragging' : ''}`}
-                      draggable={canWrite && typeof i.stage === 'number' && i.stage < 6}
-                      onDragStart={(e) => {
-                        setDragId(i.id);
-                        e.dataTransfer.setData('text/plain', String(i.id));
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragEnd={() => setDragId(null)}
+                      className="sales-pipe-card"
                       onClick={() => setSelected(i)}
                     >
                       <div className="sales-pipe-card-top">
@@ -609,24 +594,66 @@ export function AdminSalesDealsPage() {
 export function AdminSalesCustomersPage() {
   const [customers, setCustomers] = useState<SalesCustomer[]>([]);
   const [q, setQ] = useState('');
+  const [phone, setPhone] = useState('');
+  const [owner, setOwner] = useState('');
+  const [path, setPath] = useState('');
+  const [status, setStatus] = useState('');
+  const [followFor, setFollowFor] = useState<SalesCustomer | null>(null);
+  const [followAt, setFollowAt] = useState('');
+  const [followNote, setFollowNote] = useState('');
   useEffect(() => {
-    const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
-    void adminFetch<{ customers: SalesCustomer[] }>(`/api/admin/sales/customers${qs}`).then((d) => setCustomers(d.customers)).catch(() => undefined);
-  }, [q]);
+    const qs = new URLSearchParams();
+    if (q.trim()) qs.set('q', q.trim());
+    if (phone.trim()) qs.set('phone', phone.trim());
+    if (owner.trim()) qs.set('owner', owner.trim());
+    if (path) qs.set('path', path);
+    if (status) qs.set('status', status);
+    void adminFetch<{ customers: SalesCustomer[] }>(`/api/admin/sales/customers?${qs}`).then((d) => setCustomers(d.customers)).catch(() => undefined);
+  }, [q, phone, owner, path, status]);
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>{tr('مشتریان')}</h1><p>{tr('Customer 360 سبک')}</p></div></header>
-      <input className="admin-input" placeholder={tr("جستجو…")} value={q} onChange={(e) => setQ(e.target.value)} />
+      <header className="admin-header"><div><h1>{tr('مشتریان')}</h1><p>{tr('مسیر مشتری‌شدن مستقل از تایید مالی است')}</p></div></header>
+      <div className="admin-toolbar">
+        <input className="admin-input" placeholder={tr('جستجو')} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="admin-input" placeholder={tr('موبایل')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input className="admin-input" placeholder={tr('کارشناس')} value={owner} onChange={(e) => setOwner(e.target.value)} />
+        <select className="admin-select" value={path} onChange={(e) => setPath(e.target.value)}>
+          <option value="">{tr('همه مسیرها')}</option>
+          <option value="پرداخت">{tr('پرداخت')}</option>
+          <option value="تکمیل نام توسط کارشناس">{tr('تکمیل نام توسط کارشناس')}</option>
+          <option value="ثبت‌نام">{tr('ثبت‌نام')}</option>
+        </select>
+        <input className="admin-input" placeholder={tr('وضعیت')} value={status} onChange={(e) => setStatus(e.target.value)} />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12, marginTop: 12 }}>
         {customers.map((c) => (
-          <Link key={c.id} to={`/admin/sales/customers/${c.id}`} className="admin-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <strong>{c.first} {c.last}</strong><div className="admin-muted">{c.publicId} · {c.mobile}</div>
-            <div>{c.level} · LTV {formatNumFa(c.orderSum || 0)}</div>
-            {c.csat ? <div>{tr('رضایت:')} {formatNumFa(c.csat)}{tr('/۵')}</div> : null}
-          </Link>
+          <article key={c.id} className="admin-card">
+            <Link to={`/admin/sales/customers/${c.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <strong>{c.first} {c.last}</strong><div className="admin-muted">{c.publicId} · {c.mobile}</div>
+              <div>{c.level} · {c.conversionPath || tr('بدون مسیر')}</div>
+            </Link>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setFollowFor(c)}>{tr('پیگیری')}</button>
+          </article>
         ))}
-        {!customers.length ? <p>{tr('مشتری‌ای نیست — بعد از تایید مالی ساخته می‌شود.')}</p> : null}
+        {!customers.length ? <p>{tr('مشتری‌ای با این فیلتر نیست.')}</p> : null}
       </div>
+      <AdminModal open={!!followFor} onClose={() => setFollowFor(null)} title={tr('پیگیری مشتری')} size="sm" as="form" onSubmit={(e) => {
+        e.preventDefault();
+        if (!followFor) return;
+        void adminFetch('/api/admin/sales/followups', {
+          method: 'POST',
+          body: JSON.stringify({
+            refKind: 'lead',
+            refId: followFor.sourceLeadId,
+            type: 'پیگیری مشتری',
+            at: followAt ? new Date(followAt).toISOString() : new Date().toISOString(),
+            desc: followNote || `${followFor.first} ${followFor.last}`,
+          }),
+        }).then(() => setFollowFor(null));
+      }} footer={<button type="submit" className="admin-btn admin-btn--primary">{tr('ثبت')}</button>}>
+        <label><span className="form-label">{tr('زمان')}</span><input className="form-input" type="datetime-local" value={followAt} onChange={(e) => setFollowAt(e.target.value)} /></label>
+        <label><span className="form-label">{tr('یادداشت')}</span><textarea className="form-input" value={followNote} onChange={(e) => setFollowNote(e.target.value)} /></label>
+      </AdminModal>
     </div>
   );
 }
@@ -665,7 +692,7 @@ export function AdminSalesProductsPage() {
   const [products, setProducts] = useState<SalesProduct[]>([]);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '0' });
+  const [form, setForm] = useState({ name: '', price: '0', campaign: '', discountCode: '' });
   const canAdmin = adminCan('sales.admin');
   const load = () => void adminFetch<{ products: SalesProduct[] }>('/api/admin/sales/products').then((d) => setProducts(d.products));
   useEffect(() => { load(); }, []);
@@ -674,7 +701,7 @@ export function AdminSalesProductsPage() {
     if (!form.name.trim()) return;
     setBusy(true);
     try {
-      await adminFetch('/api/admin/sales/products', { method: 'POST', body: JSON.stringify({ name: form.name.trim(), price: Number(form.price) || 0 }) });
+      await adminFetch('/api/admin/sales/products', { method: 'POST', body: JSON.stringify({ name: form.name.trim(), price: Number(form.price) || 0, campaign: form.campaign, discountCode: form.discountCode }) });
       setOpen(false);
       load();
     } finally {
@@ -684,15 +711,17 @@ export function AdminSalesProductsPage() {
   return (
     <div className="admin-page">
       <header className="admin-header"><div><h1>{tr('محصولات و قیمت')}</h1><p>{tr('کاتالوگ فروش Pet Date')}</p></div>
-        {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ name: '', price: '0' }); setOpen(true); }}>{tr('+ محصول')}</button> : null}
+        {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ name: '', price: '0', campaign: '', discountCode: '' }); setOpen(true); }}>{tr('+ محصول')}</button> : null}
       </header>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('نام')}</th><th>{tr('قیمت')}</th><th>{tr('وضعیت')}</th></tr></thead>
-        <tbody>{products.map((p) => <tr key={p.id}><td>{p.name}</td><td>{formatNumFa(p.price)}</td><td>{p.active ? tr('فعال') : tr('غیرفعال')}</td></tr>)}</tbody></table></div>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('نام')}</th><th>{tr('قیمت')}</th><th>{tr('کمپین')}</th><th>{tr('کد تخفیف')}</th><th>{tr('ایجاد')}</th><th>{tr('سازنده')}</th><th>{tr('وضعیت')}</th></tr></thead>
+        <tbody>{products.map((p) => <tr key={p.id}><td>{p.name}</td><td>{formatNumFa(p.price)}</td><td>{p.campaign || '—'}</td><td>{p.discountCode || '—'}</td><td>{p.createdAt ? formatAdminFaDate(p.createdAt) : '—'}</td><td>{p.createdBy || '—'}</td><td>{p.active ? tr('فعال') : tr('غیرفعال')}</td></tr>)}</tbody></table></div>
       <AdminModal open={open} title={tr("محصول فروش جدید")} onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void submit(e)} busy={busy}
         footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button></>}>
         <label><span className="form-label">{tr('نام')}</span><input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
         <label><span className="form-label">{tr('قیمت تومان')}</span><input className="form-input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
+        <label><span className="form-label">{tr('کمپین')}</span><input className="form-input" value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} /></label>
+        <label><span className="form-label">{tr('کد تخفیف')}</span><input className="form-input" value={form.discountCode} onChange={(e) => setForm({ ...form, discountCode: e.target.value })} /></label>
       </AdminModal>
     </div>
   );
@@ -788,6 +817,7 @@ export function AdminSalesTicketsPage() {
                     </>
                   ) : null}
                   {canWrite && ![tr('بسته‌شده'), tr('حل‌شده')].includes(t.status) ? (
+                    <>
                     <select
                       className="admin-select"
                       value={t.status}
@@ -796,6 +826,16 @@ export function AdminSalesTicketsPage() {
                     >
                       {SALES_TICKET_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    <select
+                      className="admin-select"
+                      value={t.reason || ''}
+                      onChange={(e) => void adminFetch(`/api/admin/sales/tickets/${t.id}`, { method: 'PATCH', body: JSON.stringify({ status: t.status, reason: e.target.value }) }).then(load)}
+                      style={{ minWidth: 140 }}
+                    >
+                      <option value="">{tr('دلیل')}</option>
+                      {SALES_TICKET_REASONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    </>
                   ) : null}
                 </td>
               </tr>
@@ -844,19 +884,23 @@ export function AdminSalesTicketsPage() {
 export function AdminSalesCallsPage() {
   const [calls, setCalls] = useState<SalesCall[]>([]);
   const [dir, setDir] = useState<'all' | 'call_out' | 'call_in'>('all');
-  const [qaOnly, setQaOnly] = useState(false);
-  const [scoreOpen, setScoreOpen] = useState<number | null>(null);
-  const [score, setScore] = useState('80');
-  const [busy, setBusy] = useState(false);
-  const sim = useSalesCallSimOptional();
+  const [agent, setAgent] = useState('');
+  const [day, setDay] = useState('');
+  const [evaluated, setEvaluated] = useState('');
+  const [customerScore, setCustomerScore] = useState('');
+  const [scoreCall, setScoreCall] = useState<SalesCall | null>(null);
   const canWrite = adminCan('sales.write') || adminCan('admin.full');
+  const sim = useSalesCallSimOptional();
 
   const load = useCallback(() => {
     const qs = new URLSearchParams();
     if (dir !== 'all') qs.set('dir', dir);
-    if (qaOnly) qs.set('qaPendingOnly', '1');
+    if (agent.trim()) qs.set('agent', agent.trim());
+    if (day) qs.set('day', day);
+    if (evaluated) qs.set('evaluated', evaluated);
+    if (customerScore) qs.set('customerScore', customerScore);
     void adminFetch<{ calls: SalesCall[] }>(`/api/admin/sales/calls?${qs}`).then((d) => setCalls(d.calls));
-  }, [dir, qaOnly]);
+  }, [dir, agent, day, evaluated, customerScore]);
   useEffect(() => { load(); }, [load]);
 
   const out = calls.filter((c) => c.dir === 'call_out');
@@ -893,14 +937,18 @@ export function AdminSalesCallsPage() {
           <option value="call_out">{tr('خروجی')}</option>
           <option value="call_in">{tr('ورودی')}</option>
         </select>
-        <label className="admin-check">
-          <input type="checkbox" checked={qaOnly} onChange={(e) => setQaOnly(e.target.checked)} />
-          {tr('فقط ارزیابی‌نشده')}
-        </label>
+        <input className="admin-input" placeholder={tr('نام کارشناس')} value={agent} onChange={(e) => setAgent(e.target.value)} />
+        <input className="admin-input" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+        <select className="admin-select" value={evaluated} onChange={(e) => setEvaluated(e.target.value)}>
+          <option value="">{tr('همه ارزیابی‌ها')}</option>
+          <option value="yes">{tr('ارزیابی‌شده')}</option>
+          <option value="no">{tr('ارزیابی‌نشده')}</option>
+        </select>
+        <input className="admin-input" placeholder={tr('امتیاز مشتری')} value={customerScore} onChange={(e) => setCustomerScore(e.target.value)} />
       </div>
       <div className="admin-table-wrap" style={{ marginTop: 12 }}>
         <table className="admin-table">
-          <thead><tr><th>{tr('نوع')}</th><th>{tr('کارشناس')}</th><th>{tr('نتیجه')}</th><th>{tr('مدت')}</th><th>{tr('زمان')}</th><th>QA</th><th></th></tr></thead>
+          <thead><tr><th>{tr('نوع')}</th><th>{tr('کارشناس')}</th><th>{tr('نتیجه')}</th><th>{tr('مدت')}</th><th>{tr('زمان')}</th><th>QA</th><th>{tr('امتیاز مشتری')}</th><th></th></tr></thead>
           <tbody>
             {calls.map((c) => (
               <tr key={c.id}>
@@ -910,45 +958,20 @@ export function AdminSalesCallsPage() {
                 <td>{formatNumFa(c.talk)}</td>
                 <td>{formatAdminFaDateTime(c.startedAt)}</td>
                 <td>{c.qaStatus}{c.qaScore != null ? ` (${formatNumFa(c.qaScore)})` : ''}</td>
+                <td>{c.customerScore != null ? formatNumFa(c.customerScore) : '—'}</td>
                 <td>
-                  {c.qaStatus !== 'ارزیابی شد' && canWrite ? (
-                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setScore('80'); setScoreOpen(c.id); }}>{tr('ارزیابی')}</button>
+                  {canWrite ? (
+                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setScoreCall(c)}>{tr('ارزیابی')}</button>
                   ) : null}
                   <Link to={`/admin/sales/${c.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${c.refId}`} style={{ marginInlineStart: 8 }}>{tr('پرونده')}</Link>
                 </td>
               </tr>
             ))}
-            {!calls.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}
+            {!calls.length ? <tr><td colSpan={8}>{tr('خالی')}</td></tr> : null}
           </tbody>
         </table>
       </div>
-      <AdminModal
-        open={scoreOpen != null}
-        title={tr("امتیاز QA")}
-        onClose={() => !busy && setScoreOpen(null)}
-        size="sm"
-        as="form"
-        busy={busy}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (scoreOpen == null) return;
-          setBusy(true);
-          void adminFetch(`/api/admin/sales/calls/${scoreOpen}/score`, { method: 'POST', body: JSON.stringify({ score: Number(score) || 0 }) })
-            .then(() => { setScoreOpen(null); load(); }).finally(() => setBusy(false));
-        }}
-        footer={(
-          <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreOpen(null)}>{tr('انصراف')}</button>
-          </>
-        )}
-      >
-        <label>
-          <span className="form-label">{tr('امتیاز ۰–۱۰۰')}</span>
-          <input className="form-input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} />
-        </label>
-        <p className="admin-muted">{tr('نتایج تماس استاندارد:')} {SALES_CALL_RESULTS.slice(0, 4).join(tr('، '))}…</p>
-      </AdminModal>
+      <CallScorecardModal call={scoreCall} onClose={() => setScoreCall(null)} onSaved={load} />
     </div>
   );
 }
@@ -999,13 +1022,17 @@ export function AdminSalesSettingsPage() {
   const [sourcesRaw, setSourcesRaw] = useState('');
   const [lostRaw, setLostRaw] = useState('');
   const [patternForm, setPatternForm] = useState<{ channel: string; name: string; text: string }>({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' });
-  const [goalForm, setGoalForm] = useState({ name: '', team: 'فروش Pet Date', revenue: '50000000', salesCount: '20', calls: '100' });
+  const [goalForm, setGoalForm] = useState({ name: '', team: '', person: '', conversionRate: '20', marketingCount: '10', callCount: '40', salesCount: '8' });
+  const [audience, setAudience] = useState<{ teams: string[]; jobs: string[]; people: Array<{ id: string; name: string; team: string; job: string }> }>({ teams: [], jobs: [], people: [] });
   const canAdmin = adminCan('sales.admin') || adminCan('admin.full');
 
   const load = useCallback(() => {
     void adminFetch<SalesSettings>('/api/admin/sales/settings').then(setSettings);
     void adminFetch<{ patterns: SalesPattern[] }>('/api/admin/sales/patterns').then((d) => setPatterns(d.patterns));
-    void adminFetch<{ goals: SalesGoal[] }>('/api/admin/sales/goals').then((d) => setGoals(d.goals));
+    void adminFetch<{ goals: SalesGoal[]; audience?: { teams: string[]; jobs: string[]; people: Array<{ id: string; name: string; team: string; job: string }> } }>('/api/admin/sales/goals').then((d) => {
+      setGoals(d.goals);
+      if (d.audience) setAudience(d.audience);
+    });
     void adminFetch<{ callsToday: number; salesTodayCount: number; aov: number; overdueFollowups: number }>('/api/admin/sales/dashboard')
       .then((d) => setDash({
         callsToday: d.callsToday,
@@ -1180,9 +1207,11 @@ export function AdminSalesSettingsPage() {
               name: goalForm.name,
               team: goalForm.team,
               metrics: {
-                revenue: Number(goalForm.revenue) || 0,
+                conversionRate: Number(goalForm.conversionRate) || 0,
+                marketingCount: Number(goalForm.marketingCount) || 0,
+                callCount: Number(goalForm.callCount) || 0,
                 salesCount: Number(goalForm.salesCount) || 0,
-                calls: Number(goalForm.calls) || 0,
+                person: goalForm.person,
               },
             }),
           }).then(() => { setGoalOpen(false); load(); }).finally(() => setBusy(false));
@@ -1191,14 +1220,24 @@ export function AdminSalesSettingsPage() {
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setGoalOpen(false)}>{tr('انصراف')}</button></>}>
         <label><span className="form-label">{tr('نام')}</span>
           <input className="form-input" required value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} /></label>
-        <label><span className="form-label">{tr('تیم')}</span>
-          <input className="form-input" value={goalForm.team} onChange={(e) => setGoalForm({ ...goalForm, team: e.target.value })} /></label>
-        <label><span className="form-label">{tr('هدف درآمد')}</span>
-          <input className="form-input" type="number" value={goalForm.revenue} onChange={(e) => setGoalForm({ ...goalForm, revenue: e.target.value })} /></label>
-        <label><span className="form-label">{tr('تعداد فروش')}</span>
+        <label><span className="form-label">{tr('تیم از پرسنل')}</span>
+          <select className="admin-select" value={goalForm.team} onChange={(e) => setGoalForm({ ...goalForm, team: e.target.value })}>
+            <option value="">{tr('انتخاب تیم')}</option>
+            {audience.teams.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select></label>
+        <label><span className="form-label">{tr('فرد')}</span>
+          <select className="admin-select" value={goalForm.person} onChange={(e) => setGoalForm({ ...goalForm, person: e.target.value })}>
+            <option value="">{tr('انتخاب فرد')}</option>
+            {audience.people.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.job}</option>)}
+          </select></label>
+        <label><span className="form-label">{tr('نرخ تبدیل')}</span>
+          <input className="form-input" type="number" value={goalForm.conversionRate} onChange={(e) => setGoalForm({ ...goalForm, conversionRate: e.target.value })} /></label>
+        <label><span className="form-label">{tr('تعداد هدف بازاریابی')}</span>
+          <input className="form-input" type="number" value={goalForm.marketingCount} onChange={(e) => setGoalForm({ ...goalForm, marketingCount: e.target.value })} /></label>
+        <label><span className="form-label">{tr('تعداد هدف مرکز تماس')}</span>
+          <input className="form-input" type="number" value={goalForm.callCount} onChange={(e) => setGoalForm({ ...goalForm, callCount: e.target.value })} /></label>
+        <label><span className="form-label">{tr('تعداد هدف فروش')}</span>
           <input className="form-input" type="number" value={goalForm.salesCount} onChange={(e) => setGoalForm({ ...goalForm, salesCount: e.target.value })} /></label>
-        <label><span className="form-label">{tr('تعداد تماس')}</span>
-          <input className="form-input" type="number" value={goalForm.calls} onChange={(e) => setGoalForm({ ...goalForm, calls: e.target.value })} /></label>
       </AdminModal>
     </div>
   );
