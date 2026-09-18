@@ -14,14 +14,16 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260918-landmark-js-images-v56/, 'swRegister bust generation is v56');
-assert.match(sw, /petdate-web-v56-landmark-js-images/, 'swRegister active cacheId is v56');
-assert.match(vite, /cacheId:\s*'petdate-web-v56-landmark-js-images'/, 'vite PWA cacheId is v56');
+assert.match(sw, /petdate-sw-20260918-above-fold-pad-v57/, 'swRegister bust generation is v57');
+assert.match(sw, /petdate-web-v57-above-fold-pad/, 'swRegister active cacheId is v57');
+assert.match(vite, /cacheId:\s*'petdate-web-v57-above-fold-pad'/, 'vite PWA cacheId is v57');
 assert.match(
   vite,
   /navigateFallbackDenylist:[\s\S]*?\/\^\\\/t/,
   'SW navigation denylist includes /t ticket HTML routes',
 );
+assert.doesNotMatch(sw, /petdate-web-v56-landmark-js-images/, 'old v56-landmark-js-images cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260918-landmark-js-images-v56/, 'old v56 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v55-cls-a11y/, 'old v55-cls-a11y cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260917-cls-a11y-v55/, 'old v55 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v54-defer-shop/, 'old v54-defer-shop cacheId is retired');

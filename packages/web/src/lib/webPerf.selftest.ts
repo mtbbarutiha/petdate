@@ -73,8 +73,13 @@ assert.match(
 );
 assert.match(
   indexHtml,
-  /88svh - var\(--pepito-nav-h\)/,
-  'critical desktop hero uses compact 88svh (not a 93svh dark void)'
+  /@media \(min-width:860px\)\{:root\{--pepito-nav-h:74px;--pepito-hero-h:calc\(100svh - var\(--pepito-nav-h\)\)\}/,
+  'critical desktop hero fills the first viewport (no about-section peek)'
+);
+assert.doesNotMatch(
+  indexHtml,
+  /88svh/,
+  'critical CSS must not leave an 88svh hero that peeks the next section'
 );
 assert.match(
   indexHtml,
@@ -105,6 +110,27 @@ assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.75rem/, 'critical CSS keep
 assert.match(indexHtml, /pepito-hero-dot\{[^}]*padding:17px;margin:0/, 'critical hero dots use 44px pads without negative margin');
 assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
 assert.match(indexHtml, /scrollbar-gutter:stable/, 'critical CSS reserves scrollbar gutter (CLS)');
+assert.match(indexHtml, /html\{[^}]*overflow-x:clip/, 'critical html clips RTL gutter side-bleed');
+assert.match(
+  indexHtml,
+  /\.pepito-nav\{[^}]*background:#242836/,
+  'critical nav has solid dark fill so boot LCP cannot leak into the header',
+);
+assert.match(
+  indexHtml,
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*transform:none!important/,
+  'critical boot LCP disables ken-burns/scale (outside hero overflow clip)',
+);
+assert.match(
+  indexHtml,
+  /body>#pd-boot-lcp,body>#pd-boot-lcp\.pepito-hero-media\{[^}]*clip-path:inset\(0\)/,
+  'critical boot LCP is clipped to its hero-band box',
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero\{[^}]*clip-path:inset\(0\)/,
+  'critical hero clips slide media to the frame',
+);
 assert.match(indexHtml, /id="pd-lock-hero-h"/, 'hero height re-locks after critical CSS');
 assert.match(indexHtml, /pepito-nav-section-link\{[^}]*min-height:44px/, 'critical CSS sizes nav section links for touch');
 assert.match(
@@ -162,7 +188,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v51-landmark-js-images/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v57-above-fold-pad/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -442,7 +468,22 @@ assert.match(
   /--pepito-hero-h:\s*calc\(100svh - var\(--pepito-nav-h\)\)/,
   'hydrated mobile hero fills the viewport under the nav'
 );
-assert.match(pepitoCss, /88svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 88svh band');
+assert.match(
+  pepitoCss,
+  /:root \{[\s\S]*?--pepito-hero-h:\s*calc\(100svh - var\(--pepito-nav-h\)\)/,
+  'desktop hero fills the first viewport (no 88svh about peek)'
+);
+assert.doesNotMatch(pepitoCss, /88svh/, 'hydrated CSS must not keep the 88svh compact hero band');
+assert.match(
+  pepitoCss,
+  /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?transform:\s*none\s*!important/,
+  'hydrated boot LCP disables ken-burns/scale outside the hero clip',
+);
+assert.match(
+  pepitoCss,
+  /@media \(max-width: 859px\) \{[\s\S]*?\.pepito-nav \{[\s\S]*?max-width:\s*100%/,
+  'mobile nav max-width is 100% (not 100vw) to avoid RTL gutter clip',
+);
 assert.match(
   pepitoCss,
   /--pepito-mobile-dock-clearance:\s*calc\(96px \+ env\(safe-area-inset-bottom, 0px\)\)/,

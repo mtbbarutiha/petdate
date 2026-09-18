@@ -294,8 +294,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* Fixed bar sits ABOVE the hero (not over the photo). */
 :root {
   --pepito-nav-h: 74px;
-  /* Compact band — 100svh over-reserve (#369) made the first section feel empty-tall. */
-  --pepito-hero-h: calc(88svh - var(--pepito-nav-h));
+  /* Full first viewport under fixed nav — shorter bands left an about-section peek. */
+  --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
 }
 .pepito-nav {
   position: fixed;
@@ -309,6 +309,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding-block: 0.85rem;
   padding-inline: var(--pepito-gutter-x);
   box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   background: var(--pepito-white);
   backdrop-filter: none;
   border-bottom: 1px solid rgba(92, 77, 145, 0.08);
@@ -332,8 +334,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     inset: auto;
     top: auto;
     width: 100%;
-    max-width: 100vw;
-    overflow: visible;
+    /* 100vw + scrollbar-gutter overflows and clips the nav fill on the RTL edge. */
+    max-width: 100%;
+    overflow: hidden;
     gap: 0.55rem;
     padding-block: 0.65rem;
     min-height: var(--pepito-nav-h);
@@ -638,6 +641,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
+  /* Clip ken-burns / scaled slide media to the hero frame (WebKit overflow+transform). */
+  clip-path: inset(0);
+  isolation: isolate;
   /* layout only — contain:paint flattens wash/copy/dots under out-of-root LCP.
      Transparent fill: isolated #root lets body>#pd-boot-lcp show through on slide 0. */
   contain: layout;
@@ -715,11 +721,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transform-origin: var(--hero-pos-x, 50%) var(--hero-pos-y, 0%);
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
-/* HTML LCP node lives outside #root; height matches the compact #377 hero band.
+/* HTML LCP node lives outside #root; height matches the hero band.
    absolute (not fixed) so the photo scrolls with the hero.
    z-index:0 + transparent isolated #root: boot paints above the body fill and
    shows through the hero hole, while wash (2) / copy (3) / dots (4) stay on top.
-   Override .pepito-hero-media inset:0 so geometry stays the hero band. */
+   Override .pepito-hero-media inset:0 + kill ken-burns/scale — transforms on this
+   node bleed into the nav / RTL scrollbar-gutter (not clipped by .pepito-hero). */
 body > #pd-boot-lcp,
 body > #pd-boot-lcp.pepito-hero-media {
   position: absolute;
@@ -728,7 +735,8 @@ body > #pd-boot-lcp.pepito-hero-media {
   left: 0;
   right: 0;
   bottom: auto;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: var(--pepito-hero-h);
   max-height: var(--pepito-hero-h);
   z-index: 0;
@@ -737,6 +745,9 @@ body > #pd-boot-lcp.pepito-hero-media {
   display: block;
   visibility: visible;
   opacity: 1;
+  transform: none !important;
+  animation: none !important;
+  clip-path: inset(0);
 }
 body > #pd-boot-lcp.is-parked,
 #pd-boot-lcp.is-parked {
