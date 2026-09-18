@@ -71,3 +71,26 @@ Script reads JPGs from `packages/bot/assets/channel-posts/vertical/`, sends `sen
 ## Live posts (canonical keep set)
 
 - https://t.me/petdating/121 … https://t.me/petdating/130
+
+## Activity series (v-post-11…15)
+
+Five posts covering core product activities (publish with
+`publish-channel-activity-posts.mjs` — does **not** re-send 01–10):
+
+| File | Topic |
+|------|--------|
+| `v-post-11-playmate.jpg` | همبازی پت |
+| `v-post-12-shop.jpg` | پت‌شاپ |
+| `v-post-13-vet.jpg` | دامپزشک آنلاین |
+| `v-post-14-adoption.jpg` | پذیرش حیوان خانگی |
+| `v-post-15-event.jpg` | ایونت / پت‌دیتینگ پارک |
+
+```bash
+TELEGRAM_BOT_TOKEN=… node packages/bot/scripts/publish-channel-activity-posts.mjs
+```
+
+Same CTA: `🐾 ورود به ربات` → `https://t.me/Petdatebot`. Do not delete older posts.
+
+### Live activity posts
+
+- https://t.me/petdating/144 … https://t.me/petdating/148

@@ -119,5 +119,57 @@
       "link": "https://t.me/petdating/130",
       "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: all features collage — ONE cohesive vertical ad showing multiple services, NOT repeating lonely-dog story as sole composition.\n\nCOMPOSITION:\n- Top: Pet Date logo large + PLAY · MEET · FRIENDS\n- Center headline purple banner Persian «پتت هم دوست می‌خواد؟»\n- Cohesive collage of 5 circular feature tiles arranged vertically/stacked elegantly on soft gradient:\n  1) two dogs playing (همبازی)\n  2) trainer+clicker (مربی)\n  3) vet+stethoscope (دامپزشک)\n  4) shopping bag products (پت‌شاپ)\n  5) event meetup (ایونت)\n- Each tile has small Persian label\n- Bottom: phone silhouette + pink CTA «PetDate.ir» and «همه امکانات در پت‌دیت»\n- Sparse floating hearts/paws tying collage together as one brand ad\n\nBrand purple/pink, premium high-CTR, clean organized collage (not chaotic). Distinct from single-topic posts."
     }
-  ]
+  ],
+  "activity_series": {
+    "note": "Core product activity posts (v-post-11..15). Publish via publish-channel-activity-posts.mjs",
+    "publish_script": "packages/bot/scripts/publish-channel-activity-posts.mjs",
+    "message_ids": [144, 145, 146, 147, 148],
+    "posts": [
+      {
+        "id": 11,
+        "slug": "playmate-activity",
+        "topic_fa": "همبازی پت",
+        "file": "v-post-11-playmate.jpg",
+        "message_id": 144,
+        "link": "https://t.me/petdating/144",
+        "image_prompt": "Vertical 9:16 — sunny park two dogs playing with tennis ball, purple/pink bandanas; banners «همبازی پت» / «پیدا کردن همبازی»; PetDate.ir CTA"
+      },
+      {
+        "id": 12,
+        "slug": "shop-activity",
+        "topic_fa": "پت‌شاپ",
+        "file": "v-post-12-shop.jpg",
+        "message_id": 145,
+        "link": "https://t.me/petdating/145",
+        "image_prompt": "Vertical 9:16 — puppy among pink/purple shopping bags and products; banners «پت‌شاپ» / «خرید محصولات برای پت»"
+      },
+      {
+        "id": 13,
+        "slug": "vet-activity",
+        "topic_fa": "دامپزشک آنلاین",
+        "file": "v-post-13-vet.jpg",
+        "message_id": 146,
+        "link": "https://t.me/petdating/146",
+        "image_prompt": "Vertical 9:16 — vet with stethoscope on cat; banners «دامپزشک آنلاین» / «مشاوره تخصصی سریع»"
+      },
+      {
+        "id": 14,
+        "slug": "adoption-activity",
+        "topic_fa": "پذیرش حیوان خانگی",
+        "file": "v-post-14-adoption.jpg",
+        "message_id": 147,
+        "link": "https://t.me/petdating/147",
+        "image_prompt": "Vertical 9:16 — person hugging rescue puppy+kitten; bubble «خونه می‌خواد...»; banners «پذیرش حیوان خانگی» / «پت‌های نیازمند خانه»"
+      },
+      {
+        "id": 15,
+        "slug": "event-activity",
+        "topic_fa": "ایونت / پت‌دیتینگ پارک",
+        "file": "v-post-15-event.jpg",
+        "message_id": 148,
+        "link": "https://t.me/petdating/148",
+        "image_prompt": "Vertical 9:16 — outdoor park meetup picnic with dogs in bandanas; banners «ایونت‌های پت» / «دورهمی · پت‌دیتینگ پارک · آشنایی»"
+      }
+    ]
+  }
 }
