@@ -223,6 +223,22 @@ assert.match(
 );
 assert.doesNotMatch(indexHtml, /cache:\s*['"]no-store['"]/, 'boot hero fetch must allow HTTP cache');
 assert.match(indexHtml, /id="pd-hero-boot-json"/, 'inlined hero boot JSON for zero-RTT apply');
+assert.match(
+  indexHtml,
+  /id="pd-hero-boot-json">[^<]*"slides":\s*\[/,
+  'boot JSON embeds full admin slides array (not playmate-only)'
+);
+assert.match(
+  indexHtml,
+  /id="pd-hero-boot-json">[^<]*"role":"vet"/,
+  'boot JSON includes vet slide from admin SoT'
+);
+assert.doesNotMatch(
+  indexHtml,
+  /id="pd-hero-boot-json">[^<]*\/media\/lcp\/hero-vet/,
+  'boot JSON must not embed stock /media/lcp vet paths'
+);
+assert.match(indexHtml, /pd-hero-slides/, 'boot script publishes slides event for React');
 assert.match(indexHtml, /class="theme-dark"/, 'html defaults to theme-dark before paint (CLS)');
 assert.match(
   indexHtml,
@@ -243,7 +259,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v60-landing-css-restore/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v61-hero-admin-photos/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /\.pepito-service-blob\{[^}]*width:80px;height:72px/,
@@ -355,7 +371,23 @@ assert.match(welcome, /heroReady/, 'React gates slide photos on hero readiness')
 assert.match(welcome, /readBootHeroOverlay|pd-hero-boot-json/, 'React seeds hero from HTML boot snapshot');
 assert.match(welcome, /scheduleAfterLoadIdle/, 'React defers /api/hero until after load+idle');
 assert.match(welcome, /setTimeout\(go,\s*10000\)/, 'React hero refresh waits 10s or input (not +2s)');
-assert.match(welcome, /hero-playmate-800\.webp/, 'offline fallback still knows the default 800w WebP');
+assert.match(welcome, /pd-hero-slides/, 'React listens for boot-script admin slide publish');
+assert.match(welcome, /boot\.slides/, 'React prefers full boot.slides array (all roles)');
+assert.doesNotMatch(
+  welcome,
+  /webp:\s*['"]\/media\/lcp\/hero-vet/,
+  'WelcomePage must not hardcode stock vet /media/lcp paths'
+);
+assert.doesNotMatch(
+  welcome,
+  /\/pepito\/uploads\/3-hero\.jpg/,
+  'WelcomePage must not hardcode stock Yorkie vet JPEG'
+);
+assert.doesNotMatch(
+  welcome,
+  /webp:\s*['"]\/media\/lcp\/hero-/,
+  'WelcomePage must not hardcode any stock /media/lcp hero URLs'
+);
 assert.match(welcome, /WelcomeBelowFold/, 'below-fold is code-split off the TBT path');
 assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/input (lucide off critical path)');
 assert.doesNotMatch(welcome, /addEventListener\('scroll', load/, 'below-fold must not arm on scroll');

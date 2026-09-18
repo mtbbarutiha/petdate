@@ -152,7 +152,9 @@ assert.doesNotMatch(
 );
 assert.match(welcome, /lockMobileHeroHeight|pepito-hero-h/, 'welcome locks mobile hero height');
 assert.match(welcome, /--hero-pos-x|--hero-pos-y|--hero-scale/, 'welcome applies admin focus CSS vars');
-assert.match(welcome, /\/2-hero\.jpg/, 'adoption hero has a dedicated 2-hero.jpg fallback');
+assert.match(welcome, /boot\.slides|pd-hero-slides/, 'welcome seeds all hero roles from admin boot/API');
+assert.doesNotMatch(welcome, /\/media\/lcp\/hero-adoption/, 'welcome must not hardcode stock adoption media');
+assert.doesNotMatch(welcome, /\/2-hero\.jpg/, 'welcome must not hardcode stock 2-hero.jpg fallback');
 assert.match(welcome, /landing\.heroAdoptionTitle/, 'adoption hero title key present');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');
 

@@ -10,6 +10,7 @@ import {
   bootLcpImgOpenTag,
   renderLcpBootHtml,
   snapshotFromFirstSlide,
+  snapshotFromSlides,
 } from './hero-boot-snapshot';
 import type { HeroSlideResolved } from './hero-slides';
 
@@ -26,15 +27,37 @@ const slide: HeroSlideResolved = {
   scale: 1,
 };
 
+const vet: HeroSlideResolved = {
+  role: 'vet',
+  webp: '/api/hero/images/20260913/example-vet-800.webp',
+  srcSet: '/api/hero/images/20260913/example-vet-800.webp 800w',
+  fallback: '/api/hero/images/20260913/example-vet-fallback.jpg',
+  source: 'custom',
+  updatedAt: '2026-09-17T00:00:00.000Z',
+  posX: 42,
+  posY: 71,
+  scale: 1,
+};
+
 const snap = snapshotFromFirstSlide(slide);
 assert.equal(snap.webp, slide.webp);
 assert.equal(snap.posY, 90);
+assert.equal(snap.slides.length, 1);
+assert.equal(snap.slides[0]?.role, 'playmate');
 
-const block = renderLcpBootHtml(snap);
+const full = snapshotFromSlides([slide, vet]);
+assert.equal(full.slides.length, 2);
+assert.equal(full.slides[1]?.webp, vet.webp);
+assert.equal(full.webp, slide.webp, 'LCP fields stay on first/playmate slide');
+
+const block = renderLcpBootHtml(full);
 assert.match(block, /<!--pd-lcp-boot-->/);
 assert.match(block, /data-pd-lcp="hero"/);
 assert.match(block, /id="pd-hero-boot-json"/);
 assert.match(block, /example-playmate-800\.webp/);
+assert.match(block, /"role":"vet"/, 'boot JSON embeds all admin slides including vet');
+assert.match(block, /example-vet-800\.webp/);
+assert.doesNotMatch(block, /\/media\/lcp\/hero-vet/, 'boot JSON must not embed stock /media/lcp vet paths');
 
 const img = bootLcpImgOpenTag(snap);
 assert.match(img, /id="pd-boot-lcp"/);

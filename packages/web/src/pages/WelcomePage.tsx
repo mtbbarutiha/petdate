@@ -54,17 +54,16 @@ type HeroApiSlide = {
 };
 
 /**
- * Copy/CTA shell only. Image URLs come exclusively from GET /api/hero
- * (same resolved list the admin panel shows) — never a parallel gallery.
- * Offline/first-paint placeholders match admin defaults until the API arrives.
+ * Copy/CTA shell only — NO stock image URLs.
+ * Photos come exclusively from admin SoT via inlined #pd-hero-boot-json.slides
+ * and GET /api/hero. Hardcoded /media/lcp/hero-* (e.g. Yorkie vet) must never paint.
  */
 const HERO_SLIDES: HeroSlide[] = [
   {
     role: 'playmate',
-    webp: '/media/lcp/hero-playmate-800.webp',
-    srcSet:
-      '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w',
-    fallback: '/pepito/uploads/1-hero.jpg',
+    webp: '',
+    srcSet: '',
+    fallback: '',
     kickerKey: 'landing.heroPlaymateKicker',
     titleKey: 'landing.heroPlaymateTitle',
     leadKey: 'landing.heroPlaymateLead',
@@ -76,10 +75,9 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     role: 'vet',
-    webp: '/media/lcp/hero-vet-800.webp',
-    srcSet:
-      '/media/lcp/hero-vet-800.webp 800w, /media/lcp/hero-vet-1280.webp 1280w, /media/lcp/hero-vet-1920.webp 1920w',
-    fallback: '/pepito/uploads/3-hero.jpg',
+    webp: '',
+    srcSet: '',
+    fallback: '',
     kickerKey: 'landing.heroVetKicker',
     titleKey: 'landing.heroVetTitle',
     leadKey: 'landing.heroVetLead',
@@ -91,10 +89,9 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     role: 'trainer',
-    webp: '/media/lcp/hero-trainer-800.webp',
-    srcSet:
-      '/media/lcp/hero-trainer-800.webp 800w, /media/lcp/hero-trainer-1280.webp 1280w, /media/lcp/hero-trainer-1920.webp 1920w',
-    fallback: '/pepito/uploads/5-hero.jpg',
+    webp: '',
+    srcSet: '',
+    fallback: '',
     kickerKey: 'landing.heroTrainerKicker',
     titleKey: 'landing.heroTrainerTitle',
     leadKey: 'landing.heroTrainerLead',
@@ -106,10 +103,9 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     role: 'no_pet',
-    webp: '/media/lcp/hero-nopet-800.webp',
-    srcSet:
-      '/media/lcp/hero-nopet-800.webp 800w, /media/lcp/hero-nopet-1280.webp 1280w, /media/lcp/hero-nopet-1920.webp 1920w',
-    fallback: '/pepito/uploads/06-hero.jpg',
+    webp: '',
+    srcSet: '',
+    fallback: '',
     kickerKey: 'landing.heroNoPetKicker',
     titleKey: 'landing.heroNoPetTitle',
     leadKey: 'landing.heroNoPetLead',
@@ -121,10 +117,9 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     role: 'adoption',
-    webp: '/media/lcp/hero-adoption-800.webp',
-    srcSet:
-      '/media/lcp/hero-adoption-800.webp 800w, /media/lcp/hero-adoption-1280.webp 1280w, /media/lcp/hero-adoption-1920.webp 1920w',
-    fallback: '/pepito/uploads/2-hero.jpg',
+    webp: '',
+    srcSet: '',
+    fallback: '',
     kickerKey: 'landing.heroAdoptionKicker',
     titleKey: 'landing.heroAdoptionTitle',
     leadKey: 'landing.heroAdoptionLead',
@@ -159,8 +154,8 @@ function resolveSrcSet(srcSet: string): string {
 }
 
 /**
- * Single source of truth: always prefer API slide URLs + focus when present.
- * Admin panel and live hero share listResolvedHeroSlides().
+ * Single source of truth: only apply admin/API URLs + focus.
+ * Without an overlay for a role, keep empty media — never invent stock paths.
  */
 function applyHeroOverlay(
   base: HeroSlide[],
@@ -170,9 +165,10 @@ function applyHeroOverlay(
   const byRole = new Map(apiSlides.map((s) => [s.role, s]));
   return base.map((slide) => {
     const overlay = byRole.get(slide.role);
-    if (!overlay) return slide;
+    if (!overlay?.webp) return slide;
     const webp = resolvePublicMediaUrl(overlay.webp) || overlay.webp;
-    const fallback = resolvePublicMediaUrl(overlay.fallback) || overlay.fallback;
+    const fallback =
+      resolvePublicMediaUrl(overlay.fallback) || overlay.fallback || webp;
     const srcSet = resolveSrcSet(overlay.srcSet || '') || webp;
     const posX = Number.isFinite(overlay.posX) ? Number(overlay.posX) : slide.posX;
     const posY = Number.isFinite(overlay.posY) ? Number(overlay.posY) : slide.posY;
@@ -190,7 +186,7 @@ function heroMediaStyle(slide: HeroSlide): CSSProperties {
   };
 }
 
-/** Seed playmate slide from inlined HTML snapshot — no /api/hero on first paint. */
+/** Seed ALL roles from inlined HTML snapshot (admin SoT) — no /api/hero on first paint. */
 function readBootHeroOverlay(): HeroApiSlide[] | null {
   if (typeof document === 'undefined') return null;
   try {
@@ -203,7 +199,12 @@ function readBootHeroOverlay(): HeroApiSlide[] | null {
       posX?: number;
       posY?: number;
       scale?: number;
+      slides?: HeroApiSlide[];
     };
+    if (Array.isArray(boot.slides) && boot.slides.length) {
+      return boot.slides.filter((s) => s?.role && s?.webp);
+    }
+    /* Legacy snapshot: playmate-only top-level fields. */
     if (!boot.webp) return null;
     return [
       {
@@ -301,9 +302,17 @@ export function WelcomePage() {
     if (!heroReady) setHeroReady(true);
   }, [heroReady]);
 
-  /* Admin-resolved slides — refresh after load+idle so LCP never waits on /api/hero. */
+  /* Prefer boot-script /api/hero result (fires ~2s after load) so vet/… never show stock photos.
+     Keep a deferred React fetch as backup for freshness without blocking LCP. */
   useEffect(() => {
     let cancelled = false;
+    const onBootSlides = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ slides?: HeroApiSlide[] }>).detail;
+      if (cancelled || !detail?.slides?.length) return;
+      setHeroOverlay(detail.slides);
+      setHeroReady(true);
+    };
+    window.addEventListener('pd-hero-slides', onBootSlides);
     scheduleAfterLoadIdle(() => {
       if (cancelled) return;
       void fetch(`${API_BASE}/api/hero`, { credentials: 'same-origin' })
@@ -319,6 +328,7 @@ export function WelcomePage() {
     });
     return () => {
       cancelled = true;
+      window.removeEventListener('pd-hero-slides', onBootSlides);
     };
   }, []);
 
@@ -414,18 +424,19 @@ export function WelcomePage() {
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {/* Slide 0 uses #pd-boot-lcp until handoff — duplicate img caused park+swap LCP delay. */}
-              {heroReady && i === slide && (i !== 0 || bootHandedOff) ? (
+              {/* Slide 0 uses #pd-boot-lcp until handoff — duplicate img caused park+swap LCP delay.
+                  Never mint <img> without admin/API URLs (empty shell = wash only). */}
+              {heroReady && i === slide && (i !== 0 || bootHandedOff) && s.webp ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
                     className="pepito-hero-media"
                     style={heroMediaStyle(s)}
-                    src={i === 0 ? s.webp : s.fallback}
+                    src={i === 0 ? s.webp : s.fallback || s.webp}
                     alt={t(s.titleKey)}
                     width={1600}
                     height={900}
-                    decoding={i === 0 ? 'async' : 'async'}
+                    decoding="async"
                     loading="eager"
                     fetchPriority={i === 0 ? 'high' : 'low'}
                   />

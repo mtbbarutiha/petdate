@@ -19,7 +19,7 @@ function afterHeroMutation(): void {
   invalidateHeroPublicCache();
   try {
     const slides = listResolvedHeroSlides();
-    if (slides[0]) writeHeroBootSnapshot(slides[0]);
+    if (slides.length) writeHeroBootSnapshot(slides);
   } catch {
     /* snapshot is best-effort */
   }

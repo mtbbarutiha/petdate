@@ -1,10 +1,24 @@
 /**
  * Keep homepage LCP discoverable in initial HTML without waiting on /api/hero.
  * Writes media/lcp/hero-boot.json and patches <!--pd-lcp-boot-->…<!--/pd-lcp-boot--> in index.html.
+ *
+ * Snapshot embeds ALL admin-resolved slides (not only playmate) so React can paint
+ * vet/trainer/… from HTML SoT before the deferred /api/hero refresh — never stock /media/lcp/.
  */
 import fs from 'fs';
 import path from 'path';
 import type { HeroSlideResolved } from './hero-slides';
+
+export type HeroBootSlide = {
+  role: string;
+  webp: string;
+  srcSet: string;
+  fallback: string;
+  source: 'custom' | 'default';
+  posX: number;
+  posY: number;
+  scale: number;
+};
 
 export type HeroBootSnapshot = {
   webp: string;
@@ -14,6 +28,8 @@ export type HeroBootSnapshot = {
   posY: number;
   scale: number;
   updatedAt: string;
+  /** Full admin/API slide list — React seeds every carousel role from this. */
+  slides: HeroBootSlide[];
 };
 
 const BOOT_START = '<!--pd-lcp-boot-->';
@@ -38,26 +54,45 @@ function candidateBootJsonPaths(): string[] {
   ];
 }
 
-export function snapshotFromFirstSlide(slide: HeroSlideResolved): HeroBootSnapshot {
+function bootSlideFromResolved(slide: HeroSlideResolved): HeroBootSlide {
   return {
+    role: slide.role,
     webp: slide.webp,
     srcSet: slide.srcSet,
     fallback: slide.fallback,
+    source: slide.source,
     posX: slide.posX,
     posY: slide.posY,
     scale: slide.scale,
-    updatedAt: new Date().toISOString(),
   };
+}
+
+/** Build snapshot from the full admin-resolved list (first slide = LCP). */
+export function snapshotFromSlides(slides: HeroSlideResolved[]): HeroBootSnapshot {
+  const first = slides[0];
+  if (!first) {
+    throw new Error('hero boot snapshot requires at least one slide');
+  }
+  return {
+    webp: first.webp,
+    srcSet: first.srcSet,
+    fallback: first.fallback,
+    posX: first.posX,
+    posY: first.posY,
+    scale: first.scale,
+    updatedAt: new Date().toISOString(),
+    slides: slides.map(bootSlideFromResolved),
+  };
+}
+
+/** @deprecated Prefer snapshotFromSlides — kept for single-slide call sites/tests. */
+export function snapshotFromFirstSlide(slide: HeroSlideResolved): HeroBootSnapshot {
+  return snapshotFromSlides([slide]);
 }
 
 export function renderLcpBootHtml(snap: HeroBootSnapshot): string {
   const href = snap.webp;
   const srcSet = snap.srcSet || href;
-  const pos = `${snap.posX}% ${snap.posY}%`;
-  const scaleStyle =
-    snap.scale > 0 && snap.scale !== 1
-      ? `style="object-position:${pos};transform:scale(${snap.scale});transform-origin:${pos}"`
-      : `style="object-position:${pos}"`;
   return [
     BOOT_START,
     `<link rel="preload" as="image" type="image/webp" href="${href}" imagesrcset="${srcSet}" imagesizes="100vw" fetchpriority="high" data-pd-lcp="hero" />`,
@@ -114,8 +149,11 @@ function patchIndexHtml(html: string, snap: HeroBootSnapshot): string {
   return next;
 }
 
-export function writeHeroBootSnapshot(slide: HeroSlideResolved): HeroBootSnapshot {
-  const snap = snapshotFromFirstSlide(slide);
+export function writeHeroBootSnapshot(
+  slidesOrFirst: HeroSlideResolved[] | HeroSlideResolved,
+): HeroBootSnapshot {
+  const slides = Array.isArray(slidesOrFirst) ? slidesOrFirst : [slidesOrFirst];
+  const snap = snapshotFromSlides(slides);
 
   for (const jsonPath of candidateBootJsonPaths()) {
     try {

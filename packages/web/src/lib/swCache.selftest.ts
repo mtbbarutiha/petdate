@@ -14,14 +14,16 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260918-landing-css-restore-v60/, 'swRegister bust generation is v60');
-assert.match(sw, /petdate-web-v60-landing-css-restore/, 'swRegister active cacheId is v60');
-assert.match(vite, /cacheId:\s*'petdate-web-v60-landing-css-restore'/, 'vite PWA cacheId is v60');
+assert.match(sw, /petdate-sw-20260918-hero-admin-photos-v61/, 'swRegister bust generation is v61');
+assert.match(sw, /petdate-web-v61-hero-admin-photos/, 'swRegister active cacheId is v61');
+assert.match(vite, /cacheId:\s*'petdate-web-v61-hero-admin-photos'/, 'vite PWA cacheId is v61');
 assert.match(
   vite,
   /navigateFallbackDenylist:[\s\S]*?\/\^\\\/t/,
   'SW navigation denylist includes /t ticket HTML routes',
 );
+assert.doesNotMatch(sw, /petdate-web-v60-landing-css-restore/, 'old v60-landing-css-restore cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260918-landing-css-restore-v60/, 'old v60 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v59-logged-in-preload/, 'old v59-logged-in-preload cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260918-logged-in-preload-v59/, 'old v59 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v58-hero-fullbleed/, 'old v58-hero-fullbleed cacheId is retired');
