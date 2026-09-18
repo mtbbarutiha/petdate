@@ -1525,6 +1525,64 @@ html[data-theme='dark'] .admin-app .wdg-cal-mode {
 html[data-theme='dark'] .admin-app .wdg-cal-mode.is-on {
   background: var(--admin-surface);
   color: var(--admin-ink);
+  border-color: color-mix(in srgb, var(--admin-mint) 55%, var(--admin-border));
+}
+/* Dual calendar day cells: light CSS mixes mint with #fff, so dark mode
+   painted a pale sage fill under light --admin-ink (dates vanished).
+   Keep fills on the admin card (#242236 / #1c192d) and lift the ink. */
+html[data-theme='dark'] .admin-app .wdg-cal-day {
+  background: #242236;
+  color: #f4f3f8;
+  border-color: transparent;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day-primary {
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day-secondary {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .wdg-calendar:not(.wdg-calendar--reduced) .wdg-cal-day:hover {
+  background: #2c2840;
+  border-color: color-mix(in srgb, var(--admin-mint) 55%, var(--admin-border));
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-out {
+  background: #1c192d;
+  opacity: 1;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-out .wdg-cal-day-primary {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-out .wdg-cal-day-secondary {
+  color: #9b96ad;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-today {
+  background: #2c2840;
+  border-color: #2dd4b0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #2dd4b0 55%, transparent);
+}
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-selected {
+  background: #322e48;
+  border-color: #a89ad4;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #a89ad4 55%, transparent);
+}
+html[data-theme='dark'] .admin-app .wdg-cal-code--or {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-code--re {
+  color: #c4b5fd;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-code--em {
+  color: #7dd3fc;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-today-btn {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .wdg-cal-today-btn:hover {
+  background: #2c2840;
+  border-color: color-mix(in srgb, var(--admin-mint) 45%, var(--admin-border));
+  color: #f4f3f8;
 }
 html[data-theme='dark'] .admin-app .wdg-notes-chip.is-today {
   color: #9ff3dc;

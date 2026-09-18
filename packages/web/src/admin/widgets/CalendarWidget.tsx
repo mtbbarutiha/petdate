@@ -1,6 +1,6 @@
 /**
  * Dual Jalali / Gregorian calendar widget for admin dashboard boards.
- * Pepito light RTL — mint today, purple accent selection.
+ * Light: mint today, purple selection. Dark day cells are remapped in theme-dark.css.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
