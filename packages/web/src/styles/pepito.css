@@ -637,7 +637,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
-  contain: layout paint;
+  /* layout only — contain:paint creates a stacking context that flattens wash/copy/dots
+     under body>#pd-boot-lcp (z-index:1), hiding the sliding hero UI on slide 0. */
+  contain: layout;
   /* Solid fill only — never a second photo under the slide <img> (dual-source flash).
      Boot LCP + React media own the visible image; admin /api/hero is the SoT. */
   background: #14161e;
@@ -715,7 +717,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 /* HTML LCP node lives outside #root; height matches the compact #377 hero band.
    absolute (not fixed) so the photo scrolls with the hero. z-index:1 so it paints
-   above #root/landing fills — fixed+z-0 left slide 0 as a black empty band.
+   above #root/landing fills (avoids a black empty band) but BELOW hero wash (2) /
+   copy (3) / dots (4) — those must participate in the root stacking context
+   (see .pepito-hero contain:layout, not paint).
    Override .pepito-hero-media inset:0 so geometry stays the hero band. */
 body > #pd-boot-lcp,
 body > #pd-boot-lcp.pepito-hero-media {

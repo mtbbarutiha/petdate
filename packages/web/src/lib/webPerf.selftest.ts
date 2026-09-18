@@ -264,7 +264,15 @@ assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes')
 assert.match(welcome, /unparkBootLcp|parkBootLcp/, 'HTML LCP img stays visible on slide 0 then parks on handoff');
 assert.match(welcome, /bootHandedOff/, 'boot LCP handoff waits for slide change (no first-paint park)');
 assert.match(welcome, /i !== 0 \|\| bootHandedOff/, 'slide 0 uses #pd-boot-lcp until handoff');
+assert.match(welcome, /setInterval/, 'hero autoplay restores sliding carousel');
+assert.match(welcome, /heroNavKey/, 'manual slide nav resets autoplay interval');
+assert.match(welcome, /prefers-reduced-motion:\s*reduce/, 'hero autoplay respects reduced motion');
 assert.match(welcome, /data-pd-hero-h-locked/, 'React must not re-lock hero height after head script');
+assert.doesNotMatch(
+  indexHtml,
+  /\.pepito-hero\{[^}]*contain:layout paint/,
+  'critical CSS must not use contain:paint (hides hero UI under #pd-boot-lcp)',
+);
 assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (smaller index entry)');
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/AppDialog'\)/, 'AppDialogHost is lazy off landing entry');
@@ -344,6 +352,16 @@ assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
 
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?contain:\s*layout paint/,
+  'pepito hero must not use contain:paint (stacking flattens under boot LCP)',
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?contain:\s*layout;/,
+  'pepito hero keeps contain:layout without paint',
+);
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?position:\s*absolute/, 'hydrated boot LCP is absolute, not viewport-fixed');
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?z-index:\s*1/, 'hydrated boot LCP paints above landing fill');
 assert.match(pepitoCss, /body > #pd-boot-lcp,\s*body > #pd-boot-lcp\.pepito-hero-media \{[\s\S]*?inset:\s*auto/, 'hydrated boot LCP overrides hero-media inset');
@@ -430,7 +448,6 @@ assert.match(below, /width=\{1600\} height=\{800\}/, 'news cover attrs match 2:1
 const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');
 const navCluster = readFileSync(join(webSrc, 'components/NavUserCluster.tsx'), 'utf8');
-const toast = readFileSync(join(webSrc, 'hooks/useAppToast.tsx'), 'utf8');
 assert.doesNotMatch(header, /from 'lucide-react'/, 'SiteHeader must not parse lucide');
 assert.doesNotMatch(themeToggle, /from 'lucide-react'/, 'ThemeToggle must not parse lucide');
 assert.doesNotMatch(navCluster, /from 'lucide-react'/, 'guest nav cluster must not parse lucide');

@@ -255,11 +255,13 @@ export function WelcomePage() {
   const { isLoggedIn } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [slide, setSlide] = useState(0);
+  /** Bumped on manual nav so autoplay restarts its interval. */
+  const [heroNavKey, setHeroNavKey] = useState(0);
   const [showBelowFold, setShowBelowFold] = useState(false);
   const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(() => readBootHeroOverlay());
   /** true once boot snapshot or /api/hero is available — never block LCP on the API. */
   const [heroReady, setHeroReady] = useState(() => Boolean(readBootHeroOverlay()));
-  /** After the user leaves slide 0, React owns the in-hero photo and boot LCP stays parked. */
+  /** After leaving slide 0 (autoplay or manual), React owns the in-hero photo and boot LCP stays parked. */
   const [bootHandedOff, setBootHandedOff] = useState(false);
   const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
@@ -268,6 +270,7 @@ export function WelcomePage() {
   const goToSlide = (index: number) => {
     const len = heroSlides.length;
     setSlide(((index % len) + len) % len);
+    setHeroNavKey((k) => k + 1);
   };
 
   useEffect(() => {
@@ -310,7 +313,7 @@ export function WelcomePage() {
 
   /* Keep #pd-boot-lcp as the visible LCP for slide 0 — never display:none it on first paint.
      Parking while the image was still the LCP candidate (then boot script unparking) caused
-     multi-second "element render delay". Hand off only after the user changes slides. */
+     multi-second "element render delay". Hand off only after slide leaves 0 (autoplay or manual). */
   useEffect(() => {
     if (slide === 0 && !bootHandedOff) {
       unparkBootLcp();
@@ -325,6 +328,18 @@ export function WelcomePage() {
       parkBootLcp();
     };
   }, []);
+
+  /* Sliding hero autoplay — respect reduced motion; manual nav resets via heroNavKey. */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const len = heroSlides.length;
+    if (len < 2) return;
+    const id = window.setInterval(() => {
+      setSlide((s) => (s + 1) % len);
+    }, 5500);
+    return () => window.clearInterval(id);
+  }, [heroNavKey, heroSlides.length]);
 
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
