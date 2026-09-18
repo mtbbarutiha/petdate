@@ -28,6 +28,11 @@ export function AdminPetPurchaseRequestsPage() {
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
+  const [phone, setPhone] = useState('');
+  const [owner, setOwner] = useState('');
+  const [source, setSource] = useState('');
+  const [leadId, setLeadId] = useState('');
+  const [sort, setSort] = useState('new');
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<PetPurchaseLead | null>(null);
   const [assignOwnerId, setAssignOwnerId] = useState('');
@@ -41,6 +46,11 @@ export function AdminPetPurchaseRequestsPage() {
       const qs = new URLSearchParams({ limit: '100' });
       if (q.trim()) qs.set('q', q.trim());
       if (status) qs.set('status', status);
+      if (phone.trim()) qs.set('phone', phone.trim());
+      if (owner.trim()) qs.set('owner', owner.trim());
+      if (source.trim()) qs.set('source', source.trim());
+      if (leadId.trim()) qs.set('leadId', leadId.trim());
+      if (sort) qs.set('sort', sort);
       const data = await adminFetch<{ total: number; items: PetPurchaseLead[] }>(
         `/api/admin/sales/pet-purchase-requests?${qs}`
       );
@@ -50,7 +60,7 @@ export function AdminPetPurchaseRequestsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'خطا');
     }
-  }, [q, status]);
+  }, [q, status, phone, owner, source, leadId, sort]);
 
   useEffect(() => {
     void load();
@@ -140,6 +150,14 @@ export function AdminPetPurchaseRequestsPage() {
               {s}
             </option>
           ))}
+        </select>
+        <input placeholder={tr('موبایل')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input placeholder={tr('کارشناس')} value={owner} onChange={(e) => setOwner(e.target.value)} />
+        <input placeholder={tr('منبع')} value={source} onChange={(e) => setSource(e.target.value)} />
+        <input placeholder={tr('شناسه')} value={leadId} onChange={(e) => setLeadId(e.target.value)} />
+        <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="new">{tr('جدیدترین')}</option>
+          <option value="name">{tr('نام')}</option>
         </select>
         <button type="button" className="admin-btn" onClick={() => void load()}>
           {tr('بروزرسانی')}
@@ -248,6 +266,9 @@ export function AdminPetPurchaseRequestsPage() {
 
             {canWrite ? (
               <div className="pp-req-detail__actions">
+                <a className="admin-btn" href={`sms:${selected.mobile}`}>{tr('پیامک')}</a>
+                <a className="admin-btn" href={`https://wa.me/98${selected.mobile.replace(/^0/, '')}`} target="_blank" rel="noreferrer">{tr('واتساپ')}</a>
+                <a className="admin-btn" href={`https://t.me/+98${selected.mobile.replace(/^0/, '')}`} target="_blank" rel="noreferrer">{tr('تلگرام')}</a>
                 <button
                   type="button"
                   className="admin-btn admin-btn--primary"

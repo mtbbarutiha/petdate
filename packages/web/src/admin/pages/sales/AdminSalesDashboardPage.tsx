@@ -45,6 +45,7 @@ import {
   MotionChartTooltip,
   useRechartsMotion,
 } from '../../motionCharts';
+import { FollowupProgressModal, FollowupTaskBoard } from './SalesOpsUi';
 import { tr } from '../../../i18n';
 
 const STAGE_COLORS = ['#5c4d91', '#15cca0', '#3b82f6', '#fd961e', '#14b8a6', '#ec4899', '#8b5cf6', '#64748b'];
@@ -95,6 +96,7 @@ export function AdminSalesDashboardPage() {
   const [data, setData] = useState<SalesDashboard | null>(null);
   const [report, setReport] = useState<SalesReportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openFollow, setOpenFollow] = useState<SalesFollowup | null>(null);
   const canWrite = adminCan('sales.write') || adminCan('admin.full');
 
   const load = useCallback(() => {
@@ -113,11 +115,6 @@ export function AdminSalesDashboardPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  const completeFollowup = async (id: number) => {
-    await adminFetch(`/api/admin/sales/followups/${id}/complete`, { method: 'POST', body: '{}' });
-    load();
-  };
 
   const stageChart = useMemo(() => {
     if (!data?.stageCounts?.length) return [];
@@ -354,9 +351,9 @@ export function AdminSalesDashboardPage() {
                         <button
                           type="button"
                           className="admin-btn admin-btn--ghost admin-btn--sm"
-                          onClick={() => void completeFollowup(f.id)}
+                          onClick={() => setOpenFollow(f)}
                         >
-                          {tr('انجام شد')}
+                          {tr('جزئیات پیگیری')}
                         </button>
                       ) : (
                         f.status
@@ -374,6 +371,11 @@ export function AdminSalesDashboardPage() {
           </table>
         </div>
       </section>
+      <section className="admin-card" style={{ marginTop: 14 }}>
+        <div className="admin-card-head"><h2>{tr('مدیریت وظایف روزانه')}</h2></div>
+        <FollowupTaskBoard followups={data.myFollowups} onOpen={setOpenFollow} onMoved={load} />
+      </section>
+      <FollowupProgressModal followup={openFollow} onClose={() => setOpenFollow(null)} onDone={load} />
     </AdminDashPage>
   );
 }

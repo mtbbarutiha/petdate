@@ -77,6 +77,7 @@ npx tsx "$ROOT/packages/shared/src/payment-card.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/admin-password.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/team-agents.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/staff-agents.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/admin-ops.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"

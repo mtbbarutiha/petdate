@@ -1183,10 +1183,18 @@ hrAdminRouter.delete('/settings/benefits/:id', requirePermission('hr.write'), (r
 });
 
 hrAdminRouter.get('/cockpit', (_req, res) => {
-  res.json({
-    tasks: hrMod.cockpitTasks(),
-    notifications: hrMod.listNotifications(),
-  });
+  try {
+    res.json({
+      tasks: hrMod.cockpitTasks() || [],
+      notifications: hrMod.listNotifications() || [],
+    });
+  } catch (err) {
+    res.status(200).json({
+      tasks: [],
+      notifications: [],
+      error: err instanceof Error ? err.message : 'کارتابل بارگذاری نشد',
+    });
+  }
 });
 
 hrAdminRouter.post('/notifications/:id/read', requirePermission('hr.write'), (req, res) => {

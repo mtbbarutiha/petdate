@@ -180,6 +180,11 @@ export function getPetPurchaseLead(id: number): PetPurchaseLead | null {
 export function listPetPurchaseLeads(opts?: {
   status?: string;
   q?: string;
+  phone?: string;
+  owner?: string;
+  source?: string;
+  leadId?: string;
+  sort?: string;
   limit?: number;
 }): { total: number; items: PetPurchaseLead[] } {
   ensurePetPurchaseLeadsSchema();
@@ -189,12 +194,29 @@ export function listPetPurchaseLeads(opts?: {
     where.push('status = ?');
     params.push(opts.status);
   }
+  if (opts?.phone?.trim()) {
+    where.push('mobile LIKE ?');
+    params.push(`%${opts.phone.trim()}%`);
+  }
+  if (opts?.owner?.trim()) {
+    where.push('(assignee_name LIKE ? OR assignee_id LIKE ?)');
+    params.push(`%${opts.owner.trim()}%`, `%${opts.owner.trim()}%`);
+  }
+  if (opts?.source?.trim()) {
+    where.push('source_page LIKE ?');
+    params.push(`%${opts.source.trim()}%`);
+  }
+  if (opts?.leadId?.trim()) {
+    where.push('(CAST(id AS TEXT) = ? OR CAST(sales_item_id AS TEXT) = ?)');
+    params.push(opts.leadId.trim(), opts.leadId.trim());
+  }
   if (opts?.q?.trim()) {
     const q = `%${opts.q.trim()}%`;
     where.push('(first_name LIKE ? OR last_name LIKE ? OR mobile LIKE ? OR CAST(id AS TEXT) LIKE ?)');
     params.push(q, q, q, q);
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const order = opts?.sort === 'name' ? 'first_name ASC, id DESC' : 'id DESC';
   const total = Number(
     (db().prepare(`SELECT COUNT(*) as c FROM pet_purchase_leads ${whereSql}`).get(...params) as { c: number })
       ?.c ?? 0
@@ -202,7 +224,7 @@ export function listPetPurchaseLeads(opts?: {
   const limit = Math.min(200, Math.max(1, Number(opts?.limit) || 100));
   const rows = db()
     .prepare(
-      `SELECT * FROM pet_purchase_leads ${whereSql} ORDER BY id DESC LIMIT ?`
+      `SELECT * FROM pet_purchase_leads ${whereSql} ORDER BY ${order} LIMIT ?`
     )
     .all(...params, limit) as Array<Record<string, unknown>>;
   return { total, items: rows.map(mapRow) };

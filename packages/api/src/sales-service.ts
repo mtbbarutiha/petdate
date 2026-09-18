@@ -7,6 +7,7 @@ import {
   SALES_LEAD_SOURCES,
   SALES_LOST_REASONS,
   SALES_STAGES,
+  customerConversionPath,
   makeSalesCustomerPublicId,
   makeSalesPublicId,
   makeSalesTicketPublicId,
@@ -192,6 +193,12 @@ function seedSalesDefaults(): void {
     seedRoleIfMissing('sales_lead', 'سرپرست فروش', 'تخصیص، تایید تخفیف/مالی، هدف‌گذاری', ['sales.read', 'sales.write', 'sales.admin']);
     seedRoleIfMissing('sales_manager', 'مدیر فروش', 'دسترسی کامل ماژول فروش', ['sales.read', 'sales.write', 'sales.admin']);
   } catch { /* admin_roles may not exist yet */ }
+  try {
+    const { ensureAdminOpsSchema } = require('./admin-ops-service') as typeof import('./admin-ops-service');
+    ensureAdminOpsSchema();
+  } catch {
+    /* additive */
+  }
 }
 
 function mapItem(row: Record<string, unknown>): SalesItem {
@@ -214,6 +221,7 @@ function mapItem(row: Record<string, unknown>): SalesItem {
     customerId: row.customer_id != null ? Number(row.customer_id) : null,
     payStatus: String(row.pay_status || 'بدون پرداخت'),
     payType: row.pay_type != null ? String(row.pay_type) : null,
+    failureOutcome: row.failure_outcome != null ? String(row.failure_outcome) : null,
   };
 }
 
@@ -256,19 +264,33 @@ export function listSalesProducts(opts?: { activeOnly?: boolean }): SalesProduct
   const rows = (opts?.activeOnly
     ? db().prepare('SELECT * FROM sales_products WHERE active = 1 ORDER BY id').all()
     : db().prepare('SELECT * FROM sales_products ORDER BY id').all()) as Array<Record<string, unknown>>;
-  return rows.map((r) => ({ id: Number(r.id), name: String(r.name), price: Number(r.price), active: Boolean(r.active), createdAt: String(r.created_at) }));
+  return rows.map((r) => ({
+    id: Number(r.id), name: String(r.name), price: Number(r.price), active: Boolean(r.active),
+    createdAt: String(r.created_at),
+    campaign: String(r.campaign || ''),
+    discountCode: String(r.discount_code || ''),
+    createdBy: String(r.created_by || ''),
+  }));
 }
 
-export function upsertSalesProduct(input: { id?: number; name: string; price: number; active?: boolean }): SalesProduct {
+export function upsertSalesProduct(input: {
+  id?: number; name: string; price: number; active?: boolean;
+  campaign?: string; discountCode?: string; createdBy?: string;
+}, actorName = ''): SalesProduct {
   ensureSalesSchema();
   const name = String(input.name || '').trim();
   if (!name) throw new Error('نام محصول الزامی است');
   const price = Math.max(0, Math.round(Number(input.price) || 0));
   const active = input.active === false ? 0 : 1;
+  const campaign = String(input.campaign || '');
+  const discountCode = String(input.discountCode || '');
+  const createdBy = String(input.createdBy || actorName || '');
   if (input.id) {
-    db().prepare('UPDATE sales_products SET name = ?, price = ?, active = ? WHERE id = ?').run(name, price, active, input.id);
+    db().prepare('UPDATE sales_products SET name = ?, price = ?, active = ?, campaign = ?, discount_code = ? WHERE id = ?')
+      .run(name, price, active, campaign, discountCode, input.id);
   } else {
-    const info = db().prepare('INSERT INTO sales_products (name, price, active) VALUES (?, ?, ?)').run(name, price, active);
+    const info = db().prepare('INSERT INTO sales_products (name, price, active, campaign, discount_code, created_by) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(name, price, active, campaign, discountCode, createdBy);
     input.id = Number(info.lastInsertRowid);
   }
   return listSalesProducts().find((p) => p.id === input.id)!;
@@ -318,7 +340,8 @@ export function updateSalesSettings(patch: Partial<SalesSettings>): SalesSetting
 }
 
 export function listSalesItems(opts: {
-  kind?: SalesItemKind; q?: string; stage?: string; unassignedOnly?: boolean; ownerId?: string; limit?: number;
+  kind?: SalesItemKind; q?: string; stage?: string; unassignedOnly?: boolean; ownerId?: string;
+  ownerName?: string; leadId?: string; phone?: string; source?: string; team?: string; limit?: number;
 }): { total: number; items: SalesItem[] } {
   ensureSalesSchema();
   const where: string[] = []; const params: unknown[] = [];
@@ -326,7 +349,16 @@ export function listSalesItems(opts: {
   if (opts.stage === 'lost') where.push("stage = 'lost'");
   else if (opts.stage != null && opts.stage !== '') { where.push('stage = ?'); params.push(String(opts.stage)); }
   if (opts.unassignedOnly) where.push('owner_id IS NULL');
-  if (opts.ownerId) { where.push('(owner_id = ? OR owner_id IS NULL)'); params.push(opts.ownerId); }
+  if (opts.ownerId) { where.push('owner_id = ?'); params.push(opts.ownerId); }
+  if (opts.ownerName?.trim()) { where.push('owner_name LIKE ?'); params.push(`%${opts.ownerName.trim()}%`); }
+  if (opts.leadId?.trim()) {
+    const raw = opts.leadId.trim().replace(/^LD-/i, '');
+    where.push('(CAST(id AS TEXT) = ? OR printf(\'%04d\', id) = ?)');
+    params.push(raw, raw);
+  }
+  if (opts.phone?.trim()) { where.push('mobile LIKE ?'); params.push(`%${opts.phone.trim()}%`); }
+  if (opts.source?.trim()) { where.push('source = ?'); params.push(opts.source.trim()); }
+  if (opts.team?.trim()) { where.push('owner_name LIKE ?'); params.push(`%${opts.team.trim()}%`); }
   if (opts.q?.trim()) {
     where.push('(first_name LIKE ? OR last_name LIKE ? OR mobile LIKE ? OR product LIKE ? OR source LIKE ?)');
     const like = `%${opts.q.trim()}%`; params.push(like, like, like, like, like);
@@ -426,6 +458,7 @@ function mapCall(r: Record<string, unknown>): SalesCall {
     dir: r.dir === 'call_in' ? 'call_in' : 'call_out', startedAt: String(r.started_at),
     talk: Number(r.talk || 0), result: String(r.result || ''), summary: String(r.summary || ''),
     qaStatus: String(r.qa_status || 'ارزیابی نشده'), qaScore: r.qa_score != null ? Number(r.qa_score) : null,
+    customerScore: r.customer_score != null ? Number(r.customer_score) : null,
   };
 }
 
@@ -453,6 +486,8 @@ function getFollowup(id: number): SalesFollowup | null {
     refId: r.ref_id != null ? Number(r.ref_id) : null, ownerId: String(r.owner_id),
     type: String(r.type), at: String(r.at), priority: String(r.priority),
     desc: String(r.desc_text || ''), status: r.status === 'انجام‌شده' ? 'انجام‌شده' : 'باز',
+    note: String(r.note || ''),
+    parentId: r.parent_id != null ? Number(r.parent_id) : null,
   };
 }
 
@@ -469,6 +504,84 @@ export function completeSalesFollowup(id: number): SalesFollowup {
   ensureSalesSchema();
   db().prepare(`UPDATE sales_followups SET status = 'انجام‌شده' WHERE id = ?`).run(id);
   const f = getFollowup(id); if (!f) throw new Error('پیگیری یافت نشد'); return f;
+}
+
+/** Close current follow-up, store the note, and chain the next one. */
+export function progressSalesFollowup(id: number, input: {
+  note?: string; nextType?: string; nextAt?: string; nextDesc?: string; priority?: string;
+}, actor: AdminAuthActor): { done: SalesFollowup; next: SalesFollowup | null } {
+  ensureSalesSchema();
+  const current = getFollowup(id);
+  if (!current) throw new Error('پیگیری یافت نشد');
+  const note = String(input.note || '').trim();
+  db().prepare(`UPDATE sales_followups SET status = 'انجام‌شده', note = ? WHERE id = ?`).run(note, id);
+  if (current.refId) {
+    addActivity(current.refId, `پیگیری انجام شد${note ? `: ${note}` : ''}`, 'followup');
+  }
+  let next: SalesFollowup | null = null;
+  if (input.nextAt) {
+    const info = db().prepare(`INSERT INTO sales_followups (ref_kind, ref_id, owner_id, type, at, priority, desc_text, status, parent_id, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'باز', ?, '')`).run(
+      current.refKind, current.refId, current.ownerId || actorId(actor),
+      input.nextType || current.type, input.nextAt, input.priority || current.priority,
+      input.nextDesc || note, id
+    );
+    next = getFollowup(Number(info.lastInsertRowid));
+    if (current.refId && input.nextAt) {
+      db().prepare('UPDATE sales_items SET next_followup = ?, last_activity = ? WHERE id = ?').run(input.nextAt, nowIso(), current.refId);
+    }
+  }
+  return { done: getFollowup(id)!, next };
+}
+
+export function updateSalesItemProfile(id: number, input: {
+  first?: string; last?: string; mobile?: string; failureOutcome?: string; note?: string; petName?: string;
+}, actor: AdminAuthActor): SalesItem {
+  ensureSalesSchema();
+  const item = getSalesItem(id);
+  if (!item) throw new Error('یافت نشد');
+  const first = input.first != null ? input.first.trim() : item.first;
+  const last = input.last != null ? input.last.trim() : item.last;
+  const mobile = input.mobile != null ? input.mobile.trim() : item.mobile;
+  db().prepare(`UPDATE sales_items SET first_name = ?, last_name = ?, mobile = ?, failure_outcome = COALESCE(?, failure_outcome), last_activity = ? WHERE id = ?`)
+    .run(first, last, mobile, input.failureOutcome ?? null, nowIso(), id);
+  if (input.note) addActivity(id, input.note, 'note');
+  if (input.petName) addActivity(id, `پت افزوده شد: ${input.petName}`, 'pet');
+  if (input.failureOutcome) addActivity(id, `نتیجه: ${input.failureOutcome}`, 'fail');
+  const path = customerConversionPath({
+    agentSavedFirstName: Boolean(first),
+    agentSavedLastName: Boolean(last),
+    paidViaGateway: item.payStatus === 'پرداخت‌شده',
+  });
+  if (path) ensureSalesCustomer(id, path, actor);
+  return getSalesItem(id)!;
+}
+
+export function ensureSalesCustomer(itemId: number, path: string, actor: AdminAuthActor): SalesItem {
+  ensureSalesSchema();
+  const item = getSalesItem(itemId);
+  if (!item) throw new Error('یافت نشد');
+  if (item.customerId) {
+    db().prepare(`UPDATE sales_customers SET conversion_path = CASE WHEN conversion_path = '' THEN ? ELSE conversion_path END WHERE id = ?`)
+      .run(path, item.customerId);
+    return item;
+  }
+  const custInfo = db().prepare(`INSERT INTO sales_customers (first_name, last_name, mobile, email, level, sales_owner, created_at, source_lead_id, conversion_path)
+     VALUES (?, ?, ?, ?, 'عادی', ?, ?, ?, ?)`).run(
+    item.first, item.last, item.mobile, item.email, item.ownerName || actorLabel(actor), nowIso(), item.id, path
+  );
+  const customerId = Number(custInfo.lastInsertRowid);
+  db().prepare(`UPDATE sales_items SET customer_id = ?, last_activity = ? WHERE id = ?`).run(customerId, nowIso(), item.id);
+  addActivity(item.id, `مشتری شد از مسیر ${path}`, 'customer');
+  return getSalesItem(item.id)!;
+}
+
+export function convertLeadsByPhone(mobile: string, path: string): number {
+  ensureSalesSchema();
+  const rows = db().prepare(`SELECT id FROM sales_items WHERE mobile = ? AND (customer_id IS NULL OR customer_id = 0) LIMIT 20`).all(mobile) as Array<{ id: number }>;
+  const actor = { kind: 'account', username: 'self-register', role: 'sales', permissions: [], displayName: 'ثبت‌نام' } as unknown as AdminAuthActor;
+  for (const row of rows) ensureSalesCustomer(row.id, path, actor);
+  return rows.length;
 }
 
 export function createSalesCall(input: {
@@ -505,6 +618,10 @@ export function listSalesCalls(opts?: {
   limit?: number;
   dir?: 'call_out' | 'call_in';
   qaPendingOnly?: boolean;
+  agent?: string;
+  day?: string;
+  evaluated?: 'yes' | 'no';
+  customerScore?: string;
 }): SalesCall[] {
   ensureSalesSchema();
   const where: string[] = [];
@@ -513,8 +630,22 @@ export function listSalesCalls(opts?: {
     where.push('dir = ?');
     params.push(opts.dir);
   }
-  if (opts?.qaPendingOnly) {
+  if (opts?.qaPendingOnly || opts?.evaluated === 'no') {
     where.push(`qa_status != 'ارزیابی شد'`);
+  }
+  if (opts?.evaluated === 'yes') where.push(`qa_status = 'ارزیابی شد'`);
+  if (opts?.agent?.trim()) {
+    where.push('(agent_name LIKE ? OR agent_id LIKE ?)');
+    const like = `%${opts.agent.trim()}%`;
+    params.push(like, like);
+  }
+  if (opts?.day?.trim()) {
+    where.push('substr(started_at, 1, 10) = ?');
+    params.push(opts.day.trim().slice(0, 10));
+  }
+  if (opts?.customerScore?.trim()) {
+    where.push('customer_score = ?');
+    params.push(Number(opts.customerScore));
   }
   params.push(Math.min(opts?.limit || 100, 300));
   const sql = `SELECT * FROM sales_calls ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY started_at DESC LIMIT ?`;
@@ -574,12 +705,23 @@ export function simulateIncomingCall(): SalesSimulateIncoming {
   return { phone, phase: 'ringing', matchedItem: matched, productLine: 'Pet Date' };
 }
 
-export function scoreSalesCall(callId: number, score: number, actor: AdminAuthActor): SalesCall {
+export function scoreSalesCall(
+  callId: number,
+  score: number,
+  actor: AdminAuthActor,
+  customerScore?: number | null
+): SalesCall {
   ensureSalesSchema();
   const s = Math.min(100, Math.max(0, Math.round(score)));
-  db().prepare(`UPDATE sales_calls SET qa_status = 'ارزیابی شد', qa_score = ? WHERE id = ?`).run(s, callId);
+  if (customerScore != null && Number.isFinite(Number(customerScore))) {
+    const cs = Math.min(5, Math.max(1, Math.round(Number(customerScore))));
+    db().prepare(`UPDATE sales_calls SET qa_status = 'ارزیابی شد', qa_score = ?, customer_score = ? WHERE id = ?`).run(s, cs, callId);
+  } else {
+    db().prepare(`UPDATE sales_calls SET qa_status = 'ارزیابی شد', qa_score = ? WHERE id = ?`).run(s, callId);
+  }
   const row = db().prepare('SELECT * FROM sales_calls WHERE id = ?').get(callId) as Record<string, unknown> | undefined;
   if (!row) throw new Error('تماس یافت نشد');
+  addActivity(Number(row.ref_id), `ارزیابی تماس ${s} توسط ${actorLabel(actor)}`, 'qa');
   return mapCall(row);
 }
 
@@ -662,6 +804,7 @@ function getTicket(id: number): SalesTicket | null {
     title: String(r.title), dept: String(r.dept), cat: String(r.cat), priority: String(r.priority),
     status: String(r.status), createdAt: String(r.created_at), slaDue: String(r.sla_due),
     desc: String(r.desc_text || ''), agentId: String(r.agent_id || ''),
+    reason: String(r.reason || ''),
   };
 }
 
@@ -764,9 +907,13 @@ export function createSalesTicket(input: {
   return getTicket(Number(info.lastInsertRowid))!;
 }
 
-export function updateSalesTicketStatus(id: number, status: string): SalesTicket {
+export function updateSalesTicketStatus(id: number, status: string, reason?: string): SalesTicket {
   ensureSalesSchema();
-  db().prepare('UPDATE sales_tickets SET status = ? WHERE id = ?').run(status, id);
+  if (reason != null) {
+    db().prepare('UPDATE sales_tickets SET status = ?, reason = ? WHERE id = ?').run(status, reason, id);
+  } else {
+    db().prepare('UPDATE sales_tickets SET status = ? WHERE id = ?').run(status, id);
+  }
   const t = getTicket(id); if (!t) throw new Error('تیکت یافت نشد'); return t;
 }
 
@@ -784,19 +931,29 @@ function enrichCustomer(row: Record<string, unknown>): SalesCustomer {
     level: String(row.level || 'عادی'), salesOwner: String(row.sales_owner || ''),
     createdAt: String(row.created_at), csat: row.csat != null ? Number(row.csat) : null,
     sourceLeadId: row.source_lead_id != null ? Number(row.source_lead_id) : null,
+    conversionPath: row.conversion_path != null ? String(row.conversion_path) : null,
     orderSum, orderCount: orders.length, lastOrderAt, daysSinceLastPurchase: daysSince, openTickets,
   };
 }
 
-export function listSalesCustomers(opts?: { q?: string }): { total: number; customers: SalesCustomer[] } {
+export function listSalesCustomers(opts?: {
+  q?: string; phone?: string; owner?: string; path?: string; status?: string;
+}): { total: number; customers: SalesCustomer[] } {
   ensureSalesSchema();
-  const params: unknown[] = []; let where = '';
+  const where: string[] = [];
+  const params: unknown[] = [];
   if (opts?.q?.trim()) {
-    where = 'WHERE first_name LIKE ? OR last_name LIKE ? OR mobile LIKE ?';
-    const like = `%${opts.q.trim()}%`; params.push(like, like, like);
+    where.push('(first_name LIKE ? OR last_name LIKE ? OR mobile LIKE ?)');
+    const like = `%${opts.q.trim()}%`;
+    params.push(like, like, like);
   }
-  const total = Number((db().prepare(`SELECT COUNT(*) as c FROM sales_customers ${where}`).get(...params) as { c: number }).c);
-  const rows = db().prepare(`SELECT * FROM sales_customers ${where} ORDER BY id DESC LIMIT 100`).all(...params) as Array<Record<string, unknown>>;
+  if (opts?.phone?.trim()) { where.push('mobile LIKE ?'); params.push(`%${opts.phone.trim()}%`); }
+  if (opts?.owner?.trim()) { where.push('sales_owner LIKE ?'); params.push(`%${opts.owner.trim()}%`); }
+  if (opts?.path?.trim()) { where.push('conversion_path = ?'); params.push(opts.path.trim()); }
+  if (opts?.status?.trim()) { where.push('level = ?'); params.push(opts.status.trim()); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const total = Number((db().prepare(`SELECT COUNT(*) as c FROM sales_customers ${whereSql}`).get(...params) as { c: number }).c);
+  const rows = db().prepare(`SELECT * FROM sales_customers ${whereSql} ORDER BY id DESC LIMIT 200`).all(...params) as Array<Record<string, unknown>>;
   return { total, customers: rows.map(enrichCustomer) };
 }
 
@@ -897,6 +1054,7 @@ export function createSalesGoal(input: {
 export function getSalesItemDetail(id: number): {
   item: SalesItem; activities: SalesActivity[]; calls: SalesCall[]; followups: SalesFollowup[];
   offers: SalesOffer[]; payments: SalesPayment[]; messages: SalesMessage[];
+  upgrades: SalesItem[]; logs: SalesActivity[];
 } | null {
   ensureSalesSchema();
   const item = getSalesItem(id); if (!item) return null;
@@ -907,6 +1065,8 @@ export function getSalesItemDetail(id: number): {
     calls: listSalesCalls({ limit: 200 }).filter((c) => c.refId === id),
     followups: listSalesFollowups().filter((f) => f.refId === id),
     offers: listOffersForItem(id), payments, messages: listSalesMessages(id),
+    upgrades: listSalesItems({ kind: 'upgrade', limit: 40 }).items.filter((u) => u.mobile === item.mobile || u.customerId === item.customerId),
+    logs: listSalesActivities(id),
   };
 }
 
@@ -1043,6 +1203,37 @@ export function getSalesPipeline(): { stages: { stage: number | "lost"; label: s
   const lost = items.filter((i) => i.stage === 'lost');
   stages.push({ stage: 'lost', label: 'ازدست‌رفته', items: lost.slice(0, 20), value: lost.reduce((s, i) => s + i.value, 0) });
   return { stages };
+}
+
+export function listGoalAudience(): {
+  teams: string[];
+  jobs: string[];
+  people: Array<{ id: string; name: string; team: string; job: string }>;
+} {
+  ensureSalesSchema();
+  try {
+    const rows = db()
+      .prepare(
+        `SELECT id, first_name, last_name, department, job_title, username
+         FROM hr_employees
+         ORDER BY id DESC
+         LIMIT 300`
+      )
+      .all() as Array<Record<string, unknown>>;
+    const people = rows.map((r) => ({
+      id: String(r.username || r.id),
+      name: `${String(r.first_name || '')} ${String(r.last_name || '')}`.trim(),
+      team: String(r.department || ''),
+      job: String(r.job_title || ''),
+    }));
+    return {
+      teams: [...new Set(people.map((p) => p.team).filter(Boolean))],
+      jobs: [...new Set(people.map((p) => p.job).filter(Boolean))],
+      people,
+    };
+  } catch {
+    return { teams: [], jobs: [], people: [] };
+  }
 }
 
 // silence unused helper in TS builds

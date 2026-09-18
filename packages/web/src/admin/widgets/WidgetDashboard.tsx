@@ -17,6 +17,7 @@ import type {
 import { chartHeightForRow, donutSizeForRow } from './drill';
 import { resizeOutwardDx } from './layoutStorage';
 import { useWidgetLayout } from './useWidgetLayout';
+import { DashboardDrillProvider, DashboardDrillResetButton } from './DashboardDrillContext';
 import { tr } from '../../i18n';
 
 type Props = {
@@ -269,6 +270,7 @@ export function WidgetDashboard({
   }, [endDrag]);
 
   return (
+    <DashboardDrillProvider>
     <section className="wdg-board" aria-label={title}>
       <div className="wdg-toolbar">
         <div className="wdg-toolbar-start">
@@ -281,6 +283,7 @@ export function WidgetDashboard({
         </div>
         <div className="wdg-toolbar-end">
           {toolbarExtra}
+          <DashboardDrillResetButton />
           <span className="wdg-persist" data-status={persistStatus} title={tr('همگام با حساب ادمین')}>
             {persistStatus === 'saving'
               ? tr('در حال ذخیره…')
@@ -354,5 +357,6 @@ export function WidgetDashboard({
         <p className="admin-muted wdg-empty">{tr('ویجتی نیست — از «افزودن ویجت» یک نمودار انتخاب کنید.')}</p>
       ) : null}
     </section>
+    </DashboardDrillProvider>
   );
 }

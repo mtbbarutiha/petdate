@@ -233,7 +233,7 @@ export function AdminCrmDashboardPage() {
         <div className="crm-kpi-layout">
           <GaugeSemi pct={data.overallAchievement} standing={data.overallStanding} />
           <div className="crm-kpi-rings">
-            {data.kpis.map((k) => (
+            {(data.kpis || []).map((k) => (
               <KpiRing key={k.key} kpi={k} />
             ))}
           </div>
@@ -252,9 +252,9 @@ export function AdminCrmDashboardPage() {
             </div>
           </div>
         </div>
-        {data.weakPoints.length ? (
+        {(data.weakPoints || []).length ? (
           <div className="crm-weak-points">
-            <strong>{tr('نقاط ضعف:')}</strong> {data.weakPoints.join(' · ')}
+            <strong>{tr('نقاط ضعف:')}</strong> {(data.weakPoints || []).join(' · ')}
           </div>
         ) : (
           <div className="crm-weak-points crm-weak-points--ok">{tr('همه شاخص‌ها در مسیر مطلوب هستند.')}</div>
@@ -262,9 +262,9 @@ export function AdminCrmDashboardPage() {
       </section>
 
       <AdminChartGrid cols={3}>
-        <AdminChartCard title={tr("توزیع کانال‌ها")} empty={!data.channelDistribution.length} height={220}>
+        <AdminChartCard title={tr("توزیع کانال‌ها")} empty={!(data.channelDistribution || []).length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data.channelDistribution} margin={adminChartPlotMargin}>
+            <BarChart data={data.channelDistribution || []} margin={adminChartPlotMargin}>
               <MotionBarGradientDefs id="crmChanBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
               <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
               <YAxis {...adminChartYAxisProps} width={28} />
@@ -274,9 +274,9 @@ export function AdminCrmDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title={tr("حجم تعامل ۷ روز اخیر")} empty={!data.dailyInteractions.length} height={220}>
+        <AdminChartCard title={tr("حجم تعامل ۷ روز اخیر")} empty={!(data.dailyInteractions || []).length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={data.dailyInteractions} margin={adminChartPlotMargin}>
+            <AreaChart data={data.dailyInteractions || []} margin={adminChartPlotMargin}>
               <MotionAreaGradientDefs id="crmArea" color={MOTION_PALETTE.mint} mid={MOTION_PALETTE.blue} />
               <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
               <YAxis {...adminChartYAxisProps} width={28} />
@@ -370,7 +370,7 @@ export function AdminCrmDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.myTickets.map((t) => (
+                {(data.myTickets || []).map((t) => (
                   <tr key={t.id} style={{ borderRight: `3px solid ${t.borderColor || 'var(--admin-border)'}` }}>
                     <td className="admin-muted">
                       <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{t.publicId}</Link>
@@ -387,7 +387,7 @@ export function AdminCrmDashboardPage() {
                     </td>
                   </tr>
                 ))}
-                {!data.myTickets.length ? <tr><td colSpan={7}>{tr('تیکت بازی نیست')}</td></tr> : null}
+                {!(data.myTickets || []).length ? <tr><td colSpan={7}>{tr('تیکت بازی نیست')}</td></tr> : null}
               </tbody>
             </table>
           </div>
@@ -396,9 +396,9 @@ export function AdminCrmDashboardPage() {
         <div className="crm-bottom-side">
           <section className="admin-card">
             <div className="admin-card-head"><h2>{tr('پیگیری‌های نزدیک')}</h2></div>
-            {data.upcomingFollowups.length ? (
+            {(data.upcomingFollowups || []).length ? (
               <ul className="crm-fu-list">
-                {data.upcomingFollowups.map((f) => {
+                {(data.upcomingFollowups || []).map((f) => {
                   const overdue = new Date(f.dueAt).getTime() < Date.now();
                   return (
                     <li key={f.id}>
@@ -423,9 +423,9 @@ export function AdminCrmDashboardPage() {
 
           <section className="admin-card">
             <div className="admin-card-head"><h2>{tr('وظایف داخلی')}</h2></div>
-            {data.myTasks.length ? (
+            {(data.myTasks || []).length ? (
               <ul className="crm-fu-list">
-                {data.myTasks.map((t) => (
+                {(data.myTasks || []).map((t) => (
                   <li key={t.id}>
                     <div>
                       <strong>{tr(t.title)}</strong>

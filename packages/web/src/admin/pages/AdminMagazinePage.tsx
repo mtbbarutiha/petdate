@@ -18,6 +18,10 @@ type Article = {
   featured: boolean;
   publishAt: string | null;
   updatedAt: string;
+  primaryKeyword?: string;
+  secondaryKeyword?: string;
+  internalLinks?: number;
+  externalLinks?: number;
 };
 
 const STATUS_LABEL: Record<Article['status'], string> = {
@@ -160,6 +164,8 @@ export function AdminMagazinePage() {
               <th>{tr('کاور')}</th>
               <th>{tr('عنوان')}</th>
               <th>{tr('وضعیت')}</th>
+              <th>{tr('کلیدواژه')}</th>
+              <th>{tr('لینک')}</th>
               <th>{tr('دسته')}</th>
               <th>{tr('انتشار')}</th>
               <th>{tr('ویژه')}</th>
@@ -169,7 +175,7 @@ export function AdminMagazinePage() {
           <tbody>
             {articles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="admin-muted">
+                <td colSpan={9} className="admin-muted">
                   {tr('مطلبی نیست — اولین مقاله را بسازید.')}
                 </td>
               </tr>
@@ -200,6 +206,11 @@ export function AdminMagazinePage() {
                         {tr(STATUS_LABEL[a.status])}
                       </span>
                     </td>
+                    <td>
+                      <div>{a.primaryKeyword || '—'}</div>
+                      <div className="admin-muted">{a.secondaryKeyword || ''}</div>
+                    </td>
+                    <td>{tr('داخلی')} {a.internalLinks ?? 0} · {tr('خارجی')} {a.externalLinks ?? 0}</td>
                     <td>{a.category || '—'}</td>
                     <td className="admin-cell-nowrap">{formatAdminFaDate(a.publishAt)}</td>
                     <td>{a.featured ? '★' : '—'}</td>

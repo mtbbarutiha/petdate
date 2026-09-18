@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { orderPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import { orderPublicIdOf, userPublicIdOf, SHOP_ORDER_STATUSES, SHOP_ORDER_STATUS_FA } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
@@ -40,16 +40,38 @@ type Order = {
   createdAt: string;
   userAvatarUrl?: string;
   userName?: string;
+  username?: string;
+  shippingCarrier?: string;
+  trackingCode?: string;
+  paymentActor?: string;
+  paidFinal?: boolean | number;
+  paymentStatus?: string;
 };
 
-const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
-const STATUS_FA: Record<string, string> = {
-  pending: 'در انتظار',
-  paid: 'پرداخت‌شده',
-  shipped: 'ارسال‌شده',
-  completed: 'تکمیل',
-  cancelled: 'لغو',
-};
+const STATUSES = [...SHOP_ORDER_STATUSES];
+const STATUS_FA: Record<string, string> = SHOP_ORDER_STATUS_FA;
+
+function ShippingEditor({ order, onSaved }: { order: Order; onSaved: () => void }) {
+  const [carrier, setCarrier] = useState(order.shippingCarrier || '');
+  const [tracking, setTracking] = useState(order.trackingCode || '');
+  const [actor, setActor] = useState(order.paymentActor || '');
+  const [paid, setPaid] = useState(Boolean(order.paidFinal));
+  return (
+    <form className="admin-toolbar" onSubmit={(e) => {
+      e.preventDefault();
+      void adminFetch(`/api/admin/shop/orders/${order.id}/shipping`, {
+        method: 'PATCH',
+        body: JSON.stringify({ shippingCarrier: carrier, trackingCode: tracking, paymentActor: actor, paidFinal: paid }),
+      }).then(onSaved);
+    }}>
+      <input className="admin-input" placeholder={tr('حامل')} value={carrier} onChange={(e) => setCarrier(e.target.value)} />
+      <input className="admin-input" placeholder={tr('کد رهگیری')} value={tracking} onChange={(e) => setTracking(e.target.value)} />
+      <input className="admin-input" placeholder={tr('بازیگر درگاه')} value={actor} onChange={(e) => setActor(e.target.value)} />
+      <label className="admin-check"><input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} /> {tr('پرداخت نهایی')}</label>
+      <button type="submit" className="admin-btn">{tr('ذخیره ارسال')}</button>
+    </form>
+  );
+}
 
 function payLabel(o: Order): string {
   const cur = o.paymentCurrency || 'toman';
@@ -143,6 +165,10 @@ export function AdminShopOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
+  const [username, setUsername] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [product, setProduct] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [showRawJson] = useState(adminWantsRawJson);
@@ -152,13 +178,17 @@ export function AdminShopOrdersPage() {
       const qs = new URLSearchParams();
       if (status) qs.set('status', status);
       if (q.trim()) qs.set('q', q.trim());
+      if (username.trim()) qs.set('username', username.trim());
+      if (mobile.trim()) qs.set('mobile', mobile.trim());
+      if (product.trim()) qs.set('product', product.trim());
+      if (paymentStatus) qs.set('paymentStatus', paymentStatus);
       const data = await adminFetch<{ orders: Order[] }>(`/api/admin/shop/orders?${qs}`);
       setOrders(data.orders);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     }
-  }, [status, q]);
+  }, [status, q, username, mobile, product, paymentStatus]);
 
   useEffect(() => {
     void load();
@@ -204,6 +234,14 @@ export function AdminShopOrdersPage() {
         <button type="button" className="admin-btn" onClick={() => void load()}>
           {tr('جستجو')}
         </button>
+        <input className="admin-input" placeholder={tr('نام کاربری')} value={username} onChange={(e) => setUsername(e.target.value)} />
+        <input className="admin-input" placeholder={tr('موبایل')} value={mobile} onChange={(e) => setMobile(e.target.value)} />
+        <input className="admin-input" placeholder={tr('محصول')} value={product} onChange={(e) => setProduct(e.target.value)} />
+        <select className="admin-select" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
+          <option value="">{tr('وضعیت پرداخت')}</option>
+          <option value="paid">{tr('پرداخت شده')}</option>
+          <option value="unpaid">{tr('پرداخت نشده')}</option>
+        </select>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card">
@@ -296,6 +334,12 @@ export function AdminShopOrdersPage() {
                                 ) : null}
                               </p>
                             )}
+                          </section>
+                          <section className="admin-order-detail__block">
+                            <h3 className="admin-order-detail__label">{tr('ارسال و پرداخت')}</h3>
+                            <p>{tr('حامل:')} {o.shippingCarrier || '—'} · {tr('رهگیری:')} {o.trackingCode || '—'}</p>
+                            <p>{tr('بازیگر درگاه:')} {o.paymentActor || '—'} · {tr('پرداخت نهایی:')} {o.paidFinal ? tr('بله') : tr('خیر')} · {o.paymentStatus || '—'}</p>
+                            <ShippingEditor order={o} onSaved={() => void load()} />
                           </section>
                           <section className="admin-order-detail__block">
                             <h3 className="admin-order-detail__label">{tr('آیتم‌ها')}</h3>

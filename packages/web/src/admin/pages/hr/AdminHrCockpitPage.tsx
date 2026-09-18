@@ -10,7 +10,7 @@ export function AdminHrCockpitPage() {
   const load = useCallback(async () => {
     try {
       const res = await adminFetch<{ tasks: CockpitTask[] }>('/api/admin/hr/cockpit');
-      setTasks(res.tasks); setError(null);
+      setTasks(Array.isArray(res.tasks) ? res.tasks : []); setError(null);
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, []);
   useEffect(() => { void load(); }, [load]);

@@ -59,7 +59,7 @@ export function TimeLineWidget({
           onPointClick={(p) => {
             drill.drillInto(p.label);
           }}
-          interactive={drill.canDown}
+          interactive={drill.canInto}
         />
       ) : (
         <ChartEmpty />
@@ -99,7 +99,7 @@ export function TimeBarWidget({
           onSliceClick={(p) => {
             drill.drillInto(p.label);
           }}
-          interactive={drill.canDown}
+          interactive={drill.canInto}
         />
       ) : (
         <ChartEmpty />
@@ -153,7 +153,7 @@ export function TimeMultiLineWidget({
           onPointClick={(label) => {
             drill.drillInto(label);
           }}
-          interactive={drill.canDown}
+          interactive={drill.canInto}
         />
       ) : (
         <ChartEmpty />

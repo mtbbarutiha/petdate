@@ -5854,8 +5854,8 @@ body:has(.admin-app) {
   min-height: 0;
 }
 .admin-app .wdg-cal-day {
-  aspect-ratio: 1;
-  min-height: 0;
+  aspect-ratio: auto;
+  min-height: 52px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: color-mix(in srgb, var(--admin-promo-mint) 35%, #fff);
@@ -5873,6 +5873,22 @@ body:has(.admin-app) {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--admin-mint) 45%, var(--admin-border));
 }
+.admin-app .wdg-cal-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+.admin-app .wdg-cal-code {
+  font-size: 9px;
+  line-height: 1.1;
+  color: var(--admin-text);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+.admin-app .wdg-cal-code--or { color: var(--admin-mint, #15cca0); }
+.admin-app .wdg-cal-code--re { color: #7c6bb5; }
+.admin-app .wdg-cal-code--em { color: #3b82f6; }
 .admin-app .wdg-cal-day.is-out {
   background: var(--admin-chip-well);
   opacity: 0.55;

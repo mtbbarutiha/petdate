@@ -145,6 +145,12 @@ export function verifyPhoneOtp(
   const updated = dbService.markPhoneVerified(userId, phone);
   dbService.deletePhoneOtpsForUser(userId);
   if (!updated) return { ok: false, reason: 'user_missing' };
+  try {
+    const sales = require('../sales-service') as typeof import('../sales-service');
+    sales.convertLeadsByPhone(phone, 'ثبت‌نام');
+  } catch {
+    /* sales schema optional during early boot */
+  }
   return { ok: true, user: updated };
 }
 

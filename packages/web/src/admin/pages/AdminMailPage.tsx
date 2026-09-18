@@ -387,7 +387,7 @@ export function AdminMailPage() {
                 <button
                   type="button"
                   className="admin-btn admin-btn--primary"
-                  disabled={replyBusy || !replyBody.trim() || !smtp?.configured}
+                  disabled={replyBusy || !replyBody.trim()}
                   onClick={() => void sendReply()}
                 >
                   <Send size={16} /> {replyBusy ? tr('در حال ارسال…') : tr('ارسال پاسخ')}
@@ -396,6 +396,9 @@ export function AdminMailPage() {
                   <p className={replyOk ? 'admin-muted' : 'admin-error'} style={{ marginTop: 12 }}>
                     {replyMsg}
                   </p>
+                ) : null}
+                {!smtp?.configured ? (
+                  <p className="admin-muted">{tr('SMTP خاموش است — پاسخ در صف ارسال ذخیره می‌شود و با دکمه ارسال صف، وقتی SMTP باشد واقعاً می‌رود.')}</p>
                 ) : null}
               </>
             ) : (
@@ -532,6 +535,7 @@ export function AdminMailPage() {
           ) : null}
         </section>
 
+        <MailOutboxPanel />
         <section className="admin-card">
           <div className="admin-card-head"><h2>{tr('ارسال تست سریع')}</h2></div>
           <div className="form-group">
@@ -630,5 +634,46 @@ export function AdminMailPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function MailOutboxPanel() {
+  const [rows, setRows] = useState<Array<{ id: number; to: string; subject: string; status: string; error?: string }>>([]);
+  const [msg, setMsg] = useState<string | null>(null);
+  const load = () => {
+    void adminFetch<{ messages: Array<{ id: number; to: string; subject: string; status: string; error?: string }> }>('/api/admin/ops/mail/outbox')
+      .then((d) => setRows(d.messages || []))
+      .catch(() => setRows([]));
+  };
+  useEffect(() => { load(); }, []);
+  return (
+    <section className="admin-card" style={{ marginTop: 12 }}>
+      <div className="admin-card-head"><h2>{tr('صف ارسال')}</h2></div>
+      <p className="admin-muted">{tr('اگر SMTP تنظیم باشد، ارسال واقعی انجام می‌شود؛ وگرنه پیام در صف می‌ماند.')}</p>
+      {msg ? <p className="admin-muted">{msg}</p> : null}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead><tr><th>{tr('گیرنده')}</th><th>{tr('موضوع')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id}>
+                <td dir="ltr">{r.to}</td>
+                <td>{r.subject}</td>
+                <td>{r.status}{r.error ? ` · ${r.error}` : ''}</td>
+                <td>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => {
+                    void adminFetch(`/api/admin/ops/mail/outbox/${r.id}/send`, { method: 'POST', body: '{}' })
+                      .then((d) => setMsg(JSON.stringify(d)))
+                      .then(load)
+                      .catch((e) => setMsg(e instanceof Error ? e.message : 'خطا'));
+                  }}>{tr('ارسال')}</button>
+                </td>
+              </tr>
+            ))}
+            {!rows.length ? <tr><td colSpan={4}>{tr('صف خالی است')}</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

@@ -26,6 +26,8 @@ type FormState = {
   featured: boolean;
   metaTitle: string;
   metaDescription: string;
+  primaryKeyword: string;
+  secondaryKeyword: string;
 };
 
 const empty: FormState = {
@@ -41,6 +43,8 @@ const empty: FormState = {
   featured: false,
   metaTitle: '',
   metaDescription: '',
+  primaryKeyword: '',
+  secondaryKeyword: '',
 };
 
 function slugifyClient(title: string): string {
@@ -98,6 +102,8 @@ export function AdminMagazineFormPage() {
         featured: Boolean(a.featured),
         metaTitle: a.metaTitle || '',
         metaDescription: a.metaDescription || '',
+        primaryKeyword: (a as { primaryKeyword?: string }).primaryKeyword || '',
+        secondaryKeyword: (a as { secondaryKeyword?: string }).secondaryKeyword || '',
       });
       setSlugTouched(true);
       setPublishJalali(
@@ -140,6 +146,8 @@ export function AdminMagazineFormPage() {
         publishAt: publishAtIso(),
         metaTitle: form.metaTitle,
         metaDescription: form.metaDescription,
+        primaryKeyword: form.primaryKeyword,
+        secondaryKeyword: form.secondaryKeyword,
       };
       if (!payload.title) throw new Error('عنوان الزامی است');
 
@@ -379,6 +387,14 @@ export function AdminMagazineFormPage() {
             onChange={(e) => set({ metaDescription: e.target.value })}
             placeholder={tr("خالی = خلاصه")}
           />
+        </label>
+        <label>
+          <span className="form-label">{tr('کلیدواژه اصلی')}</span>
+          <input className="form-input" value={form.primaryKeyword} onChange={(e) => set({ primaryKeyword: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">{tr('کلیدواژه فرعی')}</span>
+          <input className="form-input" value={form.secondaryKeyword} onChange={(e) => set({ secondaryKeyword: e.target.value })} />
         </label>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

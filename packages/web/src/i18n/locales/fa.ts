@@ -746,6 +746,8 @@ export const fa: Dict = {
     analytics: 'آنالیتیکس',
     tagManager: 'تگ منیجر',
     monitoring: 'مانیتورینگ',
+    security: 'امنیت',
+    reportsHub: 'گزارش‌ها',
     errorLogs: 'لاگ خطاها',
     platformSettings: 'تنظیمات پلتفرم',
     loginSubtitle: 'ورود اپراتور Pet Date — ربات، فروشگاه، وب و منابع انسانی',

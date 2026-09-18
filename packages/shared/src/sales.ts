@@ -58,6 +58,7 @@ export type SalesStage = number | 'lost';
 
 export interface SalesProduct {
   id: number; name: string; price: number; active: boolean; createdAt: string;
+  campaign?: string; discountCode?: string; createdBy?: string;
 }
 export interface SalesItem {
   id: number; publicId: string; kind: SalesItemKind; first: string; last: string;
@@ -68,16 +69,18 @@ export interface SalesItem {
   stage: SalesStage; value: number;
   discount: number; createdAt: string; lastActivity: string; nextFollowup: string | null;
   lostReason: string | null; customerId: number | null; payStatus: string; payType: string | null;
+  failureOutcome?: string | null;
 }
 export interface SalesActivity { id: number; itemId: number; at: string; text: string; kind: string; }
 export interface SalesCall {
   id: number; refKind: SalesItemKind; refId: number; agentId: string; agentName: string | null;
   dir: 'call_out' | 'call_in'; startedAt: string; talk: number; result: string; summary: string;
-  qaStatus: string; qaScore: number | null;
+  qaStatus: string; qaScore: number | null; customerScore?: number | null;
 }
 export interface SalesFollowup {
   id: number; refKind: SalesItemKind | null; refId: number | null; ownerId: string;
   type: string; at: string; priority: string; desc: string; status: 'باز' | 'انجام‌شده';
+  note?: string; parentId?: number | null;
 }
 export interface SalesOffer {
   id: number; refKind: SalesItemKind; refId: number; product: string; price: number;
@@ -90,13 +93,14 @@ export interface SalesPayment {
 export interface SalesTicket {
   id: number; publicId: string; refKind: SalesItemKind | null; refId: number | null;
   customerId: number | null; paymentId: number | null; title: string; dept: string; cat: string;
-  priority: string; status: string; createdAt: string; slaDue: string; desc: string; agentId: string;
+  priority: string; status: string; createdAt: string; slaDue: string;   desc: string; agentId: string; reason?: string;
 }
 export interface SalesCustomer {
   id: number; publicId: string; first: string; last: string; mobile: string; email: string | null;
   level: string; salesOwner: string; createdAt: string; csat: number | null; sourceLeadId: number | null;
   orderSum?: number; orderCount?: number; lastOrderAt?: string | null; daysSinceLastPurchase?: number | null;
   openTickets?: number; openFollowups?: number;
+  conversionPath?: string | null;
 }
 export interface SalesOrder { id: number; customerId: number; product: string; amount: number; at: string; }
 export interface SalesSurvey { id: number; customerId: number; score: number; comment: string; channel: string; at: string; }
