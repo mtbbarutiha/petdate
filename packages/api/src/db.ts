@@ -102,6 +102,8 @@ import {
   walletLedgerLabelFa,
   parseUserGenderValue,
   profileAvatarUrl,
+  publicFacingAvatarUrl,
+  isGenderDefaultAvatarPath,
   resolveProfileDisplayAvatarUrl,
   isNonImageAvatarRef,
   isStoredCustomProfilePhoto,
@@ -8912,7 +8914,9 @@ export const dbService = {
       .prepare(
         `SELECT c.id, c.user_id, c.contact_user_id, c.created_at,
                 u.name AS contact_name, u.username AS contact_username,
-                u.avatar_url AS contact_avatar_url, u.gender AS contact_gender,
+                u.avatar_url AS contact_avatar_url,
+                u.avatar_moderation_status AS contact_avatar_moderation_status,
+                u.gender AS contact_gender,
                 u.public_id AS contact_public_id
          FROM user_contacts c
          LEFT JOIN users u ON u.id = c.contact_user_id
@@ -8927,6 +8931,7 @@ export const dbService = {
       contact_name: string | null;
       contact_username: string | null;
       contact_avatar_url: string | null;
+      contact_avatar_moderation_status: string | null;
       contact_gender: string | null;
       contact_public_id: string | null;
     }>;
@@ -8937,10 +8942,15 @@ export const dbService = {
       createdAt: row.created_at,
       contactName: row.contact_name || undefined,
       contactUsername: row.contact_username || undefined,
-      contactAvatarUrl: resolveProfileDisplayAvatarUrl(row.contact_avatar_url || undefined, {
-        gender: parseUserGenderValue(row.contact_gender),
-        publicFacing: true,
-      }),
+      contactAvatarUrl: (() => {
+        // Real still photo only. Gender stock faces are one shared picture, not this person.
+        const photo = publicFacingAvatarUrl(
+          row.contact_avatar_url || undefined,
+          parsePhotoModerationStatus(row.contact_avatar_moderation_status ?? 'approved')
+        );
+        if (!photo || isGenderDefaultAvatarPath(photo)) return undefined;
+        return publicImageUrlForStored(photo);
+      })(),
       contactGender: parseUserGenderValue(row.contact_gender),
       contactPublicId: userPublicIdOf({
         id: row.contact_user_id,

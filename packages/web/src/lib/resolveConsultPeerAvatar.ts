@@ -15,7 +15,11 @@ export function resolveConsultPeerAvatarUrl(
     if (fromApi && !isGenderDefaultAvatarPath(fromApi)) return fromApi;
     const team = getTeamAgentByName(c.vetName);
     if (team?.avatarUrl) return team.avatarUrl;
-    return fromApi || resolveProfileDisplayAvatarUrl(undefined, { gender: c.vetGender });
+    return undefined;
   }
-  return resolveProfileDisplayAvatarUrl(c.patientAvatarUrl, { gender: c.patientGender });
+  const patient = resolveProfileDisplayAvatarUrl(c.patientAvatarUrl, {
+    gender: c.patientGender,
+  });
+  if (patient && !isGenderDefaultAvatarPath(patient)) return patient;
+  return undefined;
 }

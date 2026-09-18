@@ -1,5 +1,6 @@
 import {
   PLAYDATE_STATUS_LABELS,
+  isGenderDefaultAvatarPath,
   shouldNotifyRequesterOnReject,
   type PetProfile,
   type PlaydateRequest,
@@ -45,7 +46,8 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
     ownerId: pet?.ownerId ?? 0,
     ownerAvatarUrl: (() => {
       const raw = String(pet?.ownerAvatarUrl ?? '').trim();
-      if (!raw) return undefined;
+      // Gender JPG is one shared face, not this owner's photo.
+      if (!raw || isGenderDefaultAvatarPath(raw)) return undefined;
       return resolvePublicMediaUrl(raw) || raw;
     })(),
     ownerGender:

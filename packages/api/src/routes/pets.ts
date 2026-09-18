@@ -17,10 +17,16 @@ import {
   looksLikeTelegramFileId,
   materializePetTelegramPhoto,
   petPhotoStorageKeyFromUrl,
+  publicImageUrlForStored,
   readLocalPetPhoto,
 } from '../services/telegram-media';
 import { getUserFromBearer } from '../services/web-otp';
-import { isPhotoApproved, sanitizePetPhotosForViewer, type PetProfile } from '@petdate/shared';
+import {
+  isGenderDefaultAvatarPath,
+  isPhotoApproved,
+  sanitizePetPhotosForViewer,
+  type PetProfile,
+} from '@petdate/shared';
 
 export const petsRouter = Router();
 
@@ -69,8 +75,20 @@ function sendPhotoPlaceholder(res: {
 }
 
 /**
+ * Browser-loadable owner still photo for discovery rows.
+ * Shared gender stock faces (`/images/defaults/avatar-*.jpg`) are not a photo —
+ * callers fall back to initials. Telegram file_ids become `/api/media/telegram/…`.
+ */
+export function publicOwnerAvatarUrl(url?: string | null): string | undefined {
+  const raw = String(url ?? '').trim();
+  if (!raw || isGenderDefaultAvatarPath(raw)) return undefined;
+  return publicImageUrlForStored(raw);
+}
+
+/**
  * Public discovery card — playmate matching needs species/city/ownerId de-dupe.
- * Never include medical `health`, neighborhood, owner avatar, or last-seen.
+ * Never include medical `health`, neighborhood, or last-seen.
+ * Owner face is the approved still photo only (search rows on every filter).
  */
 export function toPublicPetCard(pet: PetProfile): PetProfile {
   return {
@@ -96,6 +114,7 @@ export function toPublicPetCard(pet: PetProfile): PetProfile {
     ownerProvince: pet.ownerProvince,
     ownerCity: pet.ownerCity,
     ownerName: pet.ownerName,
+    ownerAvatarUrl: publicOwnerAvatarUrl(pet.ownerAvatarUrl),
     ownerVerified: pet.ownerVerified,
     distanceKm: pet.distanceKm,
     createdAt: pet.createdAt,

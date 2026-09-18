@@ -59,6 +59,45 @@ function formatCoins(n: number): string {
   return toPersianDigits(String(n));
 }
 
+type NearbyGeo = 'ask' | 'blocked';
+
+function isGeoPermissionDenied(err: unknown): boolean {
+  return (
+    typeof GeolocationPositionError !== 'undefined' &&
+    err instanceof GeolocationPositionError &&
+    err.code === GeolocationPositionError.PERMISSION_DENIED
+  );
+}
+
+/** Browser prompt. Must be started in the same turn as the click (no await before this). */
+function requestCurrentPosition(): Promise<GeolocationCoordinates> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      reject(new Error('geo-unsupported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve(pos.coords),
+      (err) => reject(err),
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 60_000 }
+    );
+  });
+}
+
+async function geolocationPermissionState(): Promise<'granted' | 'prompt' | 'denied' | 'unknown'> {
+  try {
+    const permissions = navigator.permissions;
+    if (!permissions?.query) return 'unknown';
+    const status = await permissions.query({ name: 'geolocation' as PermissionName });
+    if (status.state === 'granted' || status.state === 'prompt' || status.state === 'denied') {
+      return status.state;
+    }
+  } catch {
+    /* Permissions API missing (older Safari) or insecure context */
+  }
+  return 'unknown';
+}
+
 /**
  * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان / لیست مخاطبین.
  * No-pet audience: مالکین نزدیک من / مالکین نژاد / هم استان → مشورت بگیر.
@@ -90,6 +129,8 @@ export function PetDiscoveryPanel({
   const [fromPetId, setFromPetId] = useState<number | null>(null);
   const [breedPickerOpen, setBreedPickerOpen] = useState(false);
   const [breedSpecies, setBreedSpecies] = useState<PetSpeciesCode | null>(null);
+  /** Near-me permission UI. Null while requesting or after a successful fix. Never a red error first. */
+  const [nearbyGeo, setNearbyGeo] = useState<NearbyGeo | null>(null);
 
   const myUserId = user?.id;
   const province = user?.province?.trim() || '';
@@ -112,6 +153,7 @@ export function PetDiscoveryPanel({
       setContacts([]);
       setStatus(null);
       setErrorKind(false);
+      setNearbyGeo(null);
       try {
         const rows = await listPets({
           breeds: [breedName],
@@ -156,6 +198,7 @@ export function PetDiscoveryPanel({
       setContacts([]);
       setStatus(null);
       setErrorKind(false);
+      setNearbyGeo(null);
       try {
         if (next === 'contacts') {
           const rows = await listUserContacts(myUserId);
@@ -178,31 +221,46 @@ export function PetDiscoveryPanel({
         }
 
         if (next === 'nearby') {
-          const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
-            if (!navigator.geolocation) {
-              reject(new Error(t('chats.discoveryGeoUnsupported')));
+          if (typeof navigator === 'undefined' || !navigator.geolocation) {
+            setErrorKind(true);
+            setStatus(t('chats.discoveryGeoUnsupported'));
+            return;
+          }
+          // Start the browser prompt in this click turn. Awaiting Permissions
+          // API first drops the user gesture on Safari/mobile and the prompt never shows.
+          const positionPromise = requestCurrentPosition();
+          const perm = await geolocationPermissionState();
+          try {
+            const coords = await positionPromise;
+            setNearbyGeo(null);
+            const rows = await listNearbyPets({
+              lat: coords.latitude,
+              lng: coords.longitude,
+              radiusKm: 25,
+              excludeOwnerId: myUserId,
+              limit: 24,
+            });
+            setResults(rows);
+            const n = peopleFromDiscoveryPets(rows).length;
+            setStatus(
+              n
+                ? t('chats.discoveryNearbyCount', { n })
+                : t('chats.discoveryNearbyEmpty')
+            );
+          } catch (err) {
+            if (err instanceof Error && err.message === 'geo-unsupported') {
+              setErrorKind(true);
+              setStatus(t('chats.discoveryGeoUnsupported'));
               return;
             }
-            navigator.geolocation.getCurrentPosition(
-              (pos) => resolve(pos.coords),
-              (err) => reject(err),
-              { enableHighAccuracy: false, timeout: 12000, maximumAge: 60_000 }
-            );
-          });
-          const rows = await listNearbyPets({
-            lat: coords.latitude,
-            lng: coords.longitude,
-            radiusKm: 25,
-            excludeOwnerId: myUserId,
-            limit: 24,
-          });
-          setResults(rows);
-          const n = peopleFromDiscoveryPets(rows).length;
-          setStatus(
-            n
-              ? t('chats.discoveryNearbyCount', { n })
-              : t('chats.discoveryNearbyEmpty')
-          );
+            // Denied, dismissed, or timeout: neutral ask — never the red denial line.
+            // `prompt` / `unknown` already called getCurrentPosition above.
+            // Permanent deny cannot re-prompt until settings change; the button retries.
+            const denied = isGeoPermissionDenied(err) || perm === 'denied';
+            setNearbyGeo(denied ? 'blocked' : 'ask');
+            setErrorKind(false);
+            setStatus(null);
+          }
           return;
         }
 
@@ -257,12 +315,7 @@ export function PetDiscoveryPanel({
             : t('chats.discoveryBreedEmpty')
         );
       } catch (err) {
-        const msg =
-          err instanceof GeolocationPositionError
-            ? t('chats.discoveryGeoDenied')
-            : err instanceof Error
-              ? err.message
-              : t('chats.discoveryFail');
+        const msg = err instanceof Error ? err.message : t('chats.discoveryFail');
         setErrorKind(true);
         setStatus(msg);
         toastError(msg);
@@ -278,6 +331,7 @@ export function PetDiscoveryPanel({
     setMode(null);
     setStatus(null);
     setErrorKind(false);
+    setNearbyGeo(null);
     setSentOwnerIds(new Set());
   }, [myUserId]);
 
@@ -461,6 +515,23 @@ export function PetDiscoveryPanel({
           {status}
         </p>
       ) : null}
+      {nearbyGeo && mode === 'nearby' && !busy ? (
+        <div className="pepito-pet-discovery-geo" data-testid="pet-discovery-geo-ask">
+          <p className="pepito-pet-discovery-status" data-testid="pet-discovery-geo-note">
+            {nearbyGeo === 'blocked'
+              ? t('chats.discoveryGeoBlocked')
+              : t('chats.discoveryGeoAsk')}
+          </p>
+          <button
+            type="button"
+            className="pepito-btn button-1 pepito-pet-discovery-request"
+            data-testid="pet-discovery-geo-allow"
+            onClick={() => void runMode('nearby')}
+          >
+            {t('chats.discoveryGeoAllow')}
+          </button>
+        </div>
+      ) : null}
       {busy ? (
         <p className="pepito-muted" data-testid="pet-discovery-loading">
           {t('common.loading')}
@@ -550,7 +621,6 @@ export function PetDiscoveryPanel({
                   <InboxPeerAvatar
                     avatarUrl={row.contactAvatarUrl}
                     name={name}
-                    gender={row.contactGender}
                     size={44}
                   />
                   <div className="pepito-pet-discovery-copy">
