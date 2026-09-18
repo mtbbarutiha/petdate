@@ -1648,6 +1648,12 @@ function migrateSchema() {
   if (!shopOrderCols.includes('invoice_pdf_token')) {
     db.exec('ALTER TABLE shop_orders ADD COLUMN invoice_pdf_token TEXT');
   }
+  if (!shopOrderCols.includes('refunded_at')) {
+    db.exec('ALTER TABLE shop_orders ADD COLUMN refunded_at TEXT');
+  }
+  if (!shopOrderCols.includes('refund_json')) {
+    db.exec('ALTER TABLE shop_orders ADD COLUMN refund_json TEXT');
+  }
 
   const coinSellCols = (
     db.prepare(`PRAGMA table_info(coin_sell_requests)`).all() as Array<{ name: string }>
@@ -5414,19 +5420,37 @@ export const dbService = {
 
   getGamePlayers(gameId: number): GamePlayer[] {
     if (!Number.isFinite(gameId) || gameId <= 0) return [];
-    const rows = db
-      .prepare(
-        `SELECT gp.*, u.name as user_name FROM game_players gp
-         JOIN users u ON u.id = gp.user_id
-         WHERE gp.game_id = ?
-         ORDER BY gp.joined_at`
-      )
-      .all(gameId) as Record<string, unknown>[];
+    const rich = `SELECT gp.*, u.name as user_name, u.username as user_username, u.phone as user_phone,
+         (SELECT p.name FROM pets p WHERE p.owner_id = gp.user_id ORDER BY p.id ASC LIMIT 1) as pet_name,
+         (SELECT p.species FROM pets p WHERE p.owner_id = gp.user_id ORDER BY p.id ASC LIMIT 1) as pet_species,
+         (SELECT t.ticket_code FROM event_tickets t
+           WHERE t.game_id = gp.game_id AND t.user_id = gp.user_id
+           ORDER BY t.id DESC LIMIT 1) as ticket_code
+       FROM game_players gp
+       JOIN users u ON u.id = gp.user_id
+       WHERE gp.game_id = ?
+       ORDER BY gp.joined_at`;
+    const basic = `SELECT gp.*, u.name as user_name, u.username as user_username, u.phone as user_phone
+       FROM game_players gp
+       JOIN users u ON u.id = gp.user_id
+       WHERE gp.game_id = ?
+       ORDER BY gp.joined_at`;
+    let rows: Record<string, unknown>[];
+    try {
+      rows = db.prepare(rich).all(gameId) as Record<string, unknown>[];
+    } catch {
+      rows = db.prepare(basic).all(gameId) as Record<string, unknown>[];
+    }
     return rows.map((row) => ({
       id: row.id as number,
       gameId: row.game_id as number,
       userId: row.user_id as number,
-      userName: row.user_name as string,
+      userName: (row.user_name as string) || undefined,
+      username: row.user_username ? String(row.user_username) : undefined,
+      mobile: row.user_phone ? String(row.user_phone) : undefined,
+      petName: row.pet_name ? String(row.pet_name) : undefined,
+      petSpecies: row.pet_species ? String(row.pet_species) : undefined,
+      ticketCode: row.ticket_code ? String(row.ticket_code) : undefined,
       joinedAt: row.joined_at as string,
     }));
   },
@@ -5437,6 +5461,77 @@ export const dbService = {
     const existing = this.getGame(id);
     if (!existing) return null;
     db.prepare('UPDATE games SET status = ? WHERE id = ?').run(status, id);
+    return this.getGame(id);
+  },
+
+  /**
+   * Admin edit of an existing event. Does not charge the create fee again.
+   * Host must already exist when hostUserId is set.
+   */
+  updateGameAdmin(
+    id: number,
+    patch: {
+      title: string;
+      gameType: GameType;
+      hostUserId: number;
+      location: string;
+      province?: string;
+      city?: string;
+      scheduledAt: string;
+      maxPlayers: number;
+      description?: string;
+      services?: string;
+      joinFeeCoins: number;
+      photoUrl?: string;
+      photoStatus?: GamePhotoStatus;
+      status: GameStatus;
+    }
+  ): Game | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
+    const existing = this.getGame(id);
+    if (!existing) return null;
+    const host = this.getUserById(patch.hostUserId);
+    if (!host) return null;
+    const photoUrl = patch.photoUrl?.trim() || null;
+    const photoStatus = patch.photoStatus
+      ? patch.photoStatus
+      : photoUrl
+        ? existing.photoStatus || 'pending'
+        : 'approved';
+    db.prepare(
+      `UPDATE games SET
+         title = ?,
+         game_type = ?,
+         host_user_id = ?,
+         location = ?,
+         province = ?,
+         city = ?,
+         scheduled_at = ?,
+         max_players = ?,
+         description = ?,
+         services = ?,
+         join_fee_coins = ?,
+         photo_url = ?,
+         photo_status = ?,
+         status = ?
+       WHERE id = ?`
+    ).run(
+      patch.title,
+      patch.gameType,
+      patch.hostUserId,
+      patch.location,
+      patch.province ?? null,
+      patch.city ?? null,
+      patch.scheduledAt,
+      patch.maxPlayers,
+      patch.description ?? null,
+      patch.services ?? null,
+      patch.joinFeeCoins,
+      photoUrl,
+      photoStatus,
+      patch.status,
+      id
+    );
     return this.getGame(id);
   },
 

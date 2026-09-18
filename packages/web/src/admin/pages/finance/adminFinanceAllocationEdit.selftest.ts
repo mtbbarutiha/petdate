@@ -37,6 +37,8 @@ assert.match(page, /saveOfficeNow/, 'office row can save immediately');
 assert.match(page, /savePersonNow/, 'people row can save immediately');
 assert.match(page, /saveEquipmentNow/, 'equipment row can save immediately');
 assert.match(page, /appConfirm\(tr\('حذف این فضا؟'\)/, 'delete confirms before PATCH');
+assert.match(page, /حذف دفتر/, 'office delete button');
+assert.match(page, /allocation\/offices\/\$\{officeId\}/, 'office delete hits API');
 assert.match(page, /tr\('ذخیره'\)/, 'inline save label present');
 assert.match(page, /editMode \? \(/, 'fields stay read-only until edit mode is on');
 
@@ -47,6 +49,7 @@ assert.doesNotMatch(
 );
 
 assert.match(routes, /patch\('\/allocation\/offices\/:id'/, 'office PATCH route');
+assert.match(routes, /delete\('\/allocation\/offices\/:id'/, 'office DELETE route');
 assert.match(routes, /patch\('\/allocation\/people\/:id'/, 'people PATCH route');
 assert.match(routes, /patch\('\/allocation\/equipment\/:id'/, 'equipment PATCH route');
 assert.match(service, /export function updateFinanceOsOffice/, 'office update service');

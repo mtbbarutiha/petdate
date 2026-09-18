@@ -29,6 +29,8 @@ assert.match(
 );
 assert.match(page, /setOpenId\(open \? null : o\.id\)/, 'close / details toggle still wired');
 assert.match(page, /patch\(o\.id, e\.target\.value\)/, 'status dropdown still patches order');
+assert.match(page, /لغو و برگشت به کیف پول/, 'cancel and wallet refund action');
+assert.match(page, /shop\/orders\/\$\{id\}\/refund/, 'refund posts to API');
 assert.match(page, /admin-order-detail__item-title/, 'human-readable item title class');
 assert.match(page, /itemUnitPrice|itemLineTotal/, 'item prices rendered for humans');
 

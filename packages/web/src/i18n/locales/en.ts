@@ -743,6 +743,8 @@ export const en: Dict = {
     heroResetError: 'Failed to restore default',
     noticesContent: 'Notices / content',
     mailSmtp: 'Email / SMTP',
+    guide: 'Guide',
+    warehouse: 'Warehouse / purchasing',
     analytics: 'Analytics',
     tagManager: 'Tag manager',
     monitoring: 'Monitoring',

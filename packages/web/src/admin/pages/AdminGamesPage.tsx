@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   EVENT_CREATE_COST,
+  EVENT_GAME_TYPES,
   GAME_PHOTO_STATUS_LABELS,
   GAME_STATUS_LABELS,
   GAME_TYPE_LABELS,
   IRAN_PROVINCES,
   type Game,
+  type GamePhotoStatus,
   type GamePlayer,
   type GameStatus,
   type GameType,
@@ -18,6 +21,51 @@ const STATUS_OPTIONS: Array<GameStatus | ''> = ['', 'open', 'full', 'cancelled',
 
 type AdminGameDetail = Game & { players?: GamePlayer[] };
 
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso || '').slice(0, 16);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type EventDraft = {
+  title: string;
+  gameType: GameType;
+  hostName: string;
+  hostUserId: string;
+  location: string;
+  province: string;
+  city: string;
+  joinFeeCoins: string;
+  photoUrl: string;
+  photoStatus: GamePhotoStatus;
+  scheduledAt: string;
+  maxPlayers: string;
+  services: string;
+  description: string;
+  status: GameStatus;
+};
+
+function draftFromGame(g: Game): EventDraft {
+  return {
+    title: g.title || '',
+    gameType: g.gameType,
+    hostName: g.hostName || '',
+    hostUserId: g.hostUserId ? String(g.hostUserId) : '',
+    location: g.location || '',
+    province: g.province || '',
+    city: g.city || '',
+    joinFeeCoins: String(g.joinFeeCoins ?? 0),
+    photoUrl: g.photoUrl || '',
+    photoStatus: g.photoStatus || 'approved',
+    scheduledAt: toLocalInput(g.scheduledAt),
+    maxPlayers: String(g.maxPlayers || 1),
+    services: g.services || '',
+    description: g.description || '',
+    status: g.status,
+  };
+}
+
 export function AdminGamesPage() {
   const [items, setItems] = useState<Game[]>([]);
   const [pendingPhotos, setPendingPhotos] = useState<Game[]>([]);
@@ -27,6 +75,9 @@ export function AdminGamesPage() {
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminGameDetail | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<EventDraft | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -83,16 +134,54 @@ export function AdminGamesPage() {
     }
   };
 
-  const openDetail = async (id: number) => {
+  const openDetail = async (id: number, edit = false) => {
     setDetailBusy(true);
     try {
       const data = await adminFetch<AdminGameDetail>(`/api/admin/games/${id}`);
       setDetail(data);
+      setEditing(edit);
+      setDraft(edit ? draftFromGame(data) : null);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : tr('خطا'));
     } finally {
       setDetailBusy(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    if (!detail || !draft) return;
+    setSaveBusy(true);
+    try {
+      const saved = await adminFetch<AdminGameDetail>(`/api/admin/games/${detail.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: draft.title,
+          gameType: draft.gameType,
+          hostName: draft.hostName,
+          hostUserId: draft.hostUserId.trim() ? Number(draft.hostUserId) : undefined,
+          location: draft.location,
+          province: draft.province,
+          city: draft.city,
+          joinFeeCoins: Number(draft.joinFeeCoins) || 0,
+          photoUrl: draft.photoUrl,
+          photoStatus: draft.photoStatus,
+          scheduledAt: draft.scheduledAt,
+          maxPlayers: Number(draft.maxPlayers) || 1,
+          services: draft.services,
+          description: draft.description,
+          status: draft.status,
+        }),
+      });
+      setDetail(saved);
+      setEditing(false);
+      setDraft(null);
+      setError(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr('خطا'));
+    } finally {
+      setSaveBusy(false);
     }
   };
 
@@ -270,6 +359,15 @@ export function AdminGamesPage() {
                     >
                       {tr('جزئیات')}
                     </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary"
+                      onClick={() => void openDetail(g.id, true)}
+                      disabled={detailBusy}
+                      data-testid={`admin-event-edit-${g.id}`}
+                    >
+                      {tr('ویرایش')}
+                    </button>
                     {g.status !== 'cancelled' ? (
                       <button
                         type="button"
@@ -311,10 +409,64 @@ export function AdminGamesPage() {
                 {GAME_TYPE_LABELS[detail.gameType]} · {GAME_STATUS_LABELS[detail.status]}
               </p>
             </div>
-            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setDetail(null)}>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setDetail(null); setEditing(false); }}>
               {tr('بستن')}
             </button>
           </header>
+          {editing && draft ? (
+            <form
+              className="admin-event-edit"
+              data-testid="admin-event-edit-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void saveEdit();
+              }}
+            >
+              <label>{tr('عنوان')}<input className="admin-input" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} required /></label>
+              <label>{tr('نوع')}
+                <select className="admin-select" value={draft.gameType} onChange={(e) => setDraft({ ...draft, gameType: e.target.value as GameType })}>
+                  {EVENT_GAME_TYPES.map((t) => (
+                    <option key={t} value={t}>{GAME_TYPE_LABELS[t]}</option>
+                  ))}
+                </select>
+              </label>
+              <label>{tr('میزبان')}<input className="admin-input" value={draft.hostName} onChange={(e) => setDraft({ ...draft, hostName: e.target.value, hostUserId: '' })} /></label>
+              <label>{tr('شناسه میزبان')}<input className="admin-input" inputMode="numeric" value={draft.hostUserId} onChange={(e) => setDraft({ ...draft, hostUserId: e.target.value })} /></label>
+              <label>{tr('مکان')}<input className="admin-input" value={draft.location} onChange={(e) => setDraft({ ...draft, location: e.target.value })} /></label>
+              <label>{tr('شهر')}<input className="admin-input" value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} /></label>
+              <label>{tr('استان')}
+                <select className="admin-select" value={draft.province} onChange={(e) => setDraft({ ...draft, province: e.target.value })}>
+                  <option value="">{tr('همه استان‌ها')}</option>
+                  {IRAN_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              <label>{tr('هزینه عضویت')}<input className="admin-input" inputMode="numeric" value={draft.joinFeeCoins} onChange={(e) => setDraft({ ...draft, joinFeeCoins: e.target.value })} /></label>
+              <label>{tr('عکس')}<input className="admin-input" value={draft.photoUrl} onChange={(e) => setDraft({ ...draft, photoUrl: e.target.value })} dir="ltr" /></label>
+              <label>{tr('وضعیت عکس')}
+                <select className="admin-select" value={draft.photoStatus} onChange={(e) => setDraft({ ...draft, photoStatus: e.target.value as GamePhotoStatus })}>
+                  {(['approved', 'pending', 'rejected'] as GamePhotoStatus[]).map((s) => (
+                    <option key={s} value={s}>{GAME_PHOTO_STATUS_LABELS[s]}</option>
+                  ))}
+                </select>
+              </label>
+              <label>{tr('زمان')}<input className="admin-input" type="datetime-local" value={draft.scheduledAt} onChange={(e) => setDraft({ ...draft, scheduledAt: e.target.value })} /></label>
+              <label>{tr('ظرفیت')}<input className="admin-input" inputMode="numeric" value={draft.maxPlayers} onChange={(e) => setDraft({ ...draft, maxPlayers: e.target.value })} /></label>
+              <label>{tr('وضعیت')}
+                <select className="admin-select" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as GameStatus })}>
+                  {STATUS_OPTIONS.filter(Boolean).map((s) => (
+                    <option key={s} value={s}>{GAME_STATUS_LABELS[s as GameStatus]}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="admin-event-edit__wide">{tr('خدمات')}<textarea className="admin-input" rows={2} value={draft.services} onChange={(e) => setDraft({ ...draft, services: e.target.value })} /></label>
+              <label className="admin-event-edit__wide">{tr('توضیح')}<textarea className="admin-input" rows={3} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></label>
+              <div className="admin-row-actions admin-event-edit__wide">
+                <button type="submit" className="admin-btn admin-btn--primary" disabled={saveBusy}>{saveBusy ? tr('در حال ذخیره…') : tr('ذخیره')}</button>
+                <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setEditing(false); setDraft(null); }}>{tr('انصراف')}</button>
+              </div>
+            </form>
+          ) : (
+            <>
           {detail.photoUrl ? (
             <p>
               <img
@@ -367,15 +519,28 @@ export function AdminGamesPage() {
               <strong>{tr('توضیح')}:</strong> {detail.description}
             </p>
           ) : null}
+          <p>
+            <Link to="/admin/finance#event-revenue">{tr('درآمد ایونت')}</Link>
+          </p>
           <h3 style={{ marginTop: 12 }}>{tr('شرکت‌کنندگان')}</h3>
-          <ul>
+          <div className="admin-event-people">
             {(detail.players ?? []).map((p) => (
-              <li key={p.id}>
-                {p.userName || `#${p.userId}`} · {formatAdminFaDateTime(p.joinedAt)}
-              </li>
+              <article key={p.id} className="admin-event-person">
+                <strong>{p.userName || tr('بدون نام')}</strong>
+                <span className="admin-muted">
+                  {p.username ? <span dir="ltr">@{p.username}</span> : null}
+                  {p.mobile ? <span dir="ltr">{p.mobile}</span> : null}
+                  {!p.username && !p.mobile ? <span>#{p.userId}</span> : null}
+                </span>
+                <span>{p.petName ? `${tr('پت')}: ${p.petName}${p.petSpecies ? ` · ${p.petSpecies}` : ''}` : tr('پت ثبت نشده')}</span>
+                <span className="admin-mono" dir="ltr">{p.ticketCode || '—'}</span>
+                <span className="admin-muted">{formatAdminFaDateTime(p.joinedAt)}</span>
+              </article>
             ))}
-            {!detail.players?.length ? <li className="admin-muted">{tr('شرکت‌کننده‌ای نیست')}</li> : null}
-          </ul>
+            {!detail.players?.length ? <p className="admin-muted">{tr('شرکت‌کننده‌ای نیست')}</p> : null}
+          </div>
+            </>
+          )}
         </div>
       ) : null}
     </div>

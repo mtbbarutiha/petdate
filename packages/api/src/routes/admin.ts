@@ -80,6 +80,15 @@ import {
   isInboxConfigured,
   listInboxMessages,
 } from '../services/mail-inbox';
+import { listAdminMailboxes, normalizeMailboxAddress } from '../admin-mailboxes';
+import { parseEventEditPayload } from '../admin-event-edit';
+import {
+  createSupplierPurchase,
+  listStockOnHand,
+  listSupplierPurchases,
+  listWarehouseProducts,
+  shopProfitSummary,
+} from '../shop-warehouse';
 import { rateLimit } from '../middleware/rate-limit';
 import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
 import { decorateAiConsultDisplay } from '../services/ai-consult-session';
@@ -937,6 +946,44 @@ adminRouter.patch('/games/:id/status', (req, res) => {
   res.json(updated);
 });
 
+adminRouter.patch('/games/:id', (req, res) => {
+  const id = parsePositiveIntId(req.params.id);
+  if (id == null) {
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
+    return;
+  }
+  const existing = dbService.getGame(id);
+  if (!existing) {
+    res.status(404).json({ error: 'ایونت پیدا نشد' });
+    return;
+  }
+  const parsed = parseEventEditPayload((req.body ?? {}) as Record<string, unknown>, existing);
+  if (!parsed.ok) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  let hostUserId = parsed.value.hostUserId ?? existing.hostUserId;
+  const hostName = parsed.value.hostName;
+  if (hostName && parsed.value.hostUserId == null) {
+    const host = getDb()
+      .prepare(
+        `SELECT id FROM users WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) ORDER BY id ASC LIMIT 1`
+      )
+      .get(hostName) as { id: number } | undefined;
+    if (!host?.id) {
+      res.status(400).json({ error: 'میزبان با این نام پیدا نشد' });
+      return;
+    }
+    hostUserId = Number(host.id);
+  }
+  const updated = dbService.updateGameAdmin(id, { ...parsed.value, hostUserId });
+  if (!updated) {
+    res.status(400).json({ error: 'ذخیره ایونت ناموفق بود' });
+    return;
+  }
+  res.json({ ...updated, players: dbService.getGamePlayers(updated.id) });
+});
+
 adminRouter.patch('/games/:id/photo', (req, res) => {
   const id = parsePositiveIntId(req.params.id);
   if (id == null) {
@@ -1485,6 +1532,47 @@ adminRouter.patch('/shop/orders/:id/status', (req, res) => {
   res.json(order);
 });
 
+adminRouter.post('/shop/orders/:id/refund', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه سفارش نامعتبر است' });
+    return;
+  }
+  const result = adminPlatform.refundShopOrder(id);
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+adminRouter.get('/shop/warehouse', (_req, res) => {
+  res.json({
+    purchases: listSupplierPurchases(200),
+    stock: listStockOnHand(),
+    profit: shopProfitSummary(),
+    products: listWarehouseProducts(),
+  });
+});
+
+adminRouter.post('/shop/purchases', (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const row = createSupplierPurchase({
+      productId: String(body.productId || ''),
+      qty: Number(body.qty),
+      unitCostToman: Number(body.unitCostToman),
+      supplier: String(body.supplier || ''),
+      purchasedAt: body.purchasedAt ? String(body.purchasedAt) : undefined,
+      note: body.note ? String(body.note) : undefined,
+      productTitle: body.productTitle ? String(body.productTitle) : undefined,
+    });
+    res.status(201).json({ purchase: row, profit: shopProfitSummary(), stock: listStockOnHand() });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'ثبت خرید ناموفق بود' });
+  }
+});
+
 adminRouter.post('/shop/orders', (req, res) => {
   const body = req.body ?? {};
   res.status(201).json(adminPlatform.createShopOrder({
@@ -1886,16 +1974,41 @@ function adminMailSendError(sent: { error: string; detail?: string }): string {
   return sent.error || 'ارسال ناموفق بود';
 }
 
+adminRouter.get('/mail/mailboxes', (req, res) => {
+  const mailboxes = listAdminMailboxes(req.adminActor);
+  res.json({
+    defaultAddress: getInboxMailboxAddress(),
+    mailboxes,
+  });
+});
+
 adminRouter.get('/mail/inbox', async (req, res) => {
-  if (!isInboxConfigured()) {
-    res.status(503).json({ error: 'صندوق ورودی روی سرور پیکربندی نشده' });
+  const requested = typeof req.query.mailbox === 'string' ? req.query.mailbox : '';
+  const allowed = listAdminMailboxes(req.adminActor);
+  const mailbox =
+    normalizeMailboxAddress(requested) ||
+    normalizeMailboxAddress(getInboxMailboxAddress()) ||
+    'info@petdate.ir';
+  if (!allowed.some((row) => row.address === mailbox)) {
+    res.status(403).json({ error: 'دسترسی به این صندوق نیست' });
     return;
   }
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
-  try {
-    const messages = await listInboxMessages(limit);
+  if (!isInboxConfigured(mailbox)) {
     res.json({
-      address: getInboxMailboxAddress(),
+      address: mailbox,
+      configured: false,
+      count: 0,
+      unread: 0,
+      messages: [],
+    });
+    return;
+  }
+  try {
+    const messages = await listInboxMessages(limit, mailbox);
+    res.json({
+      address: mailbox,
+      configured: true,
       count: messages.length,
       unread: messages.filter((m) => m.unread).length,
       messages,
@@ -1907,12 +2020,21 @@ adminRouter.get('/mail/inbox', async (req, res) => {
 });
 
 adminRouter.get('/mail/inbox/:id', async (req, res) => {
-  if (!isInboxConfigured()) {
+  const requested = typeof req.query.mailbox === 'string' ? req.query.mailbox : '';
+  const mailbox = normalizeMailboxAddress(requested) || undefined;
+  if (mailbox) {
+    const allowed = listAdminMailboxes(req.adminActor);
+    if (!allowed.some((row) => row.address === mailbox)) {
+      res.status(403).json({ error: 'دسترسی به این صندوق نیست' });
+      return;
+    }
+  }
+  if (!isInboxConfigured(mailbox)) {
     res.status(503).json({ error: 'صندوق ورودی روی سرور پیکربندی نشده' });
     return;
   }
   try {
-    const message = await getInboxMessage(String(req.params.id || ''), { markSeen: true });
+    const message = await getInboxMessage(String(req.params.id || ''), { markSeen: true, mailbox });
     if (!message) {
       res.status(404).json({ error: 'پیام پیدا نشد' });
       return;

@@ -1682,6 +1682,16 @@ export function updateFinanceOsOffice(
   );
 }
 
+export function deleteFinanceOsOffice(id: number): { ok: true } {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT id FROM finance_os_offices WHERE id = ?').get(id) as
+    | { id: number }
+    | undefined;
+  if (!prev) throw new Error('دفتر یافت نشد');
+  db().prepare('DELETE FROM finance_os_offices WHERE id = ?').run(id);
+  return { ok: true };
+}
+
 export function updateFinanceOsSbgPerson(
   id: number,
   patch: Partial<{

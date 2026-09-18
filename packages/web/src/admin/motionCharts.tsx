@@ -119,7 +119,8 @@ export function MotionChartTooltip({
           ? `${formatNumFa(Math.round(n))}${tr(' ریال')}`
           : formatNumFa(Number.isFinite(n) ? n : 0);
         return (
-          <div key={i} className="admin-motion-callout-row" style={{ color: p.color || 'var(--admin-ink)' }}>
+          <div key={i} className="admin-motion-callout-row">
+            <span className="admin-motion-callout-swatch" style={{ background: p.color || 'currentColor' }} aria-hidden />
             {p.name ? (
               <span className="admin-motion-callout-name" title={p.name}>
                 {p.name.length > 22 ? `${p.name.slice(0, 21)}…` : p.name}

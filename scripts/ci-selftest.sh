@@ -314,6 +314,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminGamesRoute.selftest.ts"
 echo "==> selftest: api admin games moderation"
 npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
 
+echo "==> selftest: admin events mail guide refund"
+npx tsx "$ROOT/packages/api/src/admin-events-mail-guide.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 

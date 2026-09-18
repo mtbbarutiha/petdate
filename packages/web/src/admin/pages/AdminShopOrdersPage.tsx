@@ -46,6 +46,8 @@ type Order = {
   paymentActor?: string;
   paidFinal?: boolean | number;
   paymentStatus?: string;
+  refundedAt?: string;
+  refund?: { toman?: number; coins?: number; stars?: number };
 };
 
 const STATUSES = [...SHOP_ORDER_STATUSES];
@@ -172,6 +174,7 @@ export function AdminShopOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [showRawJson] = useState(adminWantsRawJson);
+  const [refundBusy, setRefundBusy] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -203,6 +206,25 @@ export function AdminShopOrdersPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    }
+  };
+
+  const refund = async (id: number) => {
+    setRefundBusy(id);
+    try {
+      const result = await adminFetch<{
+        alreadyRefunded: boolean;
+        order: Order;
+        credits: { toman: number; coins: number; stars: number };
+      }>(`/api/admin/shop/orders/${id}/refund`, { method: 'POST', body: '{}' });
+      if (result.alreadyRefunded) {
+        setError(tr('این سفارش قبلاً برگشت خورده است'));
+      }
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setRefundBusy(null);
     }
   };
 
@@ -296,17 +318,30 @@ export function AdminShopOrdersPage() {
                     <td className="admin-cell-nowrap">{formatTomanFa(o.totalToman)}</td>
                     <td>{itemsSummary(o.items)}</td>
                     <td>
-                      <select
-                        className="admin-select admin-select--compact"
-                        value={o.status}
-                        onChange={(e) => void patch(o.id, e.target.value)}
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {STATUS_FA[s] || s}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="admin-row-actions">
+                        <select
+                          className="admin-select admin-select--compact"
+                          value={o.status}
+                          onChange={(e) => void patch(o.id, e.target.value)}
+                        >
+                          {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_FA[s] || s}
+                            </option>
+                          ))}
+                        </select>
+                        {o.refundedAt ? null : (
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--danger"
+                            disabled={refundBusy === o.id}
+                            onClick={() => void refund(o.id)}
+                            data-testid={`admin-order-refund-${o.id}`}
+                          >
+                            {refundBusy === o.id ? tr('در حال برگشت…') : tr('لغو و برگشت به کیف پول')}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="admin-cell-nowrap">{formatAdminFaDateTime(o.createdAt)}</td>
                     <td>
@@ -340,6 +375,16 @@ export function AdminShopOrdersPage() {
                             <p>{tr('حامل:')} {o.shippingCarrier || '—'} · {tr('رهگیری:')} {o.trackingCode || '—'}</p>
                             <p>{tr('بازیگر درگاه:')} {o.paymentActor || '—'} · {tr('پرداخت نهایی:')} {o.paidFinal ? tr('بله') : tr('خیر')} · {o.paymentStatus || '—'}</p>
                             <ShippingEditor order={o} onSaved={() => void load()} />
+                            {o.refundedAt || o.refund ? (
+                              <p data-testid="admin-order-refund-note">
+                                <strong>{tr('برگشت به کیف پول')}:</strong>{' '}
+                                {o.refund?.toman ? formatTomanFa(o.refund.toman) : null}
+                                {o.refund?.coins ? ` ${formatNumFa(o.refund.coins)} ${tr('سکه')}` : null}
+                                {o.refund?.stars ? ` ⭐ ${formatNumFa(o.refund.stars)}` : null}
+                                {!o.refund?.toman && !o.refund?.coins && !o.refund?.stars ? tr('وجهی برای برگشت نبود') : null}
+                                {o.refundedAt ? ` · ${formatAdminFaDateTime(o.refundedAt)}` : null}
+                              </p>
+                            ) : null}
                           </section>
                           <section className="admin-order-detail__block">
                             <h3 className="admin-order-detail__label">{tr('آیتم‌ها')}</h3>

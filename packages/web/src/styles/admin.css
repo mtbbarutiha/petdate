@@ -2477,8 +2477,9 @@ body:has(.admin-app) {
   display: grid;
   grid-template-columns: minmax(320px, 38%) minmax(0, 1fr);
   gap: 0;
-  min-height: 420px;
-  max-height: min(70vh, 560px);
+  height: min(70vh, 640px);
+  min-height: 280px;
+  max-height: min(70vh, 640px);
   border: 1px solid var(--admin-border);
   border-radius: 10px;
   overflow: hidden;
@@ -2487,7 +2488,9 @@ body:has(.admin-app) {
 
 .admin-app .admin-mail-list {
   min-width: 0;
+  min-height: 0;
   max-width: 100%;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -2601,6 +2604,8 @@ body:has(.admin-app) {
 
 .admin-app .admin-mail-reading {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   padding: 14px 16px;
@@ -6929,6 +6934,58 @@ body:has(.admin-app) {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 140px;
+}
+.admin-app .admin-motion-callout-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.admin-app .admin-event-edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.admin-app .admin-event-edit label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--admin-muted);
+}
+.admin-app .admin-event-edit__wide {
+  grid-column: 1 / -1;
+}
+.admin-app .admin-event-people {
+  display: grid;
+  gap: 8px;
+}
+.admin-app .admin-event-person {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-chip-well);
+  color: var(--admin-ink);
+}
+.admin-app .admin-event-person span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-app .admin-guide-link {
+  white-space: nowrap;
+}
+.admin-app .admin-guide-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.admin-app .admin-guide-section {
+  margin-bottom: 12px;
 }
 
 .admin-app .admin-motion-ring {

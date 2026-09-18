@@ -743,6 +743,8 @@ export const fa: Dict = {
     heroResetError: 'بازگردانی پیش‌فرض ناموفق بود',
     noticesContent: 'اعلان‌ها / محتوا',
     mailSmtp: 'ایمیل / SMTP',
+    guide: 'راهنما',
+    warehouse: 'انبار / خرید',
     analytics: 'آنالیتیکس',
     tagManager: 'تگ منیجر',
     monitoring: 'مانیتورینگ',
