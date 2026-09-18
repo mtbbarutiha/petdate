@@ -90,3 +90,7 @@ TELEGRAM_BOT_TOKEN=… node packages/bot/scripts/publish-channel-activity-posts.
 ```
 
 Same CTA: `🐾 ورود به ربات` → `https://t.me/Petdatebot`. Do not delete older posts.
+
+### Live activity posts
+
+- https://t.me/petdating/144 … https://t.me/petdating/148
