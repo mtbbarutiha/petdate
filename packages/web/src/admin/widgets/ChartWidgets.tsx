@@ -18,12 +18,38 @@ import {
 import type { ChartPoint, WidgetRenderContext } from './types';
 import { tr } from '../../i18n';
 
+export { chartWidgetPhase } from './chartPhase';
+export type { ChartWidgetPhase } from './chartPhase';
+
 type MultiSeries = Array<{ key: string; label: string; color: string; points: ChartPoint[] }>;
 
 function ChartEmpty({ hint }: { hint?: string }) {
   return (
     <p className="admin-dash-chart-empty wdg-chart-empty">
       {hint || tr('داده‌ای برای این سطح دریل نیست')}
+    </p>
+  );
+}
+
+export function WidgetChartLoading(): ReactNode {
+  return (
+    <div className="wdg-chart-loading" role="status" aria-live="polite" aria-busy="true">
+      <div className="wdg-chart-loading-spin" aria-hidden />
+      <p className="wdg-chart-loading-label">{tr('در حال بارگذاری…')}</p>
+      <div className="wdg-chart-skeleton" aria-hidden>
+        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--lg" />
+        <div className="wdg-chart-skeleton-bar" />
+        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--md" />
+        <div className="wdg-chart-skeleton-bar wdg-chart-skeleton-bar--sm" />
+      </div>
+    </div>
+  );
+}
+
+export function WidgetChartError({ message }: { message?: string | null }): ReactNode {
+  return (
+    <p className="admin-dash-chart-empty wdg-chart-error" role="alert">
+      {message?.trim() || tr('خطا در بارگذاری')}
     </p>
   );
 }

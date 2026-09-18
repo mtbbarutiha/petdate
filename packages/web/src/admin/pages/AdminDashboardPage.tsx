@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -37,8 +37,11 @@ import {
   TimeBarWidget,
   TimeLineWidget,
   TimeMultiLineWidget,
+  WidgetChartError,
+  WidgetChartLoading,
   WidgetDashboard,
   WidgetEmpty,
+  chartWidgetPhase,
   type WidgetRenderContext,
 } from '../widgets';
 import {
@@ -306,25 +309,39 @@ function filtersToQs(f: DashFilters): string {
   return s ? `?${s}` : '';
 }
 
+function boardListLabel(loading: boolean, error: string | null, empty: string): string {
+  if (loading) return tr('در حال بارگذاری…');
+  if (error) return tr('خطا در بارگذاری');
+  return tr(empty);
+}
+
 export function AdminDashboardPage() {
   const [data, setData] = useState<Dash | null>(null);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'activity'>('overview');
   const [filters, setFilters] = useState<DashFilters>(emptyFilters);
+  const loadSeq = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    setLoading(true);
     try {
       const qs = filtersToQs(filters);
       const [dash, act] = await Promise.all([
         adminFetch<Dash>(`/api/admin/dashboard${qs}`),
         adminFetch<{ rows: ActivityRow[] }>(`/api/admin/dashboard/activity${qs}`),
       ]);
+      if (seq !== loadSeq.current) return;
       setData(dash);
       setActivity(act.rows || []);
       setError(null);
     } catch (err) {
+      if (seq !== loadSeq.current) return;
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [filters]);
 
@@ -493,7 +510,10 @@ export function AdminDashboardPage() {
   const renderPlatformWidget = (id: string, ctx: WidgetRenderContext) => {
     if (id === DUAL_CALENDAR_WIDGET_ID) return <CalendarWidget ctx={ctx} />;
     if (id === DAILY_NOTES_WIDGET_ID) return <DailyNotesWidget ctx={ctx} />;
-    if (!series) return <WidgetEmpty />;
+    const phase = chartWidgetPhase({ loading, error, hasSeries: series != null });
+    if (phase === 'loading') return <WidgetChartLoading />;
+    if (phase === 'error') return <WidgetChartError message={error} />;
+    if (phase !== 'ready' || series == null) return <WidgetEmpty />;
     switch (id) {
       case 'moduleMix':
         return (
@@ -681,7 +701,7 @@ export function AdminDashboardPage() {
               <tbody>
                 {activity.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="admin-muted">{tr('فعالیتی نیست')}</td>
+                    <td colSpan={5} className="admin-muted">{boardListLabel(loading, error, 'فعالیتی نیست')}</td>
                   </tr>
                 ) : (
                   activity.map((row) => (
@@ -828,7 +848,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentPets?.length ? (
                       <tr>
-                        <td colSpan={5} className="admin-muted">{tr('موردی نیست')}</td>
+                        <td colSpan={5} className="admin-muted">{boardListLabel(loading, error, 'موردی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -885,7 +905,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentShopOrders?.length ? (
                       <tr>
-                        <td colSpan={4} className="admin-muted">{tr('سفارشی نیست')}</td>
+                        <td colSpan={4} className="admin-muted">{boardListLabel(loading, error, 'سفارشی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -967,7 +987,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentConsults?.length ? (
                       <tr>
-                        <td colSpan={5} className="admin-muted">{tr('موردی نیست')}</td>
+                        <td colSpan={5} className="admin-muted">{boardListLabel(loading, error, 'موردی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -994,6 +1014,10 @@ export function AdminDashboardPage() {
                     <strong>{formatNumFa(s.walletTotals.stars)}</strong>
                   </li>
                 </ul>
+              ) : loading ? (
+                <WidgetChartLoading />
+              ) : error ? (
+                <WidgetChartError message={error} />
               ) : (
                 <p className="admin-dash-chart-empty">{tr('داده‌ای نیست')}</p>
               )}
