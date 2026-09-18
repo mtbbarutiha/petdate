@@ -144,10 +144,17 @@
       /* Boot LCP must paint with critical CSS only — never wait on hashed CSS/JS.
          Override .pepito-hero-media inset:0 so size is the hero band, not zero/conflict.
          NO ken-burns/scale here — boot lives outside .pepito-hero overflow and would
-         bleed into the nav / RTL scrollbar-gutter (suit-fragment / edge leak). */
-      body>#pd-boot-lcp,body>#pd-boot-lcp.pepito-hero-media{position:absolute;inset:auto;top:var(--pepito-nav-h);left:0;right:0;bottom:auto;width:auto;max-width:100%;height:var(--pepito-hero-h);max-height:var(--pepito-hero-h);object-fit:cover;object-position:center top;z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1;transform:none!important;animation:none!important;clip-path:inset(0)}
+         bleed into the nav / RTL scrollbar-gutter (suit-fragment / edge leak).
+         width:100% (not auto): with a fixed height, width:auto uses the img intrinsic
+         16:9 ratio; in RTL the over-constrained box ignores left and sits on the right,
+         leaving a dark body gutter (~20%) on the left on short viewports. */
+      body>#pd-boot-lcp,body>#pd-boot-lcp.pepito-hero-media{position:absolute;inset:auto;top:var(--pepito-nav-h);left:0;right:auto;bottom:auto;width:100%;max-width:none;height:var(--pepito-hero-h);max-height:var(--pepito-hero-h);object-fit:cover;object-position:center top;z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1;transform:none!important;animation:none!important;clip-path:inset(0)}
       /* is-parked is for non-home / post-slide-0 only — never hide boot LCP on first paint. */
       body>#pd-boot-lcp.is-parked,#pd-boot-lcp.is-parked{display:none!important}
+      /* Absolute slide stack in critical CSS — deferred pepito.css used to leave
+         .pepito-hero-slides at height:0 until print→all, so handoff media collapsed. */
+      .pepito-hero-slides,.pepito-hero-slide{position:absolute;inset:0;width:100%;height:100%}
+      .pepito-hero-slide picture{position:absolute;inset:0;display:block;width:100%;height:100%;margin:0}
       .pepito-hero-wash{position:absolute;inset:0;z-index:2;background:rgba(5,1,12,.34);pointer-events:none}
       .pepito-hero-inner{position:relative;z-index:3;width:min(var(--pepito-container-max),100%);margin-inline:auto;padding-inline:var(--pepito-container-pad);padding-block:calc(env(safe-area-inset-top,0px) + 1.35rem) 2.25rem;box-sizing:border-box;min-height:14.5rem}
       .pepito-hero-slide-title,.pepito-hero h1{margin:0 0 16px;font-size:24px;line-height:1.15;font-weight:600;font-family:var(--font-display)}
@@ -196,13 +203,13 @@
         } catch (e) {}
       })();
     </script>
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v57-above-fold-pad + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v58-hero-fullbleed + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v57-above-fold-pad" />
+    <meta name="pd-web-perf" content="web-perf-v58-hero-fullbleed" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
@@ -366,7 +373,7 @@
       sizes="100vw"
       srcset="/api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-800.webp 800w, /api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-1280.webp 1280w, /api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-1920.webp 1920w"
       src="/api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-800.webp"
-      style="position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:0;bottom:auto;width:auto;max-width:100%;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:50% 90%;z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1;transform:none;animation:none;clip-path:inset(0)"
+      style="position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:auto;bottom:auto;width:100%;max-width:none;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:50% 90%;z-index:0;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1;transform:none;animation:none;clip-path:inset(0)"
       data-pd-boot-hero="snapshot"
     />
     <!-- Park homepage LCP on deep links before React — otherwise /shop,/faq,… show a ghost hero.

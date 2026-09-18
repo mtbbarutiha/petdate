@@ -44,6 +44,9 @@ assert.match(img, /decoding="async"/, 'boot LCP decodes async so JS cannot stall
 assert.match(img, /position:absolute/, 'boot LCP keeps inline geometry after snapshot rewrite');
 assert.match(img, /display:block/, 'boot LCP stays visible after snapshot rewrite');
 assert.doesNotMatch(img, /is-parked/, 'snapshot rewrite must not park homepage LCP');
+assert.match(img, /width:100%/, 'boot LCP uses width:100% (not intrinsic-ratio auto)');
+assert.match(img, /left:0;right:auto/, 'boot LCP anchors to physical left for RTL');
+assert.doesNotMatch(img, /width:auto;max-width:100%/, 'boot LCP must not use width:auto');
 assert.match(img, /object-position:50% 90%/, 'focus position preserved');
 assert.match(img, /z-index:0/, 'boot LCP stays behind isolated #root (hero UI above)');
 assert.match(img, /transform:none/, 'boot LCP never inlines scale (would bleed past hero clip)');
