@@ -178,7 +178,10 @@ export function AdminHeaderNotifications() {
               {tr('تیکت فروش')}
             </Link>
             <Link to="/admin/crm/ticketing" onClick={() => setOpen(false)}>
-              {tr('تیکتینگ')}
+              {tr('تیکت باشگاه مشتریان')}
+            </Link>
+            <Link to="/admin/support" onClick={() => setOpen(false)}>
+              {tr('اینباکس پشتیبانی')}
             </Link>
             <Link to="/admin/mail" onClick={() => setOpen(false)}>
               {tr('ایمیل')}

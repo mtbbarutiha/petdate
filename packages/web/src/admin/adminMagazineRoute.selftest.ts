@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const app = readFileSync(join(webRoot, 'src/App.tsx'), 'utf8');
-const layout = readFileSync(join(webRoot, 'src/admin/AdminLayout.tsx'), 'utf8');
+const layout = readFileSync(join(webRoot, 'src/admin/adminNav.ts'), 'utf8');
 const page = readFileSync(join(webRoot, 'src/admin/pages/AdminMagazinePage.tsx'), 'utf8');
 const form = readFileSync(join(webRoot, 'src/admin/pages/AdminMagazineFormPage.tsx'), 'utf8');
 const editor = readFileSync(join(webRoot, 'src/admin/MagazineRichTextEditor.tsx'), 'utf8');
