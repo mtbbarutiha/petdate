@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, readdirSync, renameSync, statSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { simpleParser, type AddressObject, type ParsedMail } from 'mailparser';
 
 const DEFAULT_MAILDIR = '/var/mail/vhosts/petdate.ir/info/Maildir';
@@ -34,8 +34,18 @@ export function getInboxMailboxAddress(): string {
   return String(process.env.MAIL_INBOX_ADDRESS ?? '').trim() || 'info@petdate.ir';
 }
 
-export function isInboxConfigured(): boolean {
-  const root = maildirRoot();
+/** Resolve a petdate.ir mailbox to its Maildir. Default stays info@. */
+export function maildirForMailbox(address?: string): string {
+  const raw = String(address || '').trim().toLowerCase();
+  const fallback = maildirRoot();
+  if (!raw || raw === getInboxMailboxAddress().toLowerCase()) return fallback;
+  const local = raw.split('@')[0] || '';
+  if (!/^[a-z0-9._+-]+$/.test(local)) return fallback;
+  return join(dirname(dirname(fallback)), local, 'Maildir');
+}
+
+export function isInboxConfigured(address?: string): boolean {
+  const root = maildirForMailbox(address);
   return existsSync(join(root, 'cur')) || existsSync(join(root, 'new'));
 }
 
@@ -67,8 +77,7 @@ export function decodeMessageId(id: string): string | null {
   }
 }
 
-function listMaildirFiles(): Array<{ abs: string; rel: string; unread: boolean; mtimeMs: number; size: number }> {
-  const root = maildirRoot();
+function listMaildirFiles(root = maildirRoot()): Array<{ abs: string; rel: string; unread: boolean; mtimeMs: number; size: number }> {
   const out: Array<{ abs: string; rel: string; unread: boolean; mtimeMs: number; size: number }> = [];
   for (const folder of ['new', 'cur'] as const) {
     const dir = join(root, folder);
@@ -142,9 +151,10 @@ function toListItem(
   };
 }
 
-export async function listInboxMessages(limit = 50): Promise<InboxListItem[]> {
-  if (!isInboxConfigured()) return [];
-  const files = listMaildirFiles().slice(0, Math.min(Math.max(limit, 1), 200));
+export async function listInboxMessages(limit = 50, mailbox?: string): Promise<InboxListItem[]> {
+  const root = maildirForMailbox(mailbox);
+  if (!isInboxConfigured(mailbox)) return [];
+  const files = listMaildirFiles(root).slice(0, Math.min(Math.max(limit, 1), 200));
   const items: InboxListItem[] = [];
   for (const file of files) {
     try {
@@ -157,8 +167,7 @@ export async function listInboxMessages(limit = 50): Promise<InboxListItem[]> {
   return items;
 }
 
-function markSeenInPlace(rel: string): string {
-  const root = maildirRoot();
+function markSeenInPlace(rel: string, root = maildirRoot()): string {
   const abs = join(root, rel);
   if (!existsSync(abs)) throw new Error('پیام پیدا نشد');
 
@@ -186,17 +195,20 @@ function markSeenInPlace(rel: string): string {
   return destRel;
 }
 
-export async function getInboxMessage(id: string, opts?: { markSeen?: boolean }): Promise<InboxMessage | null> {
-  if (!isInboxConfigured()) return null;
+export async function getInboxMessage(
+  id: string,
+  opts?: { markSeen?: boolean; mailbox?: string }
+): Promise<InboxMessage | null> {
+  const root = maildirForMailbox(opts?.mailbox);
+  if (!isInboxConfigured(opts?.mailbox)) return null;
   let rel = decodeMessageId(id);
   if (!rel) return null;
-  const root = maildirRoot();
   let abs = join(root, rel);
   if (!existsSync(abs)) return null;
 
   if (opts?.markSeen !== false) {
     try {
-      rel = markSeenInPlace(rel);
+      rel = markSeenInPlace(rel, root);
       abs = join(root, rel);
     } catch {
       /* keep original */

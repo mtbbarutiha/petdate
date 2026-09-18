@@ -29,8 +29,11 @@ type Dash = {
     aov: number; growthRate: number; marginPct: number;
   };
   breakdown: {
-    shopRevenue: number; paymentTopups: number; vetFees: number; playdateFees: number;
+    shopRevenue: number; paymentTopups: number;     vetFees: number; playdateFees: number;
     cogs: number; operatingExpense: number;
+    eventCoins?: number; eventJoins?: number; eventToman?: number;
+    eventCoinsAll?: number; eventJoinsAll?: number;
+    shopProfit?: number; shopPurchaseCount?: number;
   };
   charts?: {
     salesTrend: ChartPoint[];
@@ -186,6 +189,23 @@ export function AdminFinanceDashboardPage() {
       />
 
       {data ? (
+        <section id="event-revenue" className="admin-card" style={{ marginTop: 16, padding: 16 }}>
+          <div className="admin-card-head">
+            <h2>{tr('درآمد ایونت')}</h2>
+            <Link to="/admin/events">{tr('ایونت‌ها')}</Link>
+          </div>
+          <ul className="admin-kv">
+            <li><span>{tr('این دوره')}</span><strong>{formatNumFa(data.breakdown.eventCoins || 0)} {tr('سکه')}</strong></li>
+            <li><span>{tr('عضویت‌ها')}</span><strong>{formatNumFa(data.breakdown.eventJoins || 0)}</strong></li>
+            <li><span>{tr('معادل تومان')}</span><strong>{formatTomanFa(data.breakdown.eventToman || 0)}</strong></li>
+            <li><span>{tr('جمع کل سکه‌ها')}</span><strong>{formatNumFa(data.breakdown.eventCoinsAll || 0)} {tr('سکه')} · {formatNumFa(data.breakdown.eventJoinsAll || 0)} {tr('عضویت')}</strong></li>
+            <li><span>{tr('سود فروشگاه')}</span><strong>{formatTomanFa(data.breakdown.shopProfit || 0)}</strong></li>
+          </ul>
+          <p className="admin-muted">{tr('سود فروشگاه = درآمد سفارش منهای بهای خرید از تأمین‌کننده.')} <Link to="/admin/shop/warehouse">{tr('انبار')}</Link></p>
+        </section>
+      ) : null}
+
+      {data ? (
         <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
           <div className="admin-card-head">
             <h2>{tr('جزئیات درآمد / هزینه')}</h2>
@@ -196,6 +216,7 @@ export function AdminFinanceDashboardPage() {
             <li><span>{tr('شارژ کیف پول')}</span><strong>{formatTomanFa(data.breakdown.paymentTopups)}</strong></li>
             <li><span>{tr('مشاوره دامپزشک')}</span><strong>{formatTomanFa(data.breakdown.vetFees)}</strong></li>
             <li><span>{tr('همبازی')}</span><strong>{formatTomanFa(data.breakdown.playdateFees)}</strong></li>
+            <li><span>{tr('درآمد ایونت')}</span><strong>{formatNumFa(data.breakdown.eventCoins || 0)} {tr('سکه')}</strong></li>
             <li><span>COGS</span><strong>{formatTomanFa(data.breakdown.cogs)}</strong></li>
             <li><span>{tr('هزینه عملیاتی')}</span><strong>{formatTomanFa(data.breakdown.operatingExpense)}</strong></li>
           </ul>

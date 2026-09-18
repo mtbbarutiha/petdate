@@ -377,6 +377,12 @@ export interface GamePlayer {
   gameId: number;
   userId: number;
   userName?: string;
+  username?: string;
+  /** Mobile / phone if the account has one. */
+  mobile?: string;
+  petName?: string;
+  petSpecies?: string;
+  ticketCode?: string;
   joinedAt: string;
 }
 

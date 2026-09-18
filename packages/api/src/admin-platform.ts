@@ -5,6 +5,7 @@
 import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/shared';
 import { IRAN_PROVINCES, makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
+import { isAlreadyRefunded, refundCredits, refundHasValue, SHOP_REFUND_REF_TYPE } from './shop-refund';
 import { parseShopProductImages, withShopImagesParam } from './data/shop-product-images';
 import { isLiveShopProductIdOrSlug, purgeDemoShopProducts } from './data/shop-live-catalog';
 
@@ -208,6 +209,8 @@ export type ShopOrderRow = {
   paidFinal?: boolean;
   paymentStatus?: string;
   userUsername?: string;
+  refundedAt?: string;
+  refund?: { toman?: number; coins?: number; stars?: number; already?: boolean };
 };
 
 export type AnnouncementRow = {
@@ -285,6 +288,16 @@ function mapShopBrand(row: Record<string, unknown>): ShopBrandRow {
   };
 }
 
+function parseRefundJson(raw: unknown): { toman?: number; coins?: number; stars?: number } | undefined {
+  if (raw == null || !String(raw).trim()) return undefined;
+  try {
+    const parsed = JSON.parse(String(raw)) as { toman?: number; coins?: number; stars?: number };
+    return parsed && typeof parsed === 'object' ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function mapShopCategory(row: Record<string, unknown>): ShopCategoryRow {
   return {
     slug: String(row.slug),
@@ -332,6 +345,8 @@ function mapShopOrder(row: Record<string, unknown>): ShopOrderRow {
     paymentActor: row.payment_actor ? String(row.payment_actor) : '',
     paidFinal: Boolean(row.paid_final),
     paymentStatus: row.payment_status ? String(row.payment_status) : '',
+    refundedAt: row.refunded_at ? String(row.refunded_at) : '',
+    refund: parseRefundJson(row.refund_json),
   };
 }
 
@@ -1021,6 +1036,106 @@ export const adminPlatform = {
       queuePaidShopOrderAutoMessage(next);
     }
     return next;
+  },
+
+  /**
+   * Cancel the order and credit the paid toman / coins / stars back once.
+   * A second call is a no-op (refunded_at or an existing ledger row).
+   */
+  refundShopOrder(id: number):
+    | {
+        ok: true;
+        alreadyRefunded: boolean;
+        order: ShopOrderRow;
+        credits: { toman: number; coins: number; stars: number };
+      }
+    | { ok: false; error: string } {
+    const existing = this.getShopOrder(id);
+    if (!existing) return { ok: false, error: 'سفارش پیدا نشد' };
+    const d = db();
+    const ledgerHits = () =>
+      Number(
+        (
+          d
+            .prepare(
+              `SELECT COUNT(*) AS c FROM wallet_ledger
+               WHERE ref_type = ? AND CAST(ref_id AS TEXT) = ?`
+            )
+            .get(SHOP_REFUND_REF_TYPE, String(id)) as { c: number } | undefined
+        )?.c ?? 0
+      );
+
+    const credits = refundCredits({
+      status: existing.status,
+      paymentCurrency: existing.paymentCurrency,
+      paymentAmount: existing.paymentAmount,
+      totalToman: existing.totalToman,
+      paidFinal: existing.paidFinal,
+      paymentStatus: existing.paymentStatus,
+    });
+
+    if (isAlreadyRefunded({ refundedAt: existing.refundedAt, ledgerHits: ledgerHits() })) {
+      return { ok: true, alreadyRefunded: true, order: existing, credits: { toman: 0, coins: 0, stars: 0 } };
+    }
+    if (refundHasValue(credits) && existing.userId == null) {
+      return { ok: false, error: 'سفارش کاربر ندارد — برگشت به کیف پول ممکن نیست' };
+    }
+
+    const userId = existing.userId;
+    const run = d.transaction(() => {
+      if (isAlreadyRefunded({ refundedAt: this.getShopOrder(id)?.refundedAt, ledgerHits: ledgerHits() })) {
+        return { already: true as const };
+      }
+      const reason = 'برگشت سفارش فروشگاه';
+      if (userId != null && credits.toman > 0) {
+        const credited = dbService.creditWallet(userId, 'toman', credits.toman, {
+          reason,
+          refType: SHOP_REFUND_REF_TYPE,
+          refId: String(id),
+        });
+        if (!credited.ok) throw new Error('برگشت تومان ناموفق بود');
+      }
+      if (userId != null && credits.coins > 0) {
+        const credited = dbService.creditWallet(userId, 'coins', credits.coins, {
+          reason,
+          refType: SHOP_REFUND_REF_TYPE,
+          refId: String(id),
+        });
+        if (!credited.ok) throw new Error('برگشت سکه ناموفق بود');
+      }
+      if (userId != null && credits.stars > 0) {
+        const credited = dbService.creditWallet(userId, 'stars', credits.stars, {
+          reason,
+          refType: SHOP_REFUND_REF_TYPE,
+          refId: String(id),
+        });
+        if (!credited.ok) throw new Error('برگشت ستاره ناموفق بود');
+      }
+      d.prepare(
+        `UPDATE shop_orders SET
+           status = 'cancelled',
+           payment_status = 'refunded',
+           refunded_at = datetime('now'),
+           refund_json = ?,
+           updated_at = datetime('now')
+         WHERE id = ?`
+      ).run(JSON.stringify(credits), id);
+      return { already: false as const };
+    });
+
+    try {
+      const result = run();
+      const order = this.getShopOrder(id);
+      if (!order) return { ok: false, error: 'سفارش پیدا نشد' };
+      return {
+        ok: true,
+        alreadyRefunded: result.already,
+        order,
+        credits: result.already ? { toman: 0, coins: 0, stars: 0 } : credits,
+      };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'برگشت ناموفق بود' };
+    }
   },
 
   listAnnouncements(): AnnouncementRow[] {

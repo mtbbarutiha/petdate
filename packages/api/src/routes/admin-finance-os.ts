@@ -8,6 +8,7 @@ import {
   classifyFinanceOsTransaction,
   createFinanceOsAccount,
   createFinanceOsPerson,
+  deleteFinanceOsOffice,
   getFinanceOsAccountsBundle,
   getFinanceOsAllocationBundle,
   getFinanceOsNavCounts,
@@ -154,6 +155,19 @@ financeOsAdminRouter.patch('/allocation/offices/:id', requirePermission('finance
       return;
     }
     res.json(updateFinanceOsOffice(id, req.body || {}));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+financeOsAdminRouter.delete('/allocation/offices/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    res.json(deleteFinanceOsOffice(id));
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
   }

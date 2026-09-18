@@ -110,6 +110,8 @@ export function AdminMailPage() {
   const [composeBusy, setComposeBusy] = useState(false);
 
   const [inboxItems, setInboxItems] = useState<InboxListItem[]>([]);
+  const [mailboxes, setMailboxes] = useState<Array<{ address: string; label: string; kind: string; active: boolean }>>([]);
+  const [mailbox, setMailbox] = useState('info@petdate.ir');
   const [inboxError, setInboxError] = useState<string | null>(null);
   const [inboxLoading, setInboxLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -119,19 +121,23 @@ export function AdminMailPage() {
   const [replyOk, setReplyOk] = useState(false);
   const [replyBusy, setReplyBusy] = useState(false);
 
-  const loadInbox = useCallback(async () => {
+  const loadInbox = useCallback(async (address = mailbox) => {
     setInboxLoading(true);
     setInboxError(null);
     try {
-      const res = await adminFetch<{ messages: InboxListItem[] }>('/api/admin/mail/inbox?limit=80');
+      const qs = new URLSearchParams({ limit: '80', mailbox: address });
+      const res = await adminFetch<{ messages: InboxListItem[]; address?: string }>(
+        `/api/admin/mail/inbox?${qs.toString()}`
+      );
       setInboxItems(res.messages || []);
+      if (res.address) setMailbox(res.address);
     } catch (err) {
       setInboxError(err instanceof Error ? err.message : 'خواندن صندوق ورودی ناموفق بود');
       setInboxItems([]);
     } finally {
       setInboxLoading(false);
     }
-  }, []);
+  }, [mailbox]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,8 +153,21 @@ export function AdminMailPage() {
 
   useEffect(() => {
     void load();
+    void adminFetch<{ mailboxes: Array<{ address: string; label: string; kind: string; active: boolean }>; defaultAddress?: string }>(
+      '/api/admin/mail/mailboxes'
+    )
+      .then((res) => {
+        setMailboxes(res.mailboxes || []);
+        if (res.defaultAddress) setMailbox((cur) => cur || res.defaultAddress!);
+      })
+      .catch(() => {
+        setMailboxes([{ address: 'info@petdate.ir', label: 'info@petdate.ir', kind: 'system', active: true }]);
+      });
+  }, [load]);
+
+  useEffect(() => {
     void loadInbox();
-  }, [load, loadInbox]);
+  }, [loadInbox]);
 
   async function openMessage(id: string) {
     setSelectedId(id);
@@ -156,7 +175,9 @@ export function AdminMailPage() {
     setReplyBody('');
     setReplyMsg(null);
     try {
-      const res = await adminFetch<{ message: InboxMessage }>(`/api/admin/mail/inbox/${encodeURIComponent(id)}`);
+      const res = await adminFetch<{ message: InboxMessage }>(
+        `/api/admin/mail/inbox/${encodeURIComponent(id)}?mailbox=${encodeURIComponent(mailbox)}`
+      );
       setSelected(res.message);
       setInboxItems((prev) => prev.map((m) => (m.id === id ? { ...m, unread: false } : m)));
     } catch (err) {
@@ -295,9 +316,28 @@ export function AdminMailPage() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Inbox size={18} /> {tr('صندوق ورودی')}
             <span className="admin-muted" style={{ fontWeight: 400, fontSize: 13 }}>
-              {inbox?.address || 'info@petdate.ir'} — {formatNumFa(inboxItems.length)} {tr('پیام')}
+              {formatNumFa(inboxItems.length)} {tr('پیام')}
             </span>
           </h2>
+          <label className="admin-muted" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {tr('صندوق')}
+            <select
+              className="admin-select"
+              value={mailbox}
+              data-testid="admin-mail-mailbox"
+              onChange={(e) => {
+                setMailbox(e.target.value);
+                setSelected(null);
+                setSelectedId(null);
+              }}
+            >
+              {(mailboxes.length ? mailboxes : [{ address: mailbox, label: mailbox, active: true }]).map((box) => (
+                <option key={box.address} value={box.address}>
+                  {box.label} — {box.address}{box.active === false ? ` (${tr('غیرفعال')})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         {inboxError ? <p className="admin-error">{inboxError}</p> : null}
         <div className="admin-mail-inbox">

@@ -18,6 +18,12 @@ type OrdersRes = {
   }>;
   statusTotals: Array<{ status: string; count: number; revenue: number }>;
   paidRevenue: number;
+  shopProfit?: {
+    revenueToman: number;
+    cogsToman: number;
+    profitToman: number;
+  };
+  eventRevenue?: { coins: number; joins: number; tomanEquivalent: number };
 };
 
 const CUR: Record<string, string> = {
@@ -69,6 +75,22 @@ export function AdminFinanceOrdersPage() {
                 <div className="admin-stat-label">{tr('درآمد پرداخت‌شده')}</div>
               </div>
             </div>
+            {data.shopProfit ? (
+              <div className="admin-stat admin-stat--violet">
+                <div>
+                  <div className="admin-stat-value">{formatTomanFa(data.shopProfit.profitToman)}</div>
+                  <div className="admin-stat-label">{tr('سود فروشگاه (درآمد − بهای خرید)')}</div>
+                </div>
+              </div>
+            ) : null}
+            {data.eventRevenue ? (
+              <div className="admin-stat admin-stat--sky" id="event-revenue">
+                <div>
+                  <div className="admin-stat-value">{formatNumFa(data.eventRevenue.coins)} {tr('سکه')}</div>
+                  <div className="admin-stat-label">{tr('درآمد ایونت')}</div>
+                </div>
+              </div>
+            ) : null}
             {data.statusTotals.map((s) => (
               <div key={s.status} className="admin-stat admin-stat--slate">
                 <div>

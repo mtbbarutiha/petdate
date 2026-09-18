@@ -4,6 +4,7 @@
 import { COIN_PRICE_TOMAN, orderPublicIdOf } from '@petdate/shared';
 import { getDb } from './db';
 import { adminPlatform } from './admin-platform';
+import { purchaseUnitCostMap, shopProfitSummary } from './shop-warehouse';
 
 export type FinancePeriod = 'day' | 'week' | 'month' | 'year';
 
@@ -74,12 +75,30 @@ function parseItems(json: string): OrderItem[] {
 function orderCogs(
   row: { cogs_toman: number | null; total_toman: number; items_json: string },
   marginPercent: number,
-  productCostMap: Map<string, number>
+  productCostMap: Map<string, number>,
+  purchaseCosts: Map<string, number> = new Map()
 ): number {
+  const items = parseItems(row.items_json);
+  if (purchaseCosts.size && items.length) {
+    let sum = 0;
+    let usedPurchase = false;
+    for (const it of items) {
+      const qty = Math.max(1, Number(it.qty ?? 1));
+      const pid = it.productId ? String(it.productId) : '';
+      if (pid && purchaseCosts.has(pid)) {
+        sum += (purchaseCosts.get(pid) || 0) * qty;
+        usedPurchase = true;
+      } else if (it.costToman != null && Number.isFinite(Number(it.costToman))) {
+        sum += Number(it.costToman) * qty;
+      } else if (pid && productCostMap.has(pid)) {
+        sum += (productCostMap.get(pid) || 0) * qty;
+      }
+    }
+    if (usedPurchase) return Math.round(sum);
+  }
   if (row.cogs_toman != null && Number.isFinite(Number(row.cogs_toman))) {
     return Number(row.cogs_toman);
   }
-  const items = parseItems(row.items_json);
   let fromItems = 0;
   let used = false;
   for (const it of items) {
@@ -123,6 +142,7 @@ function sumPaidOrders(since: string, until?: string): {
 } {
   const margin = settingNum('financeMarginPercent', 35);
   const costs = productCostMap();
+  const purchaseCosts = purchaseUnitCostMap();
   let sql = `SELECT id, status, total_toman, cogs_toman, items_json,
                      COALESCE(payment_currency, 'toman') AS payment_currency, created_at
               FROM shop_orders
@@ -146,9 +166,33 @@ function sumPaidOrders(since: string, until?: string): {
   let cogs = 0;
   for (const r of rows) {
     revenue += Number(r.total_toman || 0);
-    cogs += orderCogs(r, margin, costs);
+    cogs += orderCogs(r, margin, costs, purchaseCosts);
   }
   return { revenue, orders: rows.length, cogs, rows };
+}
+
+function eventJoinRevenue(since?: string): { coins: number; joins: number; tomanEquivalent: number } {
+  try {
+    let sql = `SELECT COALESCE(SUM(amount), 0) AS coins, COUNT(*) AS joins
+               FROM wallet_ledger
+               WHERE ref_type = 'event_join'
+                 AND direction = 'credit'
+                 AND currency = 'coins'`;
+    const params: unknown[] = [];
+    if (since) {
+      sql += ' AND created_at >= ?';
+      params.push(since);
+    }
+    const row = db().prepare(sql).get(...params) as { coins: number; joins: number };
+    const coins = Number(row?.coins || 0);
+    return {
+      coins,
+      joins: Number(row?.joins || 0),
+      tomanEquivalent: coins * COIN_PRICE_TOMAN,
+    };
+  } catch {
+    return { coins: 0, joins: 0, tomanEquivalent: 0 };
+  }
 }
 
 function paymentTopupRevenue(since: string, until?: string): number {
@@ -230,6 +274,20 @@ export const adminFinance = {
     const fees = serviceFees(since);
     const prevFees = serviceFees(prev.start, prev.end);
     const opEx = opExForPeriod(period);
+    const events = eventJoinRevenue(since);
+    const eventsAll = eventJoinRevenue();
+    let shopProfit = {
+      revenueToman: current.revenue,
+      cogsToman: current.cogs,
+      profitToman: current.revenue - current.cogs,
+      purchaseCount: 0,
+      purchaseSpendToman: 0,
+    };
+    try {
+      shopProfit = { ...shopProfit, ...shopProfitSummary(), revenueToman: current.revenue, cogsToman: current.cogs, profitToman: current.revenue - current.cogs };
+    } catch {
+      /* warehouse table optional until first purchase */
+    }
 
     const revenue = current.revenue + topups + fees.vetRevenue + fees.playdateRevenue;
     const prevRevenue =
@@ -264,6 +322,13 @@ export const adminFinance = {
         operatingExpense: opEx,
         vetConsults: fees.vetCount,
         playdatesAccepted: fees.playdateCount,
+        eventCoins: events.coins,
+        eventJoins: events.joins,
+        eventToman: events.tomanEquivalent,
+        eventCoinsAll: eventsAll.coins,
+        eventJoinsAll: eventsAll.joins,
+        shopProfit: shopProfit.profitToman,
+        shopPurchaseCount: shopProfit.purchaseCount,
       },
       charts: {
         salesTrend: sales.dailyOrMonthly,
@@ -286,6 +351,7 @@ export const adminFinance = {
           { label: 'شارژ کیف پول', value: topups },
           { label: 'دامپزشک', value: fees.vetRevenue },
           { label: 'همبازی', value: fees.playdateRevenue },
+          { label: 'درآمد ایونت', value: events.tomanEquivalent },
         ].filter((s) => s.value > 0),
       },
       previous: { revenue: prevRevenue, orders: previous.orders },
@@ -306,6 +372,13 @@ export const adminFinance = {
       { key: 'topups', label: 'شارژ کیف پول (تومان تاییدشده)', type: 'income' as const, amount: dash.breakdown.paymentTopups },
       { key: 'vet', label: 'کارمزد/درآمد مشاوره دامپزشک', type: 'income' as const, amount: dash.breakdown.vetFees },
       { key: 'playdate', label: 'کارمزد همبازی', type: 'income' as const, amount: dash.breakdown.playdateFees },
+      {
+        key: 'events',
+        label: 'درآمد ایونت',
+        type: 'income' as const,
+        amount: dash.breakdown.eventCoins,
+        unit: 'coins' as const,
+      },
       { key: 'cogs', label: 'بهای تمام‌شده کالا (COGS)', type: 'expense' as const, amount: dash.breakdown.cogs },
       { key: 'opex', label: 'هزینه‌های عملیاتی', type: 'expense' as const, amount: dash.breakdown.operatingExpense },
     ];
@@ -465,6 +538,8 @@ export const adminFinance = {
       paidRevenue: statusTotals
         .filter((s) => ['paid', 'shipped', 'completed'].includes(s.status))
         .reduce((a, s) => a + Number(s.revenue), 0),
+      shopProfit: shopProfitSummary(),
+      eventRevenue: eventJoinRevenue(),
     };
   },
 

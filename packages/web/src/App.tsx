@@ -279,6 +279,12 @@ const AdminPlaydatesPage = lazy(() =>
 const AdminGamesPage = lazy(() =>
   import('./admin/pages/AdminGamesPage').then((m) => ({ default: m.AdminGamesPage })),
 );
+const AdminGuidePage = lazy(() =>
+  import('./admin/pages/AdminGuidePage').then((m) => ({ default: m.AdminGuidePage })),
+);
+const AdminShopWarehousePage = lazy(() =>
+  import('./admin/pages/AdminShopWarehousePage').then((m) => ({ default: m.AdminShopWarehousePage })),
+);
 const AdminShopProductsPage = lazy(() =>
   import('./admin/pages/AdminShopProductsPage').then((m) => ({ default: m.AdminShopProductsPage })),
 );
@@ -548,6 +554,8 @@ export default function App() {
                 <Route path="pets/:id/edit" element={<AdminPetFormPage />} />
                 <Route path="playdates" element={<AdminPlaydatesPage />} />
                 <Route path="events" element={<AdminGamesPage />} />
+                <Route path="guide" element={<AdminGuidePage />} />
+                <Route path="shop/warehouse" element={<AdminShopWarehousePage />} />
                 <Route path="games" element={<Navigate to="/admin/events" replace />} />
                 <Route path="matches" element={<Navigate to="/admin/playdates" replace />} />
                 <Route path="consults" element={<AdminConsultsPage />} />

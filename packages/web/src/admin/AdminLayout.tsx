@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminRouteOutlet } from './AdminRouteOutlet';
 import { ChevronDown,
@@ -82,6 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
       perm: 'shop.read',
       platformBadgeKey: 'shopOrders',
     },
+    { to: '/admin/shop/warehouse', icon: Package, labelKey: 'admin.warehouse', perm: 'shop.read' },
     { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
     { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
     { to: '/admin/shop/brands', icon: Package, labelKey: 'admin.brands', perm: 'shop.read' },
@@ -203,9 +204,10 @@ const NAV_GROUPS: NavGroup[] = [
   ]},
 ];
 
-const TITLE_KEY_MAP: Record<string, string> = Object.fromEntries(
-  NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.to, i.labelKey]))
-);
+const TITLE_KEY_MAP: Record<string, string> = {
+  ...Object.fromEntries(NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.to, i.labelKey]))),
+  '/admin/guide': 'admin.guide',
+};
 
 const ADMIN_NAV_MQ = '(max-width: 960px)';
 
@@ -354,9 +356,9 @@ function AdminLayoutInner() {
   }, []);
   useEffect(() => {
     refreshNavCounts();
-    const t = window.setInterval(refreshNavCounts, 90_000);
-    return () => window.clearInterval(t);
-  }, [refreshNavCounts, location.pathname]);
+    const timer = window.setInterval(refreshNavCounts, 90_000);
+    return () => window.clearInterval(timer);
+  }, [refreshNavCounts]);
 
   useEffect(() => {
     const mq = window.matchMedia(ADMIN_NAV_MQ);
@@ -501,6 +503,9 @@ function AdminLayoutInner() {
             </div>
             <div className="admin-topbar-end">
               <LanguageToggle compact className="admin-lang-toggle" />
+              <Link to="/admin/guide" className="admin-btn admin-btn--ghost admin-guide-link">
+                {t('admin.guide')}
+              </Link>
               <ThemeToggle compact className="admin-theme-toggle" />
               <AdminHeaderNotifications />
             </div>

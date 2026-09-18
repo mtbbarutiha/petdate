@@ -240,6 +240,23 @@ export function AdminFinanceAllocationPage() {
     }
   };
 
+  const deleteOfficeNow = async (officeId: number) => {
+    if (!editMode) return;
+    const ok = await appConfirm(tr('حذف دفتر؟ این کار قابل بازگشت نیست.'), { variant: 'admin' });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/finance-os/allocation/offices/${officeId}`, { method: 'DELETE' });
+      setOfficeDrafts((rows) => rows.filter((o) => o.id !== officeId));
+      const bundle = await load({ syncDrafts: true });
+      if (bundle) applyDrafts(bundle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const saveOfficeNow = async (officeId: number) => {
     if (!editMode) return;
     const office = officeDrafts.find((o) => o.id === officeId);
@@ -659,6 +676,15 @@ export function AdminFinanceAllocationPage() {
                       onClick={() => void saveOfficeNow(o.id)}
                     >
                       {tr('ذخیره')}
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--danger"
+                      disabled={busy}
+                      data-testid={`admin-office-delete-${o.id}`}
+                      onClick={() => void deleteOfficeNow(o.id)}
+                    >
+                      {tr('حذف دفتر')}
                     </button>
                   </div>
                 ) : null}

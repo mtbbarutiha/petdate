@@ -13,7 +13,7 @@ type PnL = {
   marginPct: number;
   grossProfit: number;
   grossMarginPct: number;
-  lines: Array<{ key: string; label: string; type: 'income' | 'expense'; amount: number }>;
+  lines: Array<{ key: string; label: string; type: 'income' | 'expense'; amount: number; unit?: 'coins' }>;
   settings: Record<string, number>;
 };
 
@@ -92,7 +92,7 @@ export function AdminFinancePnLPage() {
                       <tr key={l.key}>
                         <td>{tr(l.label)}</td>
                         <td><span className={`admin-badge admin-badge--${l.type === 'income' ? 'ok' : 'warn'}`}>{l.type === 'income' ? tr('درآمد') : tr('هزینه')}</span></td>
-                        <td className="admin-mono">{formatTomanFa(l.amount)}</td>
+                        <td className="admin-mono">{l.unit === 'coins' || l.key === 'events' ? `${formatNumFa(l.amount)} ${tr('سکه')}` : formatTomanFa(l.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
