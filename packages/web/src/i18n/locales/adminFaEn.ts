@@ -2331,6 +2331,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "{n} مورد مشابه": "{n} similar",
   "از {from} تا {to}": "From {from} to {to}",
   "متن فنی": "Technical text",
+  "متن خطا": "Error text",
   "کپی متن اصلی": "Copy original",
   "برای بستن ردیف دوباره کلیک کنید": "Click the row again to collapse",
   "خارجی": "External",
