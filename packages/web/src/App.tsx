@@ -168,6 +168,9 @@ const ShopOrderDetailPage = lazy(() =>
 const PhoneVerifyPage = lazy(() =>
   import('./pages/auth/PhoneVerifyPage').then((m) => ({ default: m.PhoneVerifyPage })),
 );
+const RoleSelectPage = lazy(() =>
+  import('./pages/onboarding/RoleSelectPage').then((m) => ({ default: m.RoleSelectPage })),
+);
 const ProfileWizardPage = lazy(() =>
   import('./pages/onboarding/ProfileWizardPage').then((m) => ({ default: m.ProfileWizardPage })),
 );

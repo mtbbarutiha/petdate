@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Send, Smartphone } from 'lucide-react';
-import { dashboardPathForUser, formatIranMobileDisplay, isProfileComplete, normalizeIranMobile } from '@petdate/shared';
+import { dashboardPathForUser, formatIranMobileDisplay, isProfileComplete as sharedProfileComplete, normalizeIranMobile } from '@petdate/shared';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
@@ -146,7 +146,7 @@ export function PhoneVerifyPage() {
       navigate(
         postAuthPath({
           hasRole: Boolean(verifiedUser.roles?.length || verifiedUser.role),
-          isProfileComplete: isProfileComplete(verifiedUser),
+          isProfileComplete: sharedProfileComplete(verifiedUser),
           phoneVerified: true,
           next,
           roleHome: dashboardPathForUser(verifiedUser),
