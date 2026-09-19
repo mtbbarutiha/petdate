@@ -3777,16 +3777,18 @@ export const dbService = {
   },
 
   listPendingVerifications(): User[] {
+    // Face/video queue only. The previous OR pulled every user without a
+    // verified phone — including deleted shells — and approve/reject only
+    // succeed when verification_status is pending, so those cards did nothing.
     return (
       db
         .prepare(
           `SELECT * FROM users
            WHERE verification_status = 'pending'
-              OR (
-                COALESCE(verification_status, 'none') NOT IN ('verified', 'rejected')
-                AND COALESCE(phone_verified, 0) = 0
-              )
-           ORDER BY CASE WHEN verification_status = 'pending' THEN 0 ELSE 1 END, id ASC
+             AND COALESCE(is_active, 1) = 1
+             AND name NOT LIKE '[حذف‌شده%'
+             AND COALESCE(TRIM(verification_photo_file_id), '') != ''
+           ORDER BY id ASC
            LIMIT 300`
         )
         .all() as Record<string, unknown>[]
