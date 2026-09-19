@@ -21,6 +21,8 @@ export interface PlatformNavCounts {
   shopOrders: number;
   /** Scheduled games currently open for join. */
   games: number;
+  /** Pet-lover review submissions awaiting admin approve/reject */
+  petLoverReviews: number;
 }
 
 /** Live sidebar badge counts for Finance OS + deposit approval queues. */

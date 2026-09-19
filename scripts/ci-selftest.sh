@@ -512,6 +512,7 @@ run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/runtime-settings.selftest.ts
 run src/magazine.selftest.ts
+run src/pet-lover-reviews.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/sample-pet-events-seed.selftest.ts
 run src/services/event-tickets.selftest.ts

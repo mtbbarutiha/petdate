@@ -2220,7 +2220,9 @@ html[data-theme='dark'] .pepito-reviews-section {
   );
 }
 html[data-theme='dark'] .pepito-reviews-section .pepito-section-head h2,
-html[data-theme='dark'] .pepito-reviews-section h2 {
+html[data-theme='dark'] .pepito-reviews-section .pepito-section-head h1,
+html[data-theme='dark'] .pepito-reviews-section h2,
+html[data-theme='dark'] .pepito-reviews-section h1 {
   color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-review {
@@ -2230,6 +2232,16 @@ html[data-theme='dark'] .pepito-review {
 }
 html[data-theme='dark'] .pepito-review-body h3,
 html[data-theme='dark'] .pepito-review-body p {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-reviews-submit {
+  background: var(--pepito-soft);
+}
+html[data-theme='dark'] .pepito-reviews-field input,
+html[data-theme='dark'] .pepito-reviews-field textarea,
+html[data-theme='dark'] .pepito-reviews-field select {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
   color: var(--pepito-dark);
 }
 

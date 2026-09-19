@@ -531,6 +531,16 @@ export const adminPlatform = {
       ),
       /** Open scheduled games (joinable) */
       games: q(`SELECT COUNT(*) as c FROM games WHERE status = 'open'`),
+      /** Pet-lover reviews awaiting moderation */
+      petLoverReviews: (() => {
+        try {
+          return q(
+            `SELECT COUNT(*) as c FROM pet_lover_reviews WHERE status = 'pending'`,
+          );
+        } catch {
+          return 0;
+        }
+      })(),
     };
   },
 

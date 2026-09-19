@@ -147,8 +147,8 @@ assert.doesNotMatch(welcome, /ShopProductSearch/, 'homepage chrome has no shop p
 
 const landingKeys = landingSectionLinks({ vetConsultEnabled: true }).map((l) => l.key);
 const welcomeKeys = welcomeSectionLinks().map((l) => l.key);
-assert.deepEqual(landingKeys, ['services', 'adoption', 'vet', 'faq']);
-assert.deepEqual(welcomeKeys, ['services', 'adoption', 'news', 'faq']);
+assert.deepEqual(landingKeys, ['services', 'adoption', 'reviews', 'vet', 'faq']);
+assert.deepEqual(welcomeKeys, ['services', 'adoption', 'reviews', 'news', 'faq']);
 assert.ok(!landingKeys.includes('games') && !landingKeys.includes('shop'));
 assert.ok(!welcomeKeys.includes('games') && !welcomeKeys.includes('shop'));
 assert.ok(!shopSectionLinks().some((l) => l.key === 'games' || l.key === 'cart'));

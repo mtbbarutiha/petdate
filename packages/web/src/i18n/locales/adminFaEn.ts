@@ -2673,4 +2673,12 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "نام دفتر الزامی است": "Office name is required",
   "شرح الزامی است": "Description is required",
   "مبلغ الزامی است": "Amount is required",
+  "حذف این نظر؟": "Delete this review?",
+  "نظرات عاشقان پت": "Pet lover reviews",
+  "نظرات کاربران با عکس فانتزی — فقط پس از تأیید شما در لندینگ و صفحه نظرات منتشر می‌شوند.":
+    "User reviews with fantasy photos — published on the landing and reviews page only after you approve them.",
+  "مشاهده صفحه عمومی": "View public page",
+  "موردی در این فیلتر نیست.": "Nothing in this filter.",
+  "نمونه": "Sample",
+  "بررسی": "Reviewed by",
 };

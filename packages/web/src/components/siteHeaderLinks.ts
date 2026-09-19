@@ -18,6 +18,7 @@ export function landingSectionLinks(
   const links: SiteHeaderLink[] = [
     { key: 'services', labelKey: 'nav.services', to: '/#services' },
     { key: 'adoption', labelKey: 'nav.adoption', to: '/adoption', testId: 'nav-adoption' },
+    { key: 'reviews', labelKey: 'nav.reviews', to: '/reviews' },
   ];
   if (platform?.vetConsultEnabled !== false) {
     links.push({ key: 'vet', labelKey: 'nav.vet', to: '/vet-consult' });
@@ -30,6 +31,7 @@ export function welcomeSectionLinks(): SiteHeaderLink[] {
   return [
     { key: 'services', labelKey: 'nav.services', href: '#services' },
     { key: 'adoption', labelKey: 'nav.adoption', to: '/adoption', testId: 'nav-adoption' },
+    { key: 'reviews', labelKey: 'nav.reviews', href: '#reviews' },
     { key: 'news', labelKey: 'nav.news', href: '#news' },
     { key: 'faq', labelKey: 'nav.faq', href: '#faq', className: 'pepito-nav-faq' },
   ];

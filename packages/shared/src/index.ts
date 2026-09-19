@@ -19,6 +19,7 @@ export * from './payment-card';
 export * from './admin-password';
 export * from './chat-reply';
 export * from './event-ticket';
+export * from './pet-lover-reviews';
 
 import type {
   OnboardingStatus,

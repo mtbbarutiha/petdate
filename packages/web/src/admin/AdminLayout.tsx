@@ -198,6 +198,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/security', icon: Shield, labelKey: 'admin.security', perm: 'platform.read', tone: 'sensitive' },
     { to: '/admin/logs', icon: ScrollText, labelKey: 'admin.errorLogs', perm: 'platform.read', tone: 'sensitive' },
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'content.write' },
+    { to: '/admin/pet-lover-reviews', icon: Star, labelKey: 'admin.petLoverReviews', perm: 'content.write', platformBadgeKey: 'petLoverReviews' },
     { to: '/admin/hero', icon: Image, labelKey: 'admin.heroPhotos', perm: 'content.write' },
     { to: '/admin/content', icon: Bell, labelKey: 'admin.noticesContent', perm: 'content.write' },
     { to: '/admin/mail', icon: Mail, labelKey: 'admin.mailSmtp', perm: 'platform.read' },

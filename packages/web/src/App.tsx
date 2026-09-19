@@ -129,6 +129,9 @@ const MagazinePage = lazy(() =>
 const MagazineArticlePage = lazy(() =>
   import('./pages/MagazineArticlePage').then((m) => ({ default: m.MagazineArticlePage })),
 );
+const PetLoversReviewsPage = lazy(() =>
+  import('./pages/PetLoversReviewsPage').then((m) => ({ default: m.PetLoversReviewsPage })),
+);
 const AdoptionListPage = lazy(() =>
   import('./pages/AdoptionListPage').then((m) => ({ default: m.AdoptionListPage })),
 );
@@ -329,6 +332,11 @@ const AdminMagazinePage = lazy(() =>
 const AdminMagazineFormPage = lazy(() =>
   import('./admin/pages/AdminMagazineFormPage').then((m) => ({ default: m.AdminMagazineFormPage })),
 );
+const AdminPetLoversReviewsPage = lazy(() =>
+  import('./admin/pages/AdminPetLoversReviewsPage').then((m) => ({
+    default: m.AdminPetLoversReviewsPage,
+  })),
+);
 const AdminHeroPage = lazy(() =>
   import('./admin/pages/AdminHeroPage').then((m) => ({ default: m.AdminHeroPage })),
 );
@@ -498,6 +506,7 @@ export default function App() {
             <Route path="app" element={<AppLandingPage />} />
             <Route path="magazine" element={<MagazinePage />} />
             <Route path="magazine/:slug" element={<MagazineArticlePage />} />
+            <Route path="reviews" element={<PetLoversReviewsPage />} />
             <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
@@ -590,6 +599,7 @@ export default function App() {
                 <Route path="magazine" element={<AdminMagazinePage />} />
                 <Route path="magazine/new" element={<AdminMagazineFormPage />} />
                 <Route path="magazine/:id" element={<AdminMagazineFormPage />} />
+                <Route path="pet-lover-reviews" element={<AdminPetLoversReviewsPage />} />
                 <Route path="hero" element={<AdminHeroPage />} />
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="security" element={<AdminSecurityPage />} />
