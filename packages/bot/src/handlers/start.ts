@@ -641,7 +641,7 @@ export async function handleRolesSelect(ctx: Context, roles: UserRole[]): Promis
     '',
     escapeHtml(hint) + escapeHtml(webLinkHint()),
     '',
-    'حالا پروفایلت رو کامل کنیم — اگر الان وقت نداری «⏭ فعلاً رد کن» رو بزن.',
+    'حالا اول شماره موبایلت رو با پیامک تأیید کن — بدون احراز موبایل نمی‌تونی ادامه بدی.',
   ].join('\n');
 
   try {
