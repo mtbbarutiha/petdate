@@ -12,7 +12,9 @@ import {
   patchWebVisitFee,
   claimReferral,
   requestWebOtp,
+  sendAuthPhoneOtp,
   uploadUserAvatar,
+  verifyAuthPhoneOtp,
   verifyWebOtp,
   type WebOtpChannel,
 } from '../lib/api';
@@ -111,6 +113,10 @@ class AuthStore {
     return sharedProfileComplete(u);
   }
 
+  get isPhoneVerified() {
+    return Boolean(this.data.user?.phoneVerified);
+  }
+
   setPending(channel: WebOtpChannel, target: string, devCode?: string) {
     this.data = {
       ...this.data,
@@ -159,6 +165,21 @@ class AuthStore {
     this.persist();
     await this.claimStoredReferral();
     return this.data.user ?? result.user;
+  }
+
+  /** SMS OTP to attach phone after Telegram / Google login. */
+  async sendPhoneAttachOtp(phone: string) {
+    if (!this.data.token) throw new Error('وارد نشده‌اید');
+    return sendAuthPhoneOtp(this.data.token, phone);
+  }
+
+  async verifyPhoneAttachOtp(phone: string, code: string) {
+    if (!this.data.token) throw new Error('وارد نشده‌اید');
+    const result = await verifyAuthPhoneOtp(this.data.token, phone, code);
+    this.data = { ...this.data, user: result.user };
+    this.persist();
+    if (this.data.token) invalidateAuthGetCache(this.data.token);
+    return result.user;
   }
 
   /** Apply a session from bot-signed Telegram exchange (same users row). */

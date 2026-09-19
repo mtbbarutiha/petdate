@@ -75,8 +75,13 @@ function main(): void {
   assert.match(startSrc, /startProfileGapFill/, 'returning incomplete users use gap-fill');
   assert.match(
     startSrc,
-    /ویزارد تکمیل پروفایل بلافاصله بعد از انتخاب نقش[\s\S]*startProfileWizard/,
-    'first-time role confirm still starts the full registration wizard'
+    /ثبت‌نام: اول احراز موبایل اجباری[\s\S]*handlePhoneVerifyStart[\s\S]*startProfileWizard/,
+    'first-time role confirm requires phone OTP then the registration wizard'
+  );
+  assert.match(
+    startSrc,
+    /!user\.phoneVerified[\s\S]*handlePhoneVerifyStart/,
+    '/start forces phone OTP when roles exist but phone is unverified'
   );
 
   console.log('profile-gap-fill.selftest: ok');

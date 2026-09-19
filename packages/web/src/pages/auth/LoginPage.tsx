@@ -103,6 +103,7 @@ export function LoginPage() {
       postAuthPath({
         hasRole,
         isProfileComplete,
+        phoneVerified: Boolean(user?.phoneVerified),
         next,
         roleHome: dashboardPathForUser(user),
       }),
@@ -132,6 +133,7 @@ export function LoginPage() {
             postAuthPath({
               hasRole: rolesOk,
               isProfileComplete: profileOk,
+              phoneVerified: Boolean(res.user.phoneVerified),
               next: sanitizeNext(res.next ?? next, next),
               roleHome: dashboardPathForUser(res.user),
             }),

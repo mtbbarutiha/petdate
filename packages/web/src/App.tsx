@@ -165,6 +165,9 @@ const ShopOrdersPage = lazy(() =>
 const ShopOrderDetailPage = lazy(() =>
   import('./pages/shop/ShopOrderDetailPage').then((m) => ({ default: m.ShopOrderDetailPage })),
 );
+const PhoneVerifyPage = lazy(() =>
+  import('./pages/auth/PhoneVerifyPage').then((m) => ({ default: m.PhoneVerifyPage })),
+);
 const RoleSelectPage = lazy(() =>
   import('./pages/onboarding/RoleSelectPage').then((m) => ({ default: m.RoleSelectPage })),
 );
@@ -515,6 +518,7 @@ export default function App() {
             <Route path="shop/:id" element={<ShopProductAliasRedirect />} />
             <Route path="auth/login" element={<LoginPage />} />
             <Route path="auth/otp" element={<OtpPage />} />
+            <Route path="auth/phone" element={<PhoneVerifyPage />} />
             <Route path="auth/telegram" element={<TelegramLinkPage />} />
             <Route path="auth/google" element={<GoogleCallbackPage />} />
             <Route path="onboarding/role" element={<RoleSelectPage />} />

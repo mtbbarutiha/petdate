@@ -1,5 +1,6 @@
 /**
  * Login from /vet-consult must return there (not drop next=).
+ * Phone gate after Telegram/Google must run before role/profile.
  * Run: npx tsx packages/web/src/lib/authRedirect.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -25,5 +26,7 @@ assert.doesNotMatch(
   /sanitized === '\/home' \|\| sanitized === '\/vet-consult'/,
   'postAuthPath honors next=/vet-consult'
 );
+assert.match(src, /phoneVerified === false/, 'postAuthPath gates unverified phone');
+assert.match(src, /\/auth\/phone/, 'phone verify path exists');
 
 console.log('authRedirect.selftest: ok');

@@ -47,6 +47,7 @@ export function TelegramLinkPage() {
           postAuthPath({
             hasRole: rolesOk,
             isProfileComplete: profileOk,
+            phoneVerified: Boolean(res.user.phoneVerified),
             next,
             roleHome: dashboardPathForUser(res.user),
           }),
@@ -71,6 +72,7 @@ export function TelegramLinkPage() {
       postAuthPath({
         hasRole,
         isProfileComplete,
+        phoneVerified: Boolean(user?.phoneVerified),
         next: sanitizeNext(searchParams.get('next'), '/wallet'),
         roleHome: dashboardPathForUser(user),
       }),

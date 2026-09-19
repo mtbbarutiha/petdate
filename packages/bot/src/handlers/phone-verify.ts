@@ -2,6 +2,7 @@ import type { Context } from 'grammy';
 import { Keyboard } from 'grammy';
 import {
   formatIranMobileDisplay,
+  isProfileComplete,
   normalizeIranMobile,
   phoneVerifyIntroText,
   toEnglishDigits,
@@ -60,23 +61,32 @@ function isResendLabel(text: string): boolean {
   return text === '🔄 ارسال مجدد کد' || /^⏳ ارسال مجدد/.test(text);
 }
 
-function phoneAskKeyboard(): Keyboard {
-  return phoneWizardKeyboard();
+function phoneAskKeyboard(required: boolean): Keyboard {
+  return phoneWizardKeyboard({ required });
 }
 
-/** آیا دامپزشک باید اول موبایل را تأیید کند؟ */
-export function vetNeedsPhoneVerify(user: User | null | undefined): boolean {
+/** آیا کاربر باید موبایل را تأیید کند؟ (ثبت‌نام و همه نقش‌ها) */
+export function needsPhoneVerify(user: User | null | undefined): boolean {
   if (!user) return false;
-  return userHasRole(user, 'vet') && !user.phoneVerified;
+  return !user.phoneVerified;
+}
+
+/** @deprecated use needsPhoneVerify — kept for call sites that still say «vet» */
+export function vetNeedsPhoneVerify(user: User | null | undefined): boolean {
+  return needsPhoneVerify(user);
 }
 
 /**
- * گیت اقدامات حیاتی دامپزشک.
- * اگر موبایل تأیید نشده باشد، جریان احراز را شروع می‌کند و false برمی‌گرداند.
+ * گیت اقدامات حیاتی: بدون موبایل تأییدشده ادامه نده.
+ * برای دامپزشکان قبلاً اجباری بود؛ الان برای همه نقش‌ها.
  */
 export async function ensureVetPhoneVerified(ctx: Context): Promise<boolean> {
+  return ensurePhoneVerified(ctx);
+}
+
+export async function ensurePhoneVerified(ctx: Context): Promise<boolean> {
   const user = await getCtxUser(ctx);
-  if (!vetNeedsPhoneVerify(user)) return true;
+  if (!needsPhoneVerify(user)) return true;
 
   if (ctx.callbackQuery) {
     await ctx.answerCallbackQuery({
@@ -89,7 +99,7 @@ export async function ensureVetPhoneVerified(ctx: Context): Promise<boolean> {
     [
       '📱 <b>احراز موبایل الزامی</b>',
       '',
-      'برای استفاده از امکانات دامپزشکی باید شماره موبایلت رو با پیامک تأیید کنی.',
+      'برای ادامه باید شماره موبایلت رو با پیامک تأیید کنی.',
     ].join('\n'),
     { parse_mode: 'HTML' }
   );
@@ -99,7 +109,7 @@ export async function ensureVetPhoneVerified(ctx: Context): Promise<boolean> {
 
 export async function handlePhoneVerifyStart(
   ctx: Context,
-  opts?: { required?: boolean }
+  opts?: { required?: boolean; continueProfile?: boolean }
 ): Promise<void> {
   const from = ctx.from;
   if (!from) return;
@@ -115,6 +125,7 @@ export async function handlePhoneVerifyStart(
     await upsertSession(telegramId, {
       step: 'ready',
       pendingPhone: undefined,
+      phoneVerifyRequired: undefined,
     });
     await ctx.reply(
       [
@@ -129,29 +140,40 @@ export async function handlePhoneVerifyStart(
         reply_markup: menuKeyboardFor(ctx, user),
       }
     );
-    // Allow re-verify: still open ask flow if they continue typing
   }
 
-  const required = opts?.required ?? vetNeedsPhoneVerify(user);
+  const required = opts?.required ?? needsPhoneVerify(user);
   await upsertSession(telegramId, {
     step: 'phone_verify_ask',
     pendingPhone: undefined,
     adminRejectUserId: undefined,
+    phoneVerifyRequired: required || undefined,
+    // Stash so OTP success can resume onboarding
+    ...(opts?.continueProfile ? { profileGapFill: false } : {}),
   });
 
   await ctx.reply(phoneVerifyIntroText({ required }), {
     parse_mode: 'HTML',
-    reply_markup: phoneAskKeyboard(),
+    reply_markup: phoneAskKeyboard(required),
   });
 }
 
 export async function handlePhoneVerifyCancel(ctx: Context): Promise<void> {
   const from = ctx.from;
   if (!from) return;
+  const telegramId = String(from.id);
+  const session = await getSession(telegramId);
+  if (session?.phoneVerifyRequired) {
+    await ctx.reply('احراز موبایل اجباری است — نمی‌تونی لغو کنی. شماره رو بفرست.', {
+      reply_markup: phoneAskKeyboard(true),
+    });
+    return;
+  }
   const user = await getCtxUser(ctx);
-  await upsertSession(String(from.id), {
+  await upsertSession(telegramId, {
     step: 'ready',
     pendingPhone: undefined,
+    phoneVerifyRequired: undefined,
   });
   await ctx.reply('احراز موبایل لغو شد.', {
     reply_markup: menuKeyboardFor(ctx, user),
@@ -190,36 +212,36 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
     return false;
   }
 
+  const required = Boolean(session.phoneVerifyRequired);
+
   if (text === WIZARD_NAV.cancel) {
     await handlePhoneVerifyCancel(ctx);
     return true;
   }
 
-  // اگر کاربر دکمه منو زد، از گیت موبایل خارج شو تا بات قفل نشود
-  // (برای دامپزشک الزامی، فقط یادآوری می‌کنیم و منو را آزاد می‌گذاریم)
+  // اگر کاربر دکمه منو زد: در حالت اجباری قفل بمان؛ وگرنه آزاد کن
   if (MENU_LABELS.has(text)) {
+    if (required) {
+      await ctx.reply('اول موبایلت رو با پیامک تأیید کن، بعد منو باز می‌شه.', {
+        reply_markup: phoneAskKeyboard(true),
+      });
+      return true;
+    }
     const user = await getCtxUser(ctx);
     await upsertSession(telegramId, {
       step: 'ready',
       pendingPhone: undefined,
+      phoneVerifyRequired: undefined,
     });
-    if (vetNeedsPhoneVerify(user)) {
-      await ctx.reply(
-        'احراز موبایل برای امکانات دامپزشکی لازم است — بعداً از پروفایل «📱 احراز موبایل» بزن.',
-        { reply_markup: menuKeyboardFor(ctx, user) }
-      );
-    }
     return false; // اجازه بده handler منو اجرا شود
   }
 
   if (session.step === 'phone_verify_ask') {
     if (text === WIZARD_NAV.skip || text === WIZARD_NAV.skipLater) {
-      const user = await getCtxUser(ctx);
-      if (vetNeedsPhoneVerify(user)) {
-        await ctx.reply(
-          'برای دامپزشکان رد کردن احراز موبایل ممکن نیست. لطفاً شماره رو بفرست.',
-          { reply_markup: phoneAskKeyboard() }
-        );
+      if (required || needsPhoneVerify(await getCtxUser(ctx))) {
+        await ctx.reply('رد کردن احراز موبایل ممکن نیست. لطفاً شماره رو بفرست.', {
+          reply_markup: phoneAskKeyboard(true),
+        });
         return true;
       }
       await handlePhoneVerifyCancel(ctx);
@@ -228,8 +250,8 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
     // فقط اگر شبیه شماره موبایل بود OTP بفرست؛ وگرنه منو قفل نشود
     const normalized = normalizeIranMobile(text);
     if (!normalized) {
-      await ctx.reply('شماره موبایل معتبر بفرست (مثلاً 0912…) یا /cancel بزن.', {
-        reply_markup: phoneAskKeyboard(),
+      await ctx.reply('شماره موبایل معتبر بفرست (مثلاً 0912…) یا دکمهٔ اشتراک شماره رو بزن.', {
+        reply_markup: phoneAskKeyboard(required),
       });
       return true;
     }
@@ -241,9 +263,13 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
   if (isResendLabel(text)) {
     const phone = session.pendingPhone;
     if (!phone) {
-      await upsertSession(telegramId, { step: 'phone_verify_ask', pendingPhone: undefined, phoneOtpResendAt: undefined });
+      await upsertSession(telegramId, {
+        step: 'phone_verify_ask',
+        pendingPhone: undefined,
+        phoneOtpResendAt: undefined,
+      });
       await ctx.reply('شماره پیدا نشد. دوباره شماره رو بفرست.', {
-        reply_markup: phoneAskKeyboard(),
+        reply_markup: phoneAskKeyboard(required),
       });
       return true;
     }
@@ -264,7 +290,7 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
   if (!phone) {
     await upsertSession(telegramId, { step: 'phone_verify_ask' });
     await ctx.reply('جلسه منقضی شده. دوباره شماره رو بفرست.', {
-      reply_markup: phoneAskKeyboard(),
+      reply_markup: phoneAskKeyboard(required),
     });
     return true;
   }
@@ -300,16 +326,18 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
           : reason === 'too_many'
             ? 'تعداد تلاش بیش از حد. دوباره شماره رو بفرست.'
             : 'تأیید ناموفق. دوباره شماره رو بفرست.',
-        { reply_markup: phoneAskKeyboard() }
+        { reply_markup: phoneAskKeyboard(required) }
       );
       return true;
     }
 
     const user = result.user;
+    const wasRequired = required;
     await upsertSession(telegramId, {
       step: 'ready',
       pendingPhone: undefined,
       phoneOtpResendAt: undefined,
+      phoneVerifyRequired: undefined,
     });
     await ctx.reply(
       [
@@ -319,13 +347,19 @@ export async function handlePhoneVerifyText(ctx: Context, text: string): Promise
         '',
         userHasRole(user, 'vet')
           ? 'الان می‌تونی از امکانات دامپزشکی استفاده کنی.'
-          : 'مرسی! پروفایلت قابل اعتمادتر شد.',
+          : 'مرسی! حسابت امن‌تر شد.',
       ].join('\n'),
       {
         parse_mode: 'HTML',
         reply_markup: menuKeyboardFor(ctx, user),
       }
     );
+
+    // ثبت‌نام: بعد از احراز موبایل، ویزارد پروفایل را ادامه بده
+    if (wasRequired && !isProfileComplete(user)) {
+      const { startProfileWizard } = await import('./profile');
+      await startProfileWizard(ctx);
+    }
   } catch (err) {
     console.error('verifyPhoneOtp failed:', err);
     const latest = await getSession(telegramId);
@@ -341,11 +375,13 @@ async function dispatchSendOtp(
   telegramId: string,
   phoneRaw: string
 ): Promise<void> {
+  const session = await getSession(telegramId);
+  const required = Boolean(session?.phoneVerifyRequired);
   const normalized = normalizeIranMobile(phoneRaw);
   if (!normalized) {
     await ctx.reply(
       'شماره نامعتبره. مثل ۰۹۱۲۳۴۵۶۷۸۹ بفرست یا دکمهٔ اشتراک شماره رو بزن.',
-      { reply_markup: phoneAskKeyboard() }
+      { reply_markup: phoneAskKeyboard(required) }
     );
     return;
   }
@@ -369,7 +405,7 @@ async function dispatchSendOtp(
           (reason === 'not_configured'
             ? 'سرویس پیامک فعلاً در دسترس نیست.'
             : 'ارسال پیامک ناموفق بود. کمی بعد دوباره تلاش کن.'),
-        { reply_markup: phoneAskKeyboard() }
+        { reply_markup: phoneAskKeyboard(required) }
       );
       return;
     }
@@ -398,8 +434,10 @@ async function dispatchSendOtp(
   } catch (err) {
     console.error('sendPhoneOtp failed:', err);
     await ctx.reply(
-      'ارتباط با سرور برقرار نشد یا سرویس پیامک قطع است. کمی بعد دوباره از پروفایل «📱 احراز موبایل» رو بزن.',
-      { reply_markup: phoneAskKeyboard() }
+      required
+        ? 'ارتباط با سرور برقرار نشد یا سرویس پیامک قطع است. کمی بعد دوباره شماره رو بفرست.'
+        : 'ارتباط با سرور برقرار نشد یا سرویس پیامک قطع است. کمی بعد دوباره از پروفایل «📱 احراز موبایل» رو بزن.',
+      { reply_markup: phoneAskKeyboard(required) }
     );
   }
 }

@@ -29,13 +29,27 @@ export function readNextFromSearch(search: string): string {
   return sanitizeNext(params.get('next'), '/home');
 }
 
+export function phoneVerifyPath(next?: string | null): string {
+  const target = sanitizeNext(next, '/home');
+  const base =
+    target === '/home'
+      ? '/auth/phone'
+      : `/auth/phone?next=${encodeURIComponent(target)}`;
+  return withTagAssistantParams(base);
+}
+
 export function postAuthPath(opts: {
   hasRole: boolean;
   isProfileComplete: boolean;
+  /** Telegram / Google sessions without SMS must verify phone before the app */
+  phoneVerified?: boolean;
   next?: string | null;
   /** When set and next is default home, route to this role dashboard */
   roleHome?: string | null;
 }): string {
+  if (opts.phoneVerified === false) {
+    return phoneVerifyPath(opts.next);
+  }
   if (!opts.hasRole) return withTagAssistantParams('/onboarding/role');
   if (!opts.isProfileComplete) return withTagAssistantParams('/onboarding/profile');
   const sanitized = sanitizeNext(opts.next, '/home');

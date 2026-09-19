@@ -805,6 +805,21 @@ async function askProfileCity(
 }
 
 async function askProfilePhone(ctx: Context, section = false, gap = false): Promise<void> {
+  if (!section) {
+    const user = await getCtxUser(ctx);
+    if (user?.phoneVerified && user.phone) {
+      const telegramId = String(ctx.from!.id);
+      const session = await getSession(telegramId);
+      const draft = { ...(session?.draftProfile ?? draftFromUser(user)), phone: user.phone };
+      if (gap) {
+        await continueGapFill(ctx, telegramId, draft, 'profile_phone');
+        return;
+      }
+      await upsertSession(telegramId, { step: 'profile_photo', draftProfile: draft });
+      await askProfilePhoto(ctx, false, gap);
+      return;
+    }
+  }
   const title = section
     ? '📱 <b>ویرایش موبایل</b>'
     : gap
@@ -1196,6 +1211,13 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
     }
     if (gap) {
       await continueGapFill(ctx, telegramId, draft, 'profile_city');
+      return true;
+    }
+    const fresh = await getCtxUser(ctx);
+    if (fresh?.phoneVerified && (draft.phone || fresh.phone)) {
+      draft.phone = draft.phone || fresh.phone;
+      await upsertSession(telegramId, { step: 'profile_photo', draftProfile: draft });
+      await askProfilePhoto(ctx);
       return true;
     }
     await upsertSession(telegramId, { step: 'profile_phone', draftProfile: draft });

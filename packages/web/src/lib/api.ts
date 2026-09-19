@@ -884,6 +884,27 @@ export async function verifyWebOtp(
   });
 }
 
+/** Attach+verify phone for an already-logged-in session (Telegram / Google). */
+export async function sendAuthPhoneOtp(token: string, phone: string) {
+  return request<{
+    ok: true;
+    phone: string;
+    expiresAt: string;
+  }>('/api/auth/phone/send-otp', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ phone }),
+  });
+}
+
+export async function verifyAuthPhoneOtp(token: string, phone: string, code: string) {
+  return request<{ ok: true; user: User }>('/api/auth/phone/verify-otp', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ phone, code }),
+  });
+}
+
 export type ReferralStats = {
   ok: true;
   userId: number;
