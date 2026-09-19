@@ -2161,6 +2161,110 @@ body > #pd-boot-lcp.is-parked,
   font-weight: 400;
   font-size: 1.05rem;
 }
+.pepito-reviews-more {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.pepito-reviews-page-lead {
+  margin: 0.75rem auto 0;
+  max-width: 36rem;
+  color: var(--pepito-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  text-align: center;
+}
+.pepito-reviews-page-trust {
+  margin-top: 1.25rem;
+}
+.pepito-reviews-page-count {
+  text-align: center;
+  margin: 1rem 0 0;
+  color: var(--pepito-muted);
+  font-size: 0.95rem;
+}
+.pepito-reviews-page-status {
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--pepito-muted);
+}
+.pepito-reviews-page-status--err {
+  color: #b91c1c;
+}
+.pepito-reviews-page-status--ok {
+  color: #15803d;
+}
+.pepito-reviews--page {
+  margin-top: 1.5rem;
+}
+.pepito-reviews-submit {
+  padding-block: var(--pepito-section-y);
+  background: var(--pepito-white);
+}
+.pepito-reviews-gate {
+  max-width: 28rem;
+  margin: 1.5rem auto 0;
+  text-align: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+.pepito-reviews-form {
+  max-width: 32rem;
+  margin: 1.5rem auto 0;
+  display: grid;
+  gap: 1rem;
+}
+.pepito-reviews-field {
+  display: grid;
+  gap: 0.4rem;
+  text-align: start;
+  font-weight: 500;
+}
+.pepito-reviews-field input,
+.pepito-reviews-field textarea,
+.pepito-reviews-field select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--pepito-dark) 14%, transparent);
+  background: var(--pepito-soft);
+  font: inherit;
+  color: var(--pepito-dark);
+}
+.pepito-reviews-photo-row {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.pepito-reviews-photo-row input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pepito-reviews-photo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+.pepito-reviews-photo-preview {
+  margin-top: 0.75rem;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.pepito-reviews-form-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--pepito-muted);
+  line-height: 1.6;
+}
+.pepito-reviews-page-back {
+  margin-top: 2rem;
+  text-align: center;
+}
 .pepito-underline-pink {
   border-bottom: 1px solid var(--pepito-pink);
   font-family: var(--font-display);

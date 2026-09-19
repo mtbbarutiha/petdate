@@ -203,6 +203,17 @@ export function getDb(): AppDatabase {
       }
     };
 
+    const bootPetLoverReviews = () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { bootPetLoverReviews: boot } =
+          require('./pet-lover-reviews-service') as typeof import('./pet-lover-reviews-service');
+        boot();
+      } catch (err) {
+        console.warn('Pet lover reviews boot skipped/failed:', (err as Error).message);
+      }
+    };
+
     const bootShopPilot = () => {
       // Additive Royal Canin pilot + Batch 2 + Batch 3 + Batch-multi wave 1–3 SKUs — upsert by slug; never wipe catalog.
       try {
@@ -333,6 +344,7 @@ export function getDb(): AppDatabase {
         console.warn('species/breed catalog seed skipped/failed:', (err as Error).message);
       }
       bootMagazine();
+      bootPetLoverReviews();
       bootShopPilot();
       seedIfEmpty();
       bootShopCatalogGuard();
@@ -354,6 +366,7 @@ export function getDb(): AppDatabase {
       db.pragma('foreign_keys = ON');
       initSchema();
       bootMagazine();
+      bootPetLoverReviews();
       bootShopPilot();
       seedIfEmpty();
       bootShopCatalogGuard();

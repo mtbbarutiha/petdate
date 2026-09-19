@@ -38,6 +38,11 @@ import { productTitleForLang } from '../lib/shopLocale';
 import { GatedLink, PawIcon } from './landingGatedLink';
 import { LANDING_TEAM_AGENT_SLUGS, TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
 import { scheduleLandingAppCss } from '../styles/loadAppCss';
+import {
+  fetchPetLoverReviewsFeatured,
+  type PetLoverReviewCard,
+} from '../lib/petLoverReviewsApi';
+import { PetLoverReviewCardView } from '../components/PetLoverReviewCardView';
 
 const P = '/pepito/uploads';
 
@@ -228,6 +233,7 @@ export function WelcomeBelowFold() {
   const [newsPages, setNewsPages] = useState(1);
   const newsTrackRef = useRef<HTMLDivElement>(null);
   const [newsItems, setNewsItems] = useState<MagazineCard[]>(() => newsFallback(t));
+  const [reviewItems, setReviewItems] = useState<PetLoverReviewCard[]>([]);
   const shopSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -260,6 +266,19 @@ export function WelcomeBelowFold() {
     setNewsItems((prev) => (prev.some((n) => n.id < 0) ? newsFallback(t) : prev));
   }, [lang, t]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPetLoverReviewsFeatured(4)
+      .then((list) => {
+        if (!cancelled && list.length > 0) setReviewItems(list);
+      })
+      .catch(() => {
+        /* keep static REVIEW_DEFS fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -721,27 +740,46 @@ export function WelcomeBelowFold() {
           <h2>{t('landing.reviewsTitle')}</h2>
         </div>
         <div className="pepito-reviews">
-          {REVIEW_DEFS.map((r) => {
-            const handle = t(r.handleKey);
-            return (
-            <article key={r.handleKey} className="pepito-review">
-              <div className="pepito-review-img">
-                <div className="pepito-review-img-frame">
-                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" width={600} height={600} decoding="async" />
-                </div>
-              </div>
-              <div className="pepito-review-body">
-                <h3>{handle}</h3>
-                <div className="pepito-review-stars" role="img" aria-label={t('landing.starsAria')}>
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Star key={i} size={16} fill="currentColor" strokeWidth={0} aria-hidden />
-                  ))}
-                </div>
-                <p>{t(r.textKey)}</p>
-              </div>
-            </article>
-            );
-          })}
+          {reviewItems.length > 0
+            ? reviewItems.map((r) => (
+                <PetLoverReviewCardView
+                  key={r.id}
+                  review={r}
+                  starsAria={t('landing.starsAria')}
+                />
+              ))
+            : REVIEW_DEFS.map((r) => {
+                const handle = t(r.handleKey);
+                return (
+                  <article key={r.handleKey} className="pepito-review">
+                    <div className="pepito-review-img">
+                      <div className="pepito-review-img-frame">
+                        <img
+                          src={r.img}
+                          alt={t('landing.reviewAlt', { handle })}
+                          loading="lazy"
+                          width={600}
+                          height={600}
+                          decoding="async"
+                        />
+                      </div>
+                    </div>
+                    <div className="pepito-review-body">
+                      <h3>{handle}</h3>
+                      <div
+                        className="pepito-review-stars"
+                        role="img"
+                        aria-label={t('landing.starsAria')}
+                      >
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Star key={i} size={16} fill="currentColor" strokeWidth={0} aria-hidden />
+                        ))}
+                      </div>
+                      <p>{t(r.textKey)}</p>
+                    </div>
+                  </article>
+                );
+              })}
         </div>
         <div className="pepito-review-trust">
           <span className="pepito-review-trust-tag">{t('landing.trustTag')}</span>
@@ -750,6 +788,11 @@ export function WelcomeBelowFold() {
             <span className="pepito-underline-pink">petdate</span>{' '}
             {t('landing.trustDescAfter')}
           </p>
+        </div>
+        <div className="pepito-reviews-more">
+          <Link to="/reviews" className="pepito-btn button-3">
+            {t('landing.reviewsMore')}
+          </Link>
         </div>
       </section>
 
