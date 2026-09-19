@@ -32,6 +32,7 @@ import {
   X,
 } from 'lucide-react';
 import { SiteLogo } from '../components/SiteLogo';
+import { ProfileMenuButton } from '../components/ProfileMenuButton';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
 import {
@@ -318,18 +319,25 @@ function ConversationListPane({
           <SiteLogo className="tg-chat-list-logo" height={34} />
           <h1>{inboxListTitle(scope, t)}</h1>
         </div>
-        {isPlaymateHub ? <HubCta variant="header" onSent={onRefresh} /> : null}
-        {!isPlaymateHub ? (
-          <button
-            type="button"
-            className="tg-icon-btn"
-            onClick={onRefresh}
-            aria-label="بروزرسانی فهرست"
-            title="بروزرسانی"
-          >
-            <RefreshCw size={18} />
-          </button>
-        ) : null}
+        {isPlaymateHub ? (
+          <div className="tg-chat-list-tools">
+            <HubCta variant="header" onSent={onRefresh} />
+            <ProfileMenuButton />
+          </div>
+        ) : (
+          <div className="tg-chat-list-tools">
+            <button
+              type="button"
+              className="tg-icon-btn"
+              onClick={onRefresh}
+              aria-label="بروزرسانی فهرست"
+              title="بروزرسانی"
+            >
+              <RefreshCw size={18} />
+            </button>
+            <ProfileMenuButton />
+          </div>
+        )}
       </header>
 
       {showDiscovery ? (

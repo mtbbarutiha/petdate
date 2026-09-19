@@ -38,6 +38,44 @@ export function phoneVerifyPath(next?: string | null): string {
   return withTagAssistantParams(base);
 }
 
+/**
+ * Logged-in users may browse marketing / help without SMS.
+ * Product work (shop, wallet, playmate, events, profile, chats, consults)
+ * is not exempt — AuthGuard sends them to /auth/phone.
+ * Guests still use isPublic in AuthGuard; this list must not lock /auth/phone.
+ */
+const PHONE_GATE_EXEMPT_EXACT = new Set([
+  '/',
+  '/welcome',
+  '/faq',
+  '/help',
+  '/magazine',
+  '/news',
+  '/invite',
+  '/landings/app',
+  '/app',
+  '/reviews',
+]);
+
+const PHONE_GATE_EXEMPT_PREFIXES = [
+  '/auth',
+  '/admin',
+  '/adoption',
+  '/magazine',
+  '/reviews',
+  '/landings',
+  '/pet',
+  '/team-chat',
+  '/support',
+  '/news',
+];
+
+export function isPhoneGateExempt(pathname: string): boolean {
+  const p = pathname.replace(/\/+$/, '') || '/';
+  if (PHONE_GATE_EXEMPT_EXACT.has(p)) return true;
+  return PHONE_GATE_EXEMPT_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
+}
+
 export function postAuthPath(opts: {
   hasRole: boolean;
   isProfileComplete: boolean;

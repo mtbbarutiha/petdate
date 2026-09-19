@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type TouchEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent, type TouchEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Check, UserRound } from 'lucide-react';
 import {
@@ -12,6 +12,12 @@ import { useI18n } from '../i18n';
 import { resolvePublicAvatarUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 import {
+  closeProfileMenu,
+  getProfileMenuOpen,
+  subscribeProfileMenu,
+  toggleProfileMenu,
+} from './profileMenuStore';
+import {
   filterNavByPlatformConfig,
   isMobileDockHidden,
   SITE_NAV_GUEST,
@@ -20,7 +26,6 @@ import {
 } from '../lib/siteNav';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
-import { ProfileManageNav } from './ProfileManageNav';
 
 const LONG_PRESS_MS = 480;
 /** One glyph box for every dock item (home/shop/chats/wallet/profile/…). */
@@ -30,7 +35,7 @@ const DOCK_ICON_STROKE_ACTIVE = 2.25;
 
 /**
  * Instagram-style mobile bottom dock.
- * Profile tap opens مدیریت sheet (rail is desktop-only; avatar menu is hidden on mobile).
+ * Profile tap opens the same account menu as the header avatar.
  * Long-press opens role switcher.
  */
 export function LandingMobileDock() {
@@ -39,11 +44,10 @@ export function LandingMobileDock() {
   const { isLoggedIn, user, setPrimaryRole } = useAuthStore();
   const { t } = useI18n();
   const [roleOpen, setRoleOpen] = useState(false);
-  const [manageOpen, setManageOpen] = useState(false);
+  const profileOpen = useSyncExternalStore(subscribeProfileMenu, getProfileMenuOpen, () => false);
   const [busy, setBusy] = useState(false);
   const { toastSuccess, toastError } = useAppToast();
   const rolePanelId = useId();
-  const managePanelId = useId();
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -64,16 +68,13 @@ export function LandingMobileDock() {
   const hideDock = isMobileDockHidden(pathname);
 
   useEffect(() => {
-    if (!roleOpen && !manageOpen) return;
+    if (!roleOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setRoleOpen(false);
-        setManageOpen(false);
-      }
+      if (e.key === 'Escape') setRoleOpen(false);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [roleOpen, manageOpen]);
+  }, [roleOpen]);
 
   const clearLongPress = useCallback(() => {
     if (longPressTimer.current != null) {
@@ -88,7 +89,7 @@ export function LandingMobileDock() {
     clearLongPress();
     longPressTimer.current = window.setTimeout(() => {
       longPressFired.current = true;
-      setManageOpen(false);
+      closeProfileMenu();
       setRoleOpen(true);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try {
@@ -100,7 +101,7 @@ export function LandingMobileDock() {
     }, LONG_PRESS_MS);
   }, [clearLongPress, isLoggedIn, roles.length]);
 
-  const goProfile = () => {
+  const goProfile = (anchor: HTMLElement) => {
     if (longPressFired.current) {
       longPressFired.current = false;
       return;
@@ -109,9 +110,8 @@ export function LandingMobileDock() {
       navigate(loginPath('/profile'));
       return;
     }
-    // Desktop rail + top avatar menu are hidden on mobile — open مدیریت sheet here.
     setRoleOpen(false);
-    setManageOpen(true);
+    toggleProfileMenu(anchor);
   };
 
   const roleLabel = (role: UserRole) => t(`roles.${role}`);
@@ -190,13 +190,14 @@ export function LandingMobileDock() {
               <button
                 key={item.key}
                 type="button"
-                className={`pepito-landing-mobile-dock-link pepito-landing-mobile-dock-link--profile${active || roleOpen || manageOpen ? ' is-active' : ''}`}
+                className={`pepito-landing-mobile-dock-link pepito-landing-mobile-dock-link--profile${active || roleOpen || profileOpen ? ' is-active' : ''}`}
                 aria-label={`${t(`nav.${item.key}`)}`}
-                aria-haspopup="dialog"
-                aria-expanded={roleOpen || manageOpen}
-                aria-controls={roleOpen ? rolePanelId : manageOpen ? managePanelId : undefined}
+                aria-haspopup="menu"
+                aria-expanded={roleOpen || profileOpen}
+                aria-controls={roleOpen ? rolePanelId : profileOpen ? 'pepito-profile-menu' : undefined}
+                data-profile-menu-anchor=""
                 aria-current={active ? 'page' : undefined}
-                onClick={goProfile}
+                onClick={(e) => goProfile(e.currentTarget)}
                 onContextMenu={(e) => e.preventDefault()}
                 onTouchStart={onProfilePointerDown}
                 onTouchEnd={clearLongPress}
@@ -206,7 +207,7 @@ export function LandingMobileDock() {
                 onMouseUp={clearLongPress}
                 onMouseLeave={clearLongPress}
               >
-                {renderIcon(item, active || roleOpen || manageOpen)}
+                {renderIcon(item, active || roleOpen || profileOpen)}
               </button>
             );
           }
@@ -225,35 +226,6 @@ export function LandingMobileDock() {
           );
         })}
       </nav>
-
-      {manageOpen ? (
-        <div className="pepito-dock-role-sheet-root" role="presentation">
-          <button
-            type="button"
-            className="pepito-dock-role-sheet-backdrop"
-            aria-label={t('common.close')}
-            onClick={() => setManageOpen(false)}
-          />
-          <div
-            id={managePanelId}
-            className="pepito-dock-role-sheet pepito-dock-manage-sheet"
-            role="dialog"
-            aria-label={t('nav.manage')}
-          >
-            <div className="pepito-dock-role-sheet-handle" aria-hidden />
-            <p className="pepito-dock-role-sheet-title">{t('nav.manage')}</p>
-            <Link
-              to="/profile"
-              className="pepito-dock-manage-profile"
-              onClick={() => setManageOpen(false)}
-            >
-              <UserRound size={20} strokeWidth={2} aria-hidden />
-              <span>{t('roles.goProfile')}</span>
-            </Link>
-            <ProfileManageNav variant="sheet" onNavigate={() => setManageOpen(false)} />
-          </div>
-        </div>
-      ) : null}
 
       {roleOpen ? (
         <div className="pepito-dock-role-sheet-root" role="presentation">

@@ -12,7 +12,7 @@ const WalletChip = lazy(() => import('./WalletChip').then((m) => ({ default: m.W
  * Top-bar account tools pinned to physical CSS left (LTR cluster):
  * circular profile avatar → wallet → orders → guest login → cart → (lang/theme outside).
  * Guest login sits immediately left of cart (same circular chip as cart).
- * Mobile CSS hides avatar/wallet (dock covers them); shop pages keep the avatar.
+ * Mobile keeps the avatar (wallet stays in the dock) so the account menu works on every page.
  */
 export function NavUserCluster({
   showCart = true,

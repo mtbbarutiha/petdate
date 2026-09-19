@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
+  isPhoneGateExempt,
   loginPath,
   phoneVerifyPath,
   postAuthPath,
@@ -71,23 +72,14 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
     return <Navigate to={loginPath(next)} replace state={{ from: next }} />;
   }
 
-  // Telegram / Google: must verify phone before role/profile/app.
-  if (
-    isLoggedIn &&
-    !isPhoneVerified &&
-    !isPhoneVerifyPath(location.pathname) &&
-    !location.pathname.startsWith('/admin')
-  ) {
-    // Allow public browsing (shop, landing) without phone; lock private + auth redirects.
-    if (!isPublic(location.pathname) || location.pathname.startsWith('/auth')) {
-      return (
-        <Navigate
-          to={phoneVerifyPath(nextFromState)}
-          replace
-          state={{ from: nextFromState }}
-        />
-      );
-    }
+  // phoneVerified is mandatory for product work (same flag as the Telegram bot).
+  // Marketing, help, adoption, and /auth/phone stay reachable — no redirect loop.
+  if (isLoggedIn && !isPhoneVerified && !isPhoneGateExempt(location.pathname)) {
+    const here = sanitizeNext(
+      stripTagAssistantParams(location.pathname + location.search),
+      '/home',
+    );
+    return <Navigate to={phoneVerifyPath(here)} replace state={{ from: here }} />;
   }
 
   // Public surfaces (landing, shop, adoption) stay browsable even before role pick.

@@ -317,9 +317,28 @@ assert.match(
 );
 assert.match(
   css,
-  /\.pd-shop-page[\s\S]{0,80}\.pepito-nav-profile[\s\S]{0,80}display:\s*block\s*!important/,
-  'shop keeps profile avatar visible on mobile beside Orders',
+  /\.pepito-nav-user-cluster \.pepito-nav-profile[\s\S]{0,80}display:\s*block\s*!important/,
+  'mobile header keeps the profile avatar on every page',
 );
+assert.match(
+  css,
+  /\.pepito-nav-profile-menu--floating[\s\S]{0,160}overflow-y:\s*auto/,
+  'profile menu scrolls instead of covering the phone',
+);
+assert.match(css, /MOBILE_EARN_CURRENCY/, 'earn currency layout is marked for mobile');
+assert.match(
+  css,
+  /@media \(min-width: 860px\) \{\s*\n\s*\.pepito-earn-currency-options \{\s*\n\s*grid-template-columns: repeat\(3/,
+  'currency cards are 3-up only on desktop',
+);
+assert.doesNotMatch(
+  css,
+  /min-width:\s*420px\)[\s\S]{0,120}pepito-earn-currency-options/,
+  'currency cards do not go 3-up on narrow phones',
+);
+const earnFieldInput = css.indexOf('.pepito-earn-field input {');
+const earnRadio = css.indexOf(".pepito-earn-currency-option input[type='radio']");
+assert.ok(earnFieldInput > 0 && earnRadio > earnFieldInput, 'radio size wins over full-width earn inputs');
 assert.match(css, /\.pepito-nav-profile-shortcuts/, 'profile menu hosts relocated nav shortcuts');
 
 const profileMenu = readFileSync(join(root, 'components/ProfileMenu.tsx'), 'utf8');

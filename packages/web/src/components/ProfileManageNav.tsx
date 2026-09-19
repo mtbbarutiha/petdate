@@ -5,12 +5,14 @@ import {
   Eye,
   Pencil,
   ShieldCheck,
+  Smartphone,
   Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { VerificationStatus } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { faceVerifyChromeLabel, useI18n } from '../i18n';
+import { phoneVerifyPath } from '../lib/authRedirect';
 
 export type ProfileManageVariant = 'rail' | 'menu' | 'sheet';
 
@@ -19,7 +21,9 @@ type ManageLink = {
   to: string;
   icon: LucideIcon;
   label: string;
-  tone?: 'warn' | 'danger' | 'finance';
+  tone?: 'warn' | 'danger' | 'finance' | 'ok';
+  /** Verified phone is a status row, not a link back into OTP. */
+  status?: boolean;
   match: (pathname: string, search: string) => boolean;
 };
 
@@ -32,7 +36,9 @@ function manageLinks(
     earn: string;
     blocked: string;
     account: string;
-  }
+    phone: string;
+  },
+  phoneVerified: boolean,
 ): ManageLink[] {
   return [
     {
@@ -58,6 +64,15 @@ function manageLinks(
       label: labels.earn,
       tone: 'finance',
       match: (pathname) => pathname === '/wallet/earn' || pathname.startsWith('/wallet/earn/'),
+    },
+    {
+      key: 'phone',
+      to: '/auth/phone',
+      icon: Smartphone,
+      label: labels.phone,
+      tone: phoneVerified ? 'ok' : 'warn',
+      status: phoneVerified,
+      match: (pathname) => pathname === '/auth/phone',
     },
     {
       key: 'verify',
@@ -108,14 +123,24 @@ export function ProfileManageNav({
   const { pathname, search } = useLocation();
   const { user } = useAuthStore();
   const { t, lang } = useI18n();
-  const items = manageLinks(user?.verificationStatus, {
-    edit: t('nav.manageEdit'),
-    verify: faceVerifyChromeLabel(t, lang, user?.verificationStatus),
-    interactions: t('nav.manageInteractions'),
-    earn: t('nav.manageEarn'),
-    blocked: t('nav.manageBlocked'),
-    account: t('nav.manageAccount'),
-  });
+  const phoneVerified = Boolean(user?.phoneVerified);
+  const items = manageLinks(
+    user?.verificationStatus,
+    {
+      edit: t('nav.manageEdit'),
+      verify: faceVerifyChromeLabel(t, lang, user?.verificationStatus),
+      interactions: t('nav.manageInteractions'),
+      earn: t('nav.manageEarn'),
+      blocked: t('nav.manageBlocked'),
+      account: t('nav.manageAccount'),
+      phone: phoneVerified ? t('nav.managePhoneVerified') : t('nav.managePhone'),
+    },
+    phoneVerified,
+  ).map((item) =>
+    item.key === 'phone' && !phoneVerified
+      ? { ...item, to: phoneVerifyPath(`${pathname}${search}`) }
+      : item,
+  );
 
   const rootClass =
     variant === 'rail'
@@ -123,7 +148,7 @@ export function ProfileManageNav({
       : variant === 'sheet'
         ? `pepito-dock-manage-nav${className ? ` ${className}` : ''}`
         : `pepito-nav-profile-manage${className ? ` ${className}` : ''}`;
-  const linkClass = (active: boolean, tone?: 'warn' | 'danger' | 'finance') => {
+  const linkClass = (active: boolean, tone?: 'warn' | 'danger' | 'finance' | 'ok') => {
     if (variant === 'rail') {
       return `pepito-app-rail-link${active ? ' is-active' : ''}${tone ? ` is-${tone}` : ''}`;
     }
@@ -132,7 +157,9 @@ export function ProfileManageNav({
     }
     return `pepito-nav-profile-item${tone === 'danger' ? ' pepito-nav-profile-item--danger' : ''}${
       tone === 'warn' ? ' pepito-nav-profile-item--warn' : ''
-    }${tone === 'finance' ? ' pepito-nav-profile-item--finance' : ''}`;
+    }${tone === 'finance' ? ' pepito-nav-profile-item--finance' : ''}${
+      tone === 'ok' ? ' pepito-nav-profile-item--ok' : ''
+    }`;
   };
   const labelClass =
     variant === 'rail'
@@ -148,12 +175,27 @@ export function ProfileManageNav({
       <nav aria-label={t('nav.manage')}>
         {items.map((item) => {
           const active = item.match(pathname, search);
+          const className = linkClass(active, item.tone);
+          if (item.status) {
+            return (
+              <span
+                key={item.key}
+                className={className}
+                role="status"
+                data-testid={item.key === 'phone' ? 'profile-manage-phone' : undefined}
+              >
+                <item.icon size={iconSize} strokeWidth={2} aria-hidden />
+                <span>{item.label}</span>
+              </span>
+            );
+          }
           return (
             <NavLink
               key={item.key}
               to={item.to}
-              className={linkClass(active, item.tone)}
+              className={className}
               aria-current={active ? 'page' : undefined}
+              data-testid={item.key === 'phone' ? 'profile-manage-phone' : undefined}
               onClick={() => onNavigate?.()}
             >
               <item.icon size={iconSize} strokeWidth={2} aria-hidden />
