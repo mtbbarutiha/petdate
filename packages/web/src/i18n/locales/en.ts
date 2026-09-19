@@ -157,6 +157,8 @@ export const en: Dict = {
     manageEarn: 'Earn / withdraw',
     manageBlocked: 'Blocked',
     manageAccount: 'Delete / deactivate account',
+    managePhone: 'Verify mobile number',
+    managePhoneVerified: 'Mobile number verified',
   },
   landing: {
     heroAria: 'Role slides — playmate, vet, trainer, no pet, adoption',

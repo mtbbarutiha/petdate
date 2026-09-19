@@ -157,6 +157,8 @@ export const fa: Dict = {
     manageEarn: 'درخواست برداشت',
     manageBlocked: 'بلاک‌شده‌ها',
     manageAccount: 'حذف / غیرفعال‌سازی حساب',
+    managePhone: 'احراز شماره موبایل',
+    managePhoneVerified: 'شماره موبایل تأیید شده',
   },
   landing: {
     heroAria: 'اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت، پذیرش',

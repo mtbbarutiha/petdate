@@ -49,6 +49,18 @@
   gap: 2px;
   justify-items: start;
 }
+.tg-chat-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.tg-chat-list-tools .pepito-nav-profile-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+}
 
 .tg-chat-list-brand h1,
 .tg-chat-list-head h1 {

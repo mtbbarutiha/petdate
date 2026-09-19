@@ -2708,6 +2708,10 @@ html[data-theme='dark'] .pepito-nav-profile-manage {
 html[data-theme='dark'] .pepito-nav-profile-item--warn {
   color: #e0b36a;
 }
+html[data-theme='dark'] .pepito-nav-profile-item--ok,
+html[data-theme='dark'] .pepito-app-rail-link.is-ok {
+  color: #7ddec0;
+}
 html[data-theme='dark'] .pepito-nav-profile-item--danger {
   color: #e08a96;
 }

@@ -16,9 +16,11 @@ const dock = readFileSync(join(root, 'components/LandingMobileDock.tsx'), 'utf8'
 
 assert.match(layout, /ProfileManageNav/, 'Layout rail includes ProfileManageNav');
 assert.match(menu, /ProfileManageNav/, 'avatar menu includes ProfileManageNav');
-assert.match(dock, /ProfileManageNav/, 'mobile dock includes ProfileManageNav');
-assert.match(dock, /variant=["']sheet["']/, 'mobile dock uses sheet variant');
-assert.match(dock, /setManageOpen\(true\)/, 'profile tap opens manage sheet on mobile');
+assert.match(menu, /createPortal/, 'avatar menu is portaled so header overflow cannot eat the click');
+assert.match(menu, /data-profile-menu/, 'menu marks itself so outside-click does not swallow item taps');
+assert.match(dock, /toggleProfileMenu/, 'profile tap opens the shared profile menu');
+assert.match(dock, /data-profile-menu-anchor/, 'dock avatar is a profile-menu anchor');
+assert.doesNotMatch(dock, /setManageOpen/, 'dock does not keep a second manage sheet');
 assert.match(manageNav, /'sheet'/, 'ProfileManageNav supports sheet variant');
 assert.match(manageNav, /\/profile\?edit=1/, 'edit deep-link');
 assert.match(manageNav, /\/profile\?panel=verify/, 'verify deep-link');
@@ -26,10 +28,17 @@ assert.match(manageNav, /\/profile\?panel=interactions/, 'interactions deep-link
 assert.match(manageNav, /\/wallet\/earn/, 'earn link');
 assert.match(manageNav, /\/profile\?panel=blocked/, 'blocked deep-link');
 assert.match(manageNav, /\/profile\?panel=account/, 'account deep-link');
+assert.match(manageNav, /key: 'phone'/, 'phone verify sits in manage nav');
+assert.match(manageNav, /phoneVerifyPath/, 'unverified phone opens the existing OTP route');
+assert.match(manageNav, /status: phoneVerified/, 'verified phone is a status row, not a broken CTA');
 const earnAt = manageNav.indexOf("key: 'earn'");
+const phoneAt = manageNav.indexOf("key: 'phone'");
 const verifyAt = manageNav.indexOf("key: 'verify'");
 const accountAt = manageNav.indexOf("key: 'account'");
-assert.ok(earnAt > 0 && verifyAt > earnAt && accountAt > verifyAt, 'manage: everyday → finance → verify → delete last');
+assert.ok(
+  earnAt > 0 && phoneAt > earnAt && verifyAt > phoneAt && accountAt > verifyAt,
+  'manage: everyday → finance → phone → face verify → delete last',
+);
 assert.match(manageNav, /tone: 'finance'/, 'earn uses finance tone');
 assert.match(manageNav, /tone: 'danger'/, 'account delete uses danger tone');
 assert.doesNotMatch(manageNav, /سایلنت|silent-chat|silentChat/, 'mute stays icon elsewhere');

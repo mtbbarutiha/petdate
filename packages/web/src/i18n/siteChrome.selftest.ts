@@ -50,6 +50,8 @@ const REQUIRED = [
   'nav.manageEarn',
   'nav.manageBlocked',
   'nav.manageAccount',
+  'nav.managePhone',
+  'nav.managePhoneVerified',
   'consultDesk.statusClosed',
   'consultDesk.statusExpired',
   'consultDesk.statusActive',
@@ -115,6 +117,10 @@ assert.equal(tFa('verify.faceVerified'), 'احراز چهره شده');
 assert.equal(tEn('verify.faceVerified'), 'Face verified');
 assert.equal(tFa('nav.manageEdit'), 'ویرایش پروفایل');
 assert.equal(tEn('nav.manageEdit'), 'Edit profile');
+assert.equal(tFa('nav.managePhone'), 'احراز شماره موبایل');
+assert.equal(tEn('nav.managePhone'), 'Verify mobile number');
+assert.equal(tFa('nav.managePhoneVerified'), 'شماره موبایل تأیید شده');
+assert.equal(tEn('nav.managePhoneVerified'), 'Mobile number verified');
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const layout = readFileSync(join(root, 'components/Layout.tsx'), 'utf8');
@@ -129,6 +135,8 @@ const manage = readFileSync(join(root, 'components/ProfileManageNav.tsx'), 'utf8
 assert.match(manage, /faceVerifyChromeLabel/, 'manage nav uses i18n face-verify label');
 assert.match(manage, /nav\.manageEdit/, 'manage edit key');
 assert.match(manage, /nav\.manageAccount/, 'manage account key');
+assert.match(manage, /nav\.managePhone/, 'manage phone key');
+assert.match(manage, /phoneVerified/, 'phone row follows phoneVerified');
 assert.doesNotMatch(manage, /faceVerifyButtonLabel/, 'shared FA face-verify helper stays off site chrome');
 
 const trainer = readFileSync(join(root, 'pages/ServiceConsultPage.tsx'), 'utf8');

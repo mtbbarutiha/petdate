@@ -45,6 +45,7 @@ import {
 import { appAlert } from '../components/AppDialog';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SiteLogo } from '../components/SiteLogo';
+import { ProfileMenuButton } from '../components/ProfileMenuButton';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
@@ -1423,15 +1424,18 @@ export function VetChatPage() {
               <SiteLogo className="tg-chat-list-logo" height={34} />
               <h1>{providerInboxTitle(inboxScope)}</h1>
             </div>
-            <button
-              type="button"
-              className="tg-icon-btn"
-              onClick={() => void reloadConversations()}
-              aria-label="بروزرسانی فهرست"
-              title="بروزرسانی"
-            >
-              <RefreshCw size={18} />
-            </button>
+            <div className="tg-chat-list-tools">
+              <button
+                type="button"
+                className="tg-icon-btn"
+                onClick={() => void reloadConversations()}
+                aria-label="بروزرسانی فهرست"
+                title="بروزرسانی"
+              >
+                <RefreshCw size={18} />
+              </button>
+              <ProfileMenuButton />
+            </div>
           </header>
 
           {listError ? <p className="tg-error tg-error--inset">{listError}</p> : null}
