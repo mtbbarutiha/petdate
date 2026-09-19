@@ -34,6 +34,16 @@ async function main() {
     'typo حیوانات fixed in seed',
   );
   assert(!allPublic.reviews.some((r) => r.body.includes('حیوانان‌اند')), 'old typo absent');
+  const photos = allPublic.reviews.map((r) => r.photoUrl);
+  assert(new Set(photos).size === photos.length, 'every seed photo URL is unique');
+  assert(
+    photos.every(
+      (p) =>
+        /\/pepito\/uploads\/0[1-4]-4\.jpg$/.test(p) ||
+        /\/pepito\/uploads\/reviews\/fantasy-\d+\.jpg$/.test(p),
+    ),
+    'photos stay on-theme fantasy studio paths',
+  );
 
   const { user } = (await import('./db')).dbService.findOrCreateUser({
     telegramId: `plr-${process.pid}`,
