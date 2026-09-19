@@ -991,6 +991,45 @@ body:has(.admin-app) {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  position: relative;
+  padding-inline-start: 1.35rem;
+}
+.admin-app .admin-log-expand-toggle {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 10px;
+  display: inline-flex;
+  color: var(--admin-muted);
+}
+.admin-app .admin-log-row.is-open .admin-log-expand-toggle {
+  color: var(--admin-accent);
+}
+.admin-app .admin-log-msg-raw {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--admin-bg) 70%, var(--admin-surface));
+  border: 1px solid var(--admin-border);
+  color: var(--admin-ink);
+  font-size: 0.78rem;
+  max-height: 7.5rem;
+  overflow: auto;
+}
+.admin-app .admin-log-dupes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+}
+.admin-app .admin-log-dupes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
 }
 .admin-app .admin-log-count {
   display: inline-flex;

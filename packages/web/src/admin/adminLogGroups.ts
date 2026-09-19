@@ -26,6 +26,7 @@ export function adminLogFingerprint(row: AdminLogGroupKeyInput): string {
 
 export type AdminLogGroup<T extends AdminLogGroupKeyInput> = {
   key: string;
+  fingerprint: string;
   count: number;
   latest: T;
   oldest: T;
@@ -33,19 +34,23 @@ export type AdminLogGroup<T extends AdminLogGroupKeyInput> = {
 };
 
 /** Group adjacent rows that share the same fingerprint (list is newest-first). */
-export function groupConsecutiveLogs<T extends AdminLogGroupKeyInput>(rows: T[]): AdminLogGroup<T>[] {
+export function groupConsecutiveLogs<T extends AdminLogGroupKeyInput & { id?: number }>(
+  rows: T[]
+): AdminLogGroup<T>[] {
   const groups: AdminLogGroup<T>[] = [];
   for (const row of rows) {
-    const key = adminLogFingerprint(row);
+    const fingerprint = adminLogFingerprint(row);
     const prev = groups[groups.length - 1];
-    if (prev && prev.key === key) {
+    if (prev && prev.fingerprint === fingerprint) {
       prev.items.push(row);
       prev.count += 1;
       prev.oldest = row;
       continue;
     }
+    // Include latest id so React keys stay unique across non-adjacent groups.
     groups.push({
-      key,
+      key: `${fingerprint}#${row.id ?? groups.length}`,
+      fingerprint,
       count: 1,
       latest: row,
       oldest: row,

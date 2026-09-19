@@ -3717,6 +3717,11 @@ html[data-theme='dark'] .admin-app .admin-log-msg {
 html[data-theme='dark'] .admin-app .admin-log-msg-detail {
   color: color-mix(in srgb, var(--admin-muted) 80%, #fff);
 }
+html[data-theme='dark'] .admin-app .admin-log-msg-raw {
+  background: #0b0e16;
+  border-color: var(--admin-border);
+  color: #e2e8f0;
+}
 html[data-theme='dark'] .admin-app .admin-log-row--warn:hover,
 html[data-theme='dark'] .admin-app .admin-log-row--error:hover,
 html[data-theme='dark'] .admin-app .admin-log-row--info:hover {

@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, AlertTriangle, ChevronDown, Copy, RefreshCw, Trash2 } from 'lucide-react';
+import { Activity, AlertTriangle, ChevronDown, ChevronLeft, Copy, RefreshCw, Trash2 } from 'lucide-react';
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { groupConsecutiveLogs } from '../adminLogGroups';
@@ -17,6 +17,7 @@ type LogRow = {
   path: string | null;
   method: string | null;
   statusCode: number | null;
+  meta?: Record<string, unknown> | null;
   createdAt: string;
 };
 
@@ -57,12 +58,13 @@ export function AdminLogsPage() {
   const [level, setLevel] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expandedFp, setExpandedFp] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [live, setLive] = useState(true);
   const [groupDupes, setGroupDupes] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const silentRef = useRef(false);
+  const userCollapsedRef = useRef(false);
   const { lang } = useI18n();
 
   const load = useCallback(async () => {
@@ -121,6 +123,7 @@ export function AdminLogsPage() {
     if (!groupDupes) {
       return logs.map((row) => ({
         key: `row-${row.id}`,
+        fingerprint: `row-${row.id}`,
         count: 1,
         latest: row,
         oldest: row,
@@ -129,6 +132,23 @@ export function AdminLogsPage() {
     }
     return groupConsecutiveLogs(logs);
   }, [logs, groupDupes]);
+
+  useEffect(() => {
+    userCollapsedRef.current = false;
+  }, [level, groupDupes]);
+
+  // Keep panel open across polls; open the first row until the user collapses it.
+  useEffect(() => {
+    if (!rows.length) {
+      setExpandedFp(null);
+      return;
+    }
+    if (userCollapsedRef.current) return;
+    setExpandedFp((cur) => {
+      if (cur && rows.some((g) => g.fingerprint === cur)) return cur;
+      return rows[0]!.fingerprint;
+    });
+  }, [rows]);
 
   async function copyRaw(row: LogRow) {
     try {
@@ -283,8 +303,8 @@ export function AdminLogsPage() {
                 const mapped = translateAppLogMessage(row);
                 const primary = pickLogTitle(mapped, lang);
                 const secondary = adminLogSecondary(mapped, primary);
-                const isOpen = expanded === group.key;
-                const showTech = Boolean(row.message || row.stack || group.count > 1);
+                const rawMessage = (row.message || '').trim();
+                const isOpen = expandedFp === group.fingerprint;
                 const pathText = `${row.method ? `${row.method} ` : ''}${row.path || '—'}${
                   row.statusCode ? ` · ${row.statusCode}` : ''
                 }`;
@@ -292,9 +312,21 @@ export function AdminLogsPage() {
                   <Fragment key={group.key}>
                     <tr
                       className={`admin-log-row admin-log-row--${row.level}${isOpen ? ' is-open' : ''}`}
-                      onClick={() => setExpanded(isOpen ? null : group.key)}
+                      onClick={() => {
+                        if (isOpen) {
+                          userCollapsedRef.current = true;
+                          setExpandedFp(null);
+                        } else {
+                          userCollapsedRef.current = false;
+                          setExpandedFp(group.fingerprint);
+                        }
+                      }}
+                      aria-expanded={isOpen}
                     >
                       <td className="admin-log-when">
+                        <span className="admin-log-expand-toggle" aria-hidden>
+                          {isOpen ? <ChevronDown size={16} /> : <ChevronLeft size={16} />}
+                        </span>
                         <span className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</span>
                         {group.count > 1 ? (
                           <span className="admin-log-count">{tr('{n} مورد مشابه', { n: group.count })}</span>
@@ -308,7 +340,7 @@ export function AdminLogsPage() {
                       <td>
                         <span className="admin-log-source">{sourceLabel(row.source)}</span>
                       </td>
-                      <td className="admin-log-msg" title={secondary || primary}>
+                      <td className="admin-log-msg">
                         <span className="admin-log-msg-fa" lang={lang === 'en' ? 'en' : 'fa'} dir={lang === 'en' ? 'ltr' : 'rtl'}>
                           {primary}
                           {group.count > 1 ? (
@@ -317,7 +349,11 @@ export function AdminLogsPage() {
                             </span>
                           ) : null}
                         </span>
-                        {secondary ? (
+                        {rawMessage ? (
+                          <bdi className="admin-log-msg-detail admin-log-msg-raw" dir="ltr" lang="en">
+                            {rawMessage}
+                          </bdi>
+                        ) : secondary ? (
                           <bdi className="admin-log-msg-detail" dir="ltr" lang="en">
                             {secondary}
                           </bdi>
@@ -327,7 +363,7 @@ export function AdminLogsPage() {
                         <bdi dir="ltr">{pathText}</bdi>
                       </td>
                     </tr>
-                    {isOpen && showTech ? (
+                    {isOpen ? (
                       <tr className="admin-log-expand">
                         <td colSpan={5}>
                           <div className="admin-log-expand-inner">
@@ -337,10 +373,12 @@ export function AdminLogsPage() {
                                   from: formatAdminFaDateTime(group.oldest.createdAt),
                                   to: formatAdminFaDateTime(group.latest.createdAt),
                                 })}
+                                {' · '}
+                                {tr('{n} مورد مشابه', { n: group.count })}
                               </p>
                             ) : null}
                             <div className="admin-log-raw-head">
-                              <span>{tr('متن فنی')}</span>
+                              <span>{tr('متن خطا')}</span>
                               <button
                                 type="button"
                                 className="admin-btn admin-btn--ghost admin-log-copy"
@@ -354,9 +392,41 @@ export function AdminLogsPage() {
                               </button>
                             </div>
                             <pre className="admin-stack admin-log-raw" dir="ltr" lang="en">
-                              <bdi dir="ltr">{row.message}</bdi>
+                              <bdi dir="ltr">{rawMessage || '—'}</bdi>
                             </pre>
-                            {row.stack ? <pre className="admin-stack">{row.stack}</pre> : null}
+                            {row.stack ? (
+                              <>
+                                <div className="admin-log-raw-head">
+                                  <span>{tr('Stack')}</span>
+                                </div>
+                                <pre className="admin-stack">{row.stack}</pre>
+                              </>
+                            ) : null}
+                            {row.meta && Object.keys(row.meta).length ? (
+                              <>
+                                <div className="admin-log-raw-head">
+                                  <span>{tr('جزئیات')}</span>
+                                </div>
+                                <pre className="admin-stack admin-log-raw" dir="ltr" lang="en">
+                                  {JSON.stringify(row.meta, null, 2)}
+                                </pre>
+                              </>
+                            ) : null}
+                            {group.count > 1 ? (
+                              <ul className="admin-log-dupes">
+                                {group.items.map((item) => (
+                                  <li key={item.id}>
+                                    <span className="admin-cell-nowrap">
+                                      {formatAdminFaDateTime(item.createdAt)}
+                                    </span>
+                                    <bdi dir="ltr" lang="en">
+                                      #{item.id}
+                                      {item.statusCode != null ? ` · ${item.statusCode}` : ''}
+                                    </bdi>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
                             <div className="admin-log-expand-hint">
                               <ChevronDown size={14} />
                               {tr('برای بستن ردیف دوباره کلیک کنید')}
