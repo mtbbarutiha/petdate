@@ -397,9 +397,7 @@ authRouter.post('/phone/send-otp', phoneAttachRequestLimit, async (req, res) => 
           ? 503
           : result.reason === 'cooldown'
             ? 429
-            : result.reason === 'send_failed'
-              ? 502
-              : 400;
+            : 400;
     res.status(status).json({
       ok: false,
       reason: result.reason,
