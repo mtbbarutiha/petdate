@@ -981,7 +981,7 @@ export const en: Dict = {
       'Your review enters the admin queue and appears here and on the landing page after approval.',
     aiEyebrow: 'AI',
     aiTitle: 'Make your photo with AI',
-    aiLead: 'Pick a sample, upload you and your pet. We restyle it to that background and charge {n} coins.',
+    aiLead: 'You and your pet stay exactly the same, even if you are holding the pet. Only the background changes to the sample color, with a light mood match. Cost: {n} coins.',
     aiStyles: 'Background samples',
     aiMember: 'Sign in as a member to generate a photo.',
     aiUpload: 'Your photo with your pet',
@@ -993,7 +993,7 @@ export const en: Dict = {
     aiError: 'Could not generate the photo.',
     aiReady: 'Photo is ready and attached to the review form. Coins left: {coins}',
     aiAttached: 'The generated photo was added to the review form. Write your text and send it.',
-    aiNote: 'You can submit the result in the reviews form. It goes live after admin approval.',
+    aiNote: 'You and your pet are not replaced — a pet in your arms stays in the photo. Only the background changes to the sample color. Cost is 5 coins. Submit the result in the review form; it goes live after admin approval.',
   },
   magazine: {
     loadFail: "Could not load the magazine",

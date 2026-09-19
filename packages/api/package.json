@@ -4,11 +4,12 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && mkdir -p dist/assets/fonts dist/assets/brand && cp -f assets/fonts/*.ttf dist/assets/fonts/ && cp -f assets/brand/* dist/assets/brand/",
+    "build": "tsc && mkdir -p dist/assets/fonts dist/assets/brand dist/scripts && cp -f assets/fonts/*.ttf dist/assets/fonts/ && cp -f assets/brand/* dist/assets/brand/ && cp -f scripts/bg-cutout.mjs dist/scripts/",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
     "@petdate/shared": "*",
     "better-sqlite3": "^11.8.1",
     "cors": "^2.8.5",
