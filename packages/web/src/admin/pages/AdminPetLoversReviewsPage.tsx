@@ -20,7 +20,8 @@ const STATUS_LABEL: Record<PetLoverReview['status'], string> = {
 export function AdminPetLoversReviewsPage() {
   const [reviews, setReviews] = useState<PetLoverReview[]>([]);
   const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState<StatusFilter>('pending');
+  const [status, setStatus] = useState<StatusFilter>('all');
+  const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0, all: 0 });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,11 +32,14 @@ export function AdminPetLoversReviewsPage() {
       const params = new URLSearchParams();
       if (status !== 'all') params.set('status', status);
       params.set('limit', '100');
-      const data = await adminFetch<{ reviews: PetLoverReview[]; total: number }>(
-        `/api/admin/pet-lover-reviews?${params}`,
-      );
+      const data = await adminFetch<{
+        reviews: PetLoverReview[];
+        total: number;
+        counts?: { pending: number; approved: number; rejected: number; all: number };
+      }>(`/api/admin/pet-lover-reviews?${params}`);
       setReviews(data.reviews);
       setTotal(data.total);
+      if (data.counts) setCounts(data.counts);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
@@ -99,7 +103,7 @@ export function AdminPetLoversReviewsPage() {
         <div>
           <h1>{tr('نظرات عاشقان پت')}</h1>
           <p className="muted">
-            {tr('نظرات کاربران با عکس فانتزی — فقط پس از تأیید شما در لندینگ و صفحه نظرات منتشر می‌شوند.')}
+            {tr('همه نظرات اینجاست — نمونه‌ها تأییدشده‌اند. صف «در انتظار» فقط عکس‌های تازه کاربران است.')}
           </p>
         </div>
         <div className="admin-page-actions">
@@ -119,7 +123,7 @@ export function AdminPetLoversReviewsPage() {
       </header>
 
       <div className="admin-filter-row" style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {(['pending', 'approved', 'rejected', 'all'] as const).map((s) => (
+        {(['all', 'pending', 'approved', 'rejected'] as const).map((s) => (
           <button
             key={s}
             type="button"
@@ -133,6 +137,7 @@ export function AdminPetLoversReviewsPage() {
                 : s === 'approved'
                   ? tr('تأیید شده')
                   : tr('رد شده')}
+            {` (${counts[s]})`}
           </button>
         ))}
         <span className="muted" style={{ alignSelf: 'center' }}>
@@ -147,31 +152,13 @@ export function AdminPetLoversReviewsPage() {
         <p className="muted">{tr('موردی در این فیلتر نیست.')}</p>
       ) : null}
 
-      <div className="admin-card-grid" style={{ display: 'grid', gap: 16 }}>
+      <div className="admin-plr-list">
         {reviews.map((r) => {
           const img = resolvePublicMediaUrl(r.photoUrl) || r.photoUrl;
           return (
-            <article
-              key={r.id}
-              className="admin-card"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(120px, 180px) 1fr',
-                gap: 16,
-                padding: 16,
-              }}
-            >
+            <article key={r.id} className="admin-card admin-plr-card">
               <div>
-                <img
-                  src={img}
-                  alt={r.displayHandle}
-                  style={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    objectFit: 'cover',
-                    borderRadius: 12,
-                  }}
-                />
+                <img src={img} alt={r.displayHandle} />
               </div>
               <div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

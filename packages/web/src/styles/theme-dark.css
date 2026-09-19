@@ -2234,7 +2234,8 @@ html[data-theme='dark'] .pepito-review-body h3,
 html[data-theme='dark'] .pepito-review-body p {
   color: var(--pepito-dark);
 }
-html[data-theme='dark'] .pepito-reviews-submit {
+html[data-theme='dark'] .pepito-reviews-submit,
+html[data-theme='dark'] .pepito-reviews-ai {
   background: var(--pepito-soft);
 }
 html[data-theme='dark'] .pepito-reviews-field input,

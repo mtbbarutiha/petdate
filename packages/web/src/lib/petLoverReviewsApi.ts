@@ -56,3 +56,52 @@ export async function submitPetLoverReview(opts: {
   if (!res.ok) throw new Error(data.error || 'ثبت نظر ناموفق بود');
   return { message: data.message || 'نظرت ثبت شد و پس از تأیید ادمین منتشر می‌شود' };
 }
+
+export type FantasyPhotoStyleCard = {
+  id: string;
+  labelFa: string;
+  labelEn: string;
+  background: string;
+  sampleUrl: string;
+};
+
+export async function fetchFantasyPhotoStyles(): Promise<{
+  styles: FantasyPhotoStyleCard[];
+  cost: number;
+}> {
+  const res = await fetch(`${API_BASE}/api/pet-lover-reviews/styles`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('styles failed');
+  const data = (await res.json()) as { styles: FantasyPhotoStyleCard[]; cost?: number };
+  return { styles: data.styles || [], cost: data.cost ?? 5 };
+}
+
+export async function generateFantasyPhoto(opts: {
+  token: string;
+  styleId: string;
+  photo: File;
+}): Promise<{ photoUrl: string; coins: number; cost: number; message: string; engine: string }> {
+  const form = new FormData();
+  form.append('styleId', opts.styleId);
+  form.append('photo', opts.photo);
+  const res = await fetch(`${API_BASE}/api/pet-lover-reviews/ai-photo`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${opts.token}` },
+    body: form,
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    message?: string;
+    photoUrl?: string;
+    coins?: number;
+    cost?: number;
+    engine?: string;
+  };
+  if (!res.ok || !data.photoUrl) throw new Error(data.error || 'ساخت عکس ناموفق بود');
+  return {
+    photoUrl: data.photoUrl,
+    coins: data.coins ?? 0,
+    cost: data.cost ?? 5,
+    message: data.message || 'عکس فانتزی آماده است',
+    engine: data.engine || 'ai',
+  };
+}
