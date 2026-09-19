@@ -596,7 +596,6 @@ export function WelcomeBelowFold() {
               <article key={s.titleKey} className="pepito-service-card">
                 <GatedLink to={s.to} className="pepito-service">
                   <span className="pepito-service-icon pepito-service-icon--proto" aria-hidden>
-                    <span className="pepito-service-halo" />
                     <svg
                       className={`pepito-service-blob fill-${s.fill}`}
                       viewBox="0 0 80 72"
