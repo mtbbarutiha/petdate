@@ -275,6 +275,7 @@ import {
   handlePhoneVerifyContact,
   handlePhoneVerifyStart,
   handlePhoneVerifyText,
+  mandatoryPhoneMiddleware,
 } from './phone-verify';
 import { touchTelegramPresence } from '../api-client';
 import { effectiveWebUrl } from '../urls';
@@ -289,6 +290,8 @@ export function registerHandlers(bot: Bot): void {
   bot.use(stickyReplyKeyboardMiddleware());
   // عضویت اجباری در کانال‌ها — قبل از همهٔ دستورات
   bot.use(forceJoinMiddleware);
+  // بعد از نقش: احراز موبایل اجباری برای همهٔ منو/کال‌بک/فرآیندها
+  bot.use(mandatoryPhoneMiddleware);
 
   // Heartbeat آنلاین بودن برای کاربرانی که در ربات فعال‌اند
   bot.use(async (ctx, next) => {
@@ -709,7 +712,7 @@ export function registerHandlers(bot: Bot): void {
 
   bot.callbackQuery('phone:verify:start', async (ctx) => {
     await ctx.answerCallbackQuery().catch(() => undefined);
-    await handlePhoneVerifyStart(ctx);
+    await handlePhoneVerifyStart(ctx, { required: true });
   });
 
   bot.callbackQuery('support:ticket', async (ctx) => {
@@ -1241,7 +1244,7 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case n.phoneVerify:
     case s.phoneVerify:
     case v.phoneVerify:
-      return handlePhoneVerifyStart(ctx);
+      return handlePhoneVerifyStart(ctx, { required: true });
     case m.myPets:
     case d.myPets:
     case n.myPets:

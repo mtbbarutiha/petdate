@@ -1,9 +1,10 @@
-import type { Context } from 'grammy';
+import type { Context, MiddlewareFn } from 'grammy';
 import { Keyboard } from 'grammy';
 import {
   formatIranMobileDisplay,
   isProfileComplete,
   normalizeIranMobile,
+  normalizeRoles,
   phoneVerifyIntroText,
   toEnglishDigits,
   userHasRole,
@@ -43,6 +44,8 @@ const MENU_LABELS = new Set<string>([
   ...Object.values(MY_PETS_SECTION),
   ...MAIN_MENU_ALIASES,
   '🛡 احراز هویت',
+  PET_OWNER_MENU.phoneVerify,
+  DEFAULT_MENU.phoneVerify,
 ]);
 
 function phoneOtpKeyboard(resendAtMs?: number): Keyboard {
@@ -77,8 +80,83 @@ export function vetNeedsPhoneVerify(user: User | null | undefined): boolean {
 }
 
 /**
+ * گیت سراسری ربات: بعد از انتخاب نقش، بدون احراز موبایل هیچ فرآیندی جلو نمی‌رود.
+ * استثنا: /start، انتخاب نقش، خود جریان OTP، اشتراک contact، تأیید ورود وب.
+ */
+export const mandatoryPhoneMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
+  const from = ctx.from;
+  if (!from) {
+    await next();
+    return;
+  }
+
+  const telegramId = String(from.id);
+  const session = await getSession(telegramId);
+  const step = session?.step;
+
+  // جریان OTP در حال انجام
+  if (step === 'phone_verify_ask' || step === 'phone_verify_otp') {
+    await next();
+    return;
+  }
+
+  // هنوز نقش انتخاب نشده — اول نقش، بعد موبایل
+  if (step === 'role_select') {
+    await next();
+    return;
+  }
+
+  const text = (ctx.message && 'text' in ctx.message ? ctx.message.text : '')?.trim() ?? '';
+  if (text.startsWith('/start')) {
+    await next();
+    return;
+  }
+
+  const cb = ctx.callbackQuery?.data ?? '';
+  if (
+    cb === 'phone:verify:start' ||
+    cb.startsWith('wpend:') ||
+    cb === 'join:check' ||
+    cb.startsWith('role:')
+  ) {
+    await next();
+    return;
+  }
+
+  // اشتراک شماره برای OTP
+  if (ctx.message && 'contact' in ctx.message && ctx.message.contact) {
+    await next();
+    return;
+  }
+
+  const user = await getCtxUser(ctx);
+  if (!user) {
+    await next();
+    return;
+  }
+
+  const roles = normalizeRoles(user.roles, user.role);
+  if (!roles.length) {
+    await next();
+    return;
+  }
+
+  if (!needsPhoneVerify(user)) {
+    await next();
+    return;
+  }
+
+  // مسدود — فقط احراز موبایل
+  if (ctx.callbackQuery) {
+    await ctx
+      .answerCallbackQuery({ text: 'اول موبایلت رو تأیید کن', show_alert: true })
+      .catch(() => undefined);
+  }
+  await handlePhoneVerifyStart(ctx, { required: true, continueProfile: true });
+};
+
+/**
  * گیت اقدامات حیاتی: بدون موبایل تأییدشده ادامه نده.
- * برای دامپزشکان قبلاً اجباری بود؛ الان برای همه نقش‌ها.
  */
 export async function ensureVetPhoneVerified(ctx: Context): Promise<boolean> {
   return ensurePhoneVerified(ctx);
@@ -89,10 +167,12 @@ export async function ensurePhoneVerified(ctx: Context): Promise<boolean> {
   if (!needsPhoneVerify(user)) return true;
 
   if (ctx.callbackQuery) {
-    await ctx.answerCallbackQuery({
-      text: 'اول موبایلت رو تأیید کن',
-      show_alert: true,
-    }).catch(() => undefined);
+    await ctx
+      .answerCallbackQuery({
+        text: 'اول موبایلت رو تأیید کن',
+        show_alert: true,
+      })
+      .catch(() => undefined);
   }
 
   await ctx.reply(
@@ -103,7 +183,7 @@ export async function ensurePhoneVerified(ctx: Context): Promise<boolean> {
     ].join('\n'),
     { parse_mode: 'HTML' }
   );
-  await handlePhoneVerifyStart(ctx, { required: true });
+  await handlePhoneVerifyStart(ctx, { required: true, continueProfile: true });
   return false;
 }
 
