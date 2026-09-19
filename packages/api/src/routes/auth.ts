@@ -63,6 +63,7 @@ import {
   verifyWebOtp,
   type WebOtpChannel,
 } from '../services/web-otp';
+import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import {
   buildGoogleAuthorizeUrl,
   completeGoogleOAuth,
@@ -354,6 +355,99 @@ authRouter.post('/otp/verify', otpVerifyLimit, async (req, res) => {
     return;
   }
   res.json({ ok: true, token: result.token, user: result.user });
+});
+
+const phoneAttachRequestLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  keyFn: (req) => {
+    const session = getUserFromBearer(req.header('authorization') ?? undefined);
+    return session ? `phone-attach:${session.user.id}` : `phone-attach-ip:${req.ip}`;
+  },
+  message: 'درخواست کد زیاد شده. کمی بعد دوباره تلاش کن.',
+});
+
+const phoneAttachVerifyLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyFn: (req) => {
+    const session = getUserFromBearer(req.header('authorization') ?? undefined);
+    return session ? `phone-verify:${session.user.id}` : `phone-verify-ip:${req.ip}`;
+  },
+  message: 'تلاش‌های تأیید زیاد است. کمی بعد دوباره تلاش کن.',
+});
+
+/**
+ * Logged-in web user (Telegram / Google / email session): send SMS OTP to attach+verify phone.
+ * Reuses phone-otp (same as bot) — not the passwordless web login OTP.
+ */
+authRouter.post('/phone/send-otp', phoneAttachRequestLimit, async (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const phone = String(req.body?.phone ?? '').trim();
+  const result = await sendPhoneOtp(session.user.id, phone);
+  if (!result.ok) {
+    const status =
+      result.reason === 'invalid_phone'
+        ? 400
+        : result.reason === 'not_configured'
+          ? 503
+          : result.reason === 'cooldown'
+            ? 429
+            : result.reason === 'send_failed'
+              ? 502
+              : 400;
+    res.status(status).json({
+      ok: false,
+      reason: result.reason,
+      error: result.error,
+      retryAfterSec: result.retryAfterSec,
+    });
+    return;
+  }
+  res.json({
+    ok: true,
+    phone: result.phone,
+    expiresAt: result.expiresAt,
+  });
+});
+
+/** Logged-in web user: verify SMS OTP and mark phoneVerified. */
+authRouter.post('/phone/verify-otp', phoneAttachVerifyLimit, (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const phone = String(req.body?.phone ?? '').trim();
+  const code = String(req.body?.code ?? '').trim();
+  if (!phone || !code) {
+    res.status(400).json({ error: 'phone و code الزامی‌اند' });
+    return;
+  }
+  const result = verifyPhoneOtp(session.user.id, phone, code);
+  if (!result.ok) {
+    res.status(400).json({
+      ok: false,
+      reason: result.reason,
+      attemptsLeft: result.attemptsLeft,
+      error:
+        result.reason === 'mismatch'
+          ? `کد نادرست است${result.attemptsLeft != null ? ` (${result.attemptsLeft} تلاش باقی‌مانده)` : ''}`
+          : result.reason === 'expired'
+            ? 'کد منقضی شده؛ دوباره درخواست بده'
+            : result.reason === 'too_many'
+              ? 'تعداد تلاش بیش از حد؛ دوباره درخواست کد بده'
+              : result.reason === 'no_otp'
+                ? 'کدی برای این شماره ثبت نشده'
+                : 'تأیید ناموفق',
+    });
+    return;
+  }
+  res.json({ ok: true, user: result.user });
 });
 
 /** لینک/آمار دعوت دوستان برای کاربر واردشده */

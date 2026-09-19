@@ -44,6 +44,7 @@ export function GoogleCallbackPage() {
           postAuthPath({
             hasRole: rolesOk,
             isProfileComplete: profileOk,
+            phoneVerified: Boolean(user.phoneVerified),
             next,
             roleHome: dashboardPathForUser(user),
           }),
@@ -68,6 +69,7 @@ export function GoogleCallbackPage() {
       postAuthPath({
         hasRole,
         isProfileComplete,
+        phoneVerified: Boolean(user?.phoneVerified),
         next: sanitizeNext(searchParams.get('next'), '/home'),
         roleHome: dashboardPathForUser(user),
       }),

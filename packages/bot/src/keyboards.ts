@@ -424,23 +424,27 @@ export function provinceReplyKeyboard(): Keyboard {
   return choiceReplyKeyboard([...IRAN_PROVINCES], { columns: 2, ...profileNavOpts() });
 }
 
-export function phoneWizardKeyboard(): Keyboard {
-  return finalizeReplyKeyboard(
-    new Keyboard()
-      .requestContact(WIZARD_NAV.sharePhone)
+export function phoneWizardKeyboard(opts?: { required?: boolean }): Keyboard {
+  const kb = new Keyboard()
+    .requestContact(WIZARD_NAV.sharePhone)
+    .primary()
+    .row();
+  if (!opts?.required) {
+    kb.text(WIZARD_NAV.skip)
       .primary()
       .row()
-      .text(WIZARD_NAV.skip).primary()
+      .text(WIZARD_NAV.skipLater)
+      .primary()
       .row()
-      .text(WIZARD_NAV.skipLater).primary()
-      .row()
-      .text(WIZARD_NAV.back).primary()
+      .text(WIZARD_NAV.back)
+      .primary()
       .text(WIZARD_NAV.cancel)
       .danger()
       .row()
-      .text(MAIN_MENU_BTN).primary()
-      .resized()
-  );
+      .text(MAIN_MENU_BTN)
+      .primary();
+  }
+  return finalizeReplyKeyboard(kb.resized());
 }
 
 /** کیبورد درخواست موقعیت برای «پت‌های نزدیک» (سبک دوردوریا) */

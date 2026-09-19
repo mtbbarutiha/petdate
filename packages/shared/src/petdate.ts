@@ -969,6 +969,8 @@ export interface BotSession {
   pendingPhone?: string;
   /** زمان مجاز بعدی برای ارسال مجدد OTP (epoch ms) */
   phoneOtpResendAt?: number;
+  /** ثبت‌نام / ورود: رد کردن احراز موبایل مجاز نیست */
+  phoneVerifyRequired?: boolean;
   /** چت مشاوره دامپزشک — شناسه مشاوره */
   vetChatConsultId?: number;
   /** تلگرام طرف مقابل در چت مشاوره */
@@ -1414,7 +1416,7 @@ export function formatIranMobileDisplay(phone: string): string {
 /** متن معرفی احراز موبایل */
 export function phoneVerifyIntroText(opts?: { required?: boolean }): string {
   const required = opts?.required
-    ? 'برای دامپزشکان احراز موبایل <b>اجباری</b> است.'
+    ? 'احراز موبایل <b>اجباری</b> است — بدون تأیید شماره نمی‌تونی ادامه بدی.'
     : 'احراز موبایل اختیاری است — برای اعتماد بیشتر پیشنهاد می‌شه.';
   return [
     '📱 <b>احراز موبایل</b>',

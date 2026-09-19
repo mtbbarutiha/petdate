@@ -1,6 +1,12 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { loginPath, postAuthPath, readNextFromSearch, sanitizeNext } from '../lib/authRedirect';
+import {
+  loginPath,
+  phoneVerifyPath,
+  postAuthPath,
+  readNextFromSearch,
+  sanitizeNext,
+} from '../lib/authRedirect';
 import { stripTagAssistantParams, withTagAssistantParams } from '../lib/tagAssistantParams';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { TelegramSync } from './OnboardingGuard';
@@ -28,9 +34,15 @@ function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
 }
 
+function isPhoneVerifyPath(pathname: string) {
+  const p = pathname.replace(/\/+$/, '') || '/';
+  return p === '/auth/phone';
+}
+
 export function AuthGuard({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
-  const { isLoggedIn, hasRole, isProfileComplete, refreshMe, token, user } = useAuthStore();
+  const { isLoggedIn, hasRole, isProfileComplete, isPhoneVerified, refreshMe, token, user } =
+    useAuthStore();
   const nextFromQuery = readNextFromSearch(location.search);
   const nextFromState = sanitizeNext(
     (location.state as { from?: string } | null)?.from,
@@ -58,9 +70,29 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
     return <Navigate to={loginPath(next)} replace state={{ from: next }} />;
   }
 
+  // Telegram / Google: must verify phone before role/profile/app.
+  if (
+    isLoggedIn &&
+    !isPhoneVerified &&
+    !isPhoneVerifyPath(location.pathname) &&
+    !location.pathname.startsWith('/admin')
+  ) {
+    // Allow public browsing (shop, landing) without phone; lock private + auth redirects.
+    if (!isPublic(location.pathname) || location.pathname.startsWith('/auth')) {
+      return (
+        <Navigate
+          to={phoneVerifyPath(nextFromState)}
+          replace
+          state={{ from: nextFromState }}
+        />
+      );
+    }
+  }
+
   // Public surfaces (landing, shop, adoption) stay browsable even before role pick.
   if (
     isLoggedIn &&
+    isPhoneVerified &&
     !hasRole &&
     !location.pathname.startsWith('/onboarding/role') &&
     !isPublic(location.pathname)
@@ -78,12 +110,24 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
   // ورود اولیه هنوز از postAuthPath به /onboarding/profile هدایت می‌شود.
 
   if (isLoggedIn && isPublic(location.pathname) && location.pathname.startsWith('/auth')) {
+    if (isPhoneVerifyPath(location.pathname) && !isPhoneVerified) {
+      return <>{children ?? <Outlet />}</>;
+    }
+    if (!isPhoneVerified) {
+      return <Navigate to={phoneVerifyPath(nextFromQuery)} replace />;
+    }
     if (!hasRole) {
       return <Navigate to={withTagAssistantParams('/onboarding/role')} replace />;
     }
     return (
       <Navigate
-        to={postAuthPath({ hasRole, isProfileComplete, next: nextFromQuery, roleHome })}
+        to={postAuthPath({
+          hasRole,
+          isProfileComplete,
+          phoneVerified: isPhoneVerified,
+          next: nextFromQuery,
+          roleHome,
+        })}
         replace
       />
     );

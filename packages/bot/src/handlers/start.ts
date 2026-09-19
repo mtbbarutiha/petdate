@@ -430,6 +430,13 @@ export async function handleStart(ctx: Context): Promise<void> {
       return;
     }
 
+    // نقش دارد ولی موبایل تأیید نشده — قفل ثبت‌نام تا OTP
+    if (!user.phoneVerified) {
+      const { handlePhoneVerifyStart } = await import('./phone-verify');
+      await handlePhoneVerifyStart(ctx, { required: true, continueProfile: true });
+      return;
+    }
+
     await sendWelcomeBack(ctx, user, name);
   } catch (error) {
     console.error('start failed:', error);
@@ -656,21 +663,14 @@ export async function handleRolesSelect(ctx: Context, roles: UserRole[]): Promis
     await ctx.reply(`عالی! نقش‌هات ثبت شد: ${labels}`);
   }
 
-  // ویزارد تکمیل پروفایل بلافاصله بعد از انتخاب نقش
-  await startProfileWizard(ctx);
-
-  // دامپزشک: احراز موبایل اجباری است — بعد از ویزارد یادآوری می‌کنیم
-  if (normalized.includes('vet')) {
-    await ctx.reply(
-      [
-        '📱 <b>توجه دامپزشکان</b>',
-        '',
-        'برای فعال‌شدن امکانات دامپزشکی (بیماران، مدرک، آنلاین بودن) باید موبایلت رو با پیامک تأیید کنی.',
-        'از «👤 پروفایل» دکمه «📱 احراز موبایل» رو بزن.',
-      ].join('\n'),
-      { parse_mode: 'HTML' }
-    );
+  // ثبت‌نام: اول احراز موبایل اجباری، بعد ویزارد پروفایل
+  if (!user.phoneVerified) {
+    const { handlePhoneVerifyStart } = await import('./phone-verify');
+    await handlePhoneVerifyStart(ctx, { required: true, continueProfile: true });
+    return;
   }
+
+  await startProfileWizard(ctx);
 }
 
 function escapeHtml(value: string): string {

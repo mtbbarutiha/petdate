@@ -9,6 +9,8 @@ import { authStore } from '../data/authStore';
 const authActions = {
   requestOtp: authStore.requestOtp.bind(authStore),
   verifyOtp: authStore.verifyOtp.bind(authStore),
+  sendPhoneAttachOtp: authStore.sendPhoneAttachOtp.bind(authStore),
+  verifyPhoneAttachOtp: authStore.verifyPhoneAttachOtp.bind(authStore),
   acceptSession: authStore.acceptSession.bind(authStore),
   refreshMe: authStore.refreshMe.bind(authStore),
   saveProfile: authStore.saveProfile.bind(authStore),
@@ -39,6 +41,7 @@ export function useAuthStore() {
     isLoggedIn: authStore.isLoggedIn,
     hasRole: authStore.hasRole,
     isProfileComplete: authStore.isProfileComplete,
+    isPhoneVerified: authStore.isPhoneVerified,
     ...authActions,
   };
 }

@@ -126,6 +126,7 @@ export function OtpPage() {
             postAuthPath({
               hasRole: roles.length > 0,
               isProfileComplete: complete,
+              phoneVerified: Boolean(res.user.phoneVerified),
               next: sanitizeNext(res.next ?? next, next),
               roleHome: dashboardPathForUser(res.user),
             }),
