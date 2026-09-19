@@ -62,6 +62,24 @@ async function main() {
   const after = dbService.getUserById(user.id);
   assert(Number(after?.coins) === 5, `coins left ${after?.coins}`);
 
+  const tall = await sharp({
+    create: { width: 40, height: 120, channels: 3, background: { r: 180, g: 40, b: 40 } },
+  })
+    .jpeg()
+    .toBuffer();
+  const framed = await agent.placeOnStudioBackground(tall, '#F2C200');
+  const framedMeta = await sharp(framed).metadata();
+  assert(framedMeta.width === 800 && framedMeta.height === 800, 'framed canvas');
+  const framedRaw = await sharp(framed).raw().toBuffer();
+  const upper = (80 * 800 + 400) * 3;
+  assert(
+    framedRaw[upper]! > 210 && framedRaw[upper + 1]! > 160 && framedRaw[upper + 2]! < 50,
+    'no zoom: upper letterbox stays studio color',
+  );
+  const body = (400 * 800 + 400) * 3;
+  assert(framedRaw[body]! > 140 && framedRaw[body]! > framedRaw[body + 1]!, 'full frame subject stays');
+  assert(!agentSrc.includes('.trim('), 'do not trim-zoom the subject');
+
   getDb().prepare(`UPDATE users SET coins = 2 WHERE id = ?`).run(user.id);
   let denied = false;
   try {
