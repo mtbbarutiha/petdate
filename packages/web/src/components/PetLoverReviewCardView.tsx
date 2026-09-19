@@ -36,8 +36,7 @@ export function PetLoverReviewCardView({
             src={img}
             alt={review.displayHandle}
             loading="lazy"
-            width={600}
-            height={600}
+            width={600} height={600}
             decoding="async"
           />
         </div>
