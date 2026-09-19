@@ -197,8 +197,16 @@ export function AdminLogsPage() {
       </header>
 
       {stats ? (
-        <div className="admin-stats">
-          <div className="admin-stat admin-stat--slate">
+        <div className="admin-stats" role="group" aria-label={tr('فیلتر سطح')}>
+          <button
+            type="button"
+            className={`admin-stat admin-stat--slate admin-stat-btn${level === '' ? ' is-active' : ''}`}
+            aria-pressed={level === ''}
+            onClick={() => {
+              silentRef.current = false;
+              setLevel('');
+            }}
+          >
             <div className="admin-stat-icon">
               <Activity size={20} />
             </div>
@@ -206,8 +214,16 @@ export function AdminLogsPage() {
               <div className="admin-stat-value">{stats.total}</div>
               <div className="admin-stat-label">{tr('کل لاگ‌ها')}</div>
             </div>
-          </div>
-          <div className="admin-stat admin-stat--orange">
+          </button>
+          <button
+            type="button"
+            className={`admin-stat admin-stat--orange admin-stat-btn${level === 'error' ? ' is-active' : ''}`}
+            aria-pressed={level === 'error'}
+            onClick={() => {
+              silentRef.current = false;
+              setLevel('error');
+            }}
+          >
             <div className="admin-stat-icon">
               <AlertTriangle size={20} />
             </div>
@@ -215,8 +231,16 @@ export function AdminLogsPage() {
               <div className="admin-stat-value">{stats.errors24h}</div>
               <div className="admin-stat-label">{tr('خطا ۲۴س')}</div>
             </div>
-          </div>
-          <div className="admin-stat admin-stat--blue">
+          </button>
+          <button
+            type="button"
+            className={`admin-stat admin-stat--blue admin-stat-btn${level === 'warn' ? ' is-active' : ''}`}
+            aria-pressed={level === 'warn'}
+            onClick={() => {
+              silentRef.current = false;
+              setLevel('warn');
+            }}
+          >
             <div className="admin-stat-icon">
               <AlertTriangle size={20} />
             </div>
@@ -224,13 +248,23 @@ export function AdminLogsPage() {
               <div className="admin-stat-value">{stats.warns24h}</div>
               <div className="admin-stat-label">{tr('هشدار ۲۴س')}</div>
             </div>
-          </div>
+          </button>
         </div>
       ) : null}
 
       {error ? <p className="admin-error">{error}</p> : null}
       {loading && !logs.length ? <AdminBrandLoader size="page" /> : null}
+      {!loading && logs.length === 0 ? (
+        <div className="admin-card">
+          <p className="admin-muted">
+            {level
+              ? tr('برای این فیلتر لاگی نیست. «کل لاگ‌ها» را بزن تا همهٔ ردیف‌ها بیاید.')
+              : tr('لاگی ثبت نشده است.')}
+          </p>
+        </div>
+      ) : null}
 
+      {logs.length > 0 ? (
       <section className="admin-card admin-card--logs">
         <div className="admin-table-wrap admin-table-wrap--logs">
           <table className="admin-table admin-table--dense admin-table--logs">
@@ -334,17 +368,11 @@ export function AdminLogsPage() {
                   </Fragment>
                 );
               })}
-              {!logs.length && !loading ? (
-                <tr>
-                  <td colSpan={5} className="admin-muted">
-                    {tr('لاگی ثبت نشده است.')}
-                  </td>
-                </tr>
-              ) : null}
             </tbody>
           </table>
         </div>
       </section>
+      ) : null}
     </div>
   );
 }
