@@ -8142,3 +8142,30 @@ body:has(.admin-app) {
 
 /* Homepage hero photo manager — layout lives in AdminHeroPage.css */
 
+.admin-app .admin-plr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-app .admin-plr-card {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 16px;
+  padding: 16px;
+  align-items: start;
+}
+.admin-app .admin-plr-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+}
+@media (max-width: 720px) {
+  .admin-app .admin-plr-card {
+    grid-template-columns: 1fr;
+  }
+  .admin-app .admin-plr-card img {
+    max-width: 220px;
+  }
+}
+

@@ -388,6 +388,30 @@ export function countPendingPetLoverReviews(): number {
   );
 }
 
+export function petLoverReviewCounts(): {
+  pending: number;
+  approved: number;
+  rejected: number;
+  all: number;
+} {
+  ensurePetLoverReviewsSchema();
+  const d = getDb();
+  const q = (status?: string) =>
+    Number(
+      (
+        (status
+          ? d.prepare(`SELECT COUNT(*) as c FROM pet_lover_reviews WHERE status = ?`).get(status)
+          : d.prepare(`SELECT COUNT(*) as c FROM pet_lover_reviews`).get()) as
+          | { c: number }
+          | undefined
+      )?.c ?? 0,
+    );
+  const pending = q('pending');
+  const approved = q('approved');
+  const rejected = q('rejected');
+  return { pending, approved, rejected, all: pending + approved + rejected };
+}
+
 export function listAdminPetLoverReviews(opts?: {
   status?: PetLoverReviewStatus | 'all';
   limit?: number;

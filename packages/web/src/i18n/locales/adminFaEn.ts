@@ -2681,4 +2681,6 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "موردی در این فیلتر نیست.": "Nothing in this filter.",
   "نمونه": "Sample",
   "بررسی": "Reviewed by",
+  "همه نظرات اینجاست — نمونه‌ها تأییدشده‌اند. صف «در انتظار» فقط عکس‌های تازه کاربران است.":
+    "All reviews are here — samples are already approved. Pending is only new user photos.",
 };

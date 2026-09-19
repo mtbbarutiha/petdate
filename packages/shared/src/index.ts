@@ -20,6 +20,7 @@ export * from './admin-password';
 export * from './chat-reply';
 export * from './event-ticket';
 export * from './pet-lover-reviews';
+export * from './fantasy-photo';
 
 import type {
   OnboardingStatus,

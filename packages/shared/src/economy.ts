@@ -565,6 +565,12 @@ export const PROFILE_PHOTO_CHANGE_COST = 100;
 /** دلیل لجر کیف‌پول برای کسر تعویض عکس */
 export const PROFILE_PHOTO_CHANGE_FEE_REASON = 'هزینه تعویض عکس پروفایل';
 
+/** هزینه ساخت عکس فانتزی با هوش مصنوعی (بخش نظرات) */
+export const FANTASY_PHOTO_AI_COST = 5;
+
+/** دلیل لجر برای ساخت عکس فانتزی */
+export const FANTASY_PHOTO_AI_REASON = 'هزینه ساخت عکس فانتزی';
+
 /** هزینه ساخت ایونت (سکه) — از موجودی میزبان کسر می‌شود */
 export const EVENT_CREATE_COST = 100;
 
@@ -680,6 +686,9 @@ export function walletLedgerLabelFa(reason: string): string {
     r.includes('تعویض عکس')
   ) {
     return PROFILE_PHOTO_CHANGE_FEE_REASON;
+  }
+  if (r === 'هزینه ساخت عکس فانتزی' || r === 'fantasy_photo_ai') {
+    return 'هزینه ساخت عکس فانتزی';
   }
   if (
     r === EVENT_CREATE_FEE_REASON ||

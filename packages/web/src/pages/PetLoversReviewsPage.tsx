@@ -4,6 +4,7 @@ import { ChevronLeft, Upload } from 'lucide-react';
 import { LandingChrome } from '../components/LandingChrome';
 import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { PetLoverReviewCardView } from '../components/PetLoverReviewCardView';
+import { FantasyPhotoStudio } from './FantasyPhotoStudio';
 import { useI18n } from '../i18n';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { loginPath } from '../lib/authRedirect';
@@ -158,6 +159,16 @@ export function PetLoversReviewsPage() {
           )}
         </section>
 
+        <FantasyPhotoStudio
+          isLoggedIn={isLoggedIn}
+          token={token ?? null}
+          onUsePhoto={(file) => {
+            setPhoto(file);
+            setOkMsg(t('reviewsPage.aiAttached'));
+            document.getElementById('submit-review')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
+
         <section className="pepito-section pepito-reviews-submit" id="submit-review">
           <div className="pepito-section-head pepito-section-head--center">
             <h2>{t('reviewsPage.submitTitle')}</h2>
@@ -224,7 +235,6 @@ export function PetLoversReviewsPage() {
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={(e) => setPhoto(e.target.files?.[0] || null)}
-                    required
                   />
                 </div>
                 {preview ? (

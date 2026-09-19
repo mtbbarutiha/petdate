@@ -16,6 +16,8 @@ import {
   savePetLoverReviewImage,
 } from '../services/pet-lover-review-image-store';
 import { getUserFromBearer } from '../services/web-otp';
+import { FANTASY_PHOTO_AI_COST, FANTASY_PHOTO_STYLES } from '@petdate/shared';
+import { generateFantasyPhoto } from '../services/fantasy-photo-agent';
 
 export const petLoverReviewsRouter = Router();
 
@@ -36,6 +38,71 @@ petLoverReviewsRouter.get('/images/:day/:filename', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.type(mimeFromPetLoverReviewImageKey(storageKey));
   fs.createReadStream(abs).pipe(res);
+});
+
+petLoverReviewsRouter.get('/styles', (_req, res) => {
+  res.json({
+    styles: FANTASY_PHOTO_STYLES.map((s) => ({
+      id: s.id,
+      labelFa: s.labelFa,
+      labelEn: s.labelEn,
+      background: s.background,
+      sampleUrl: s.sampleUrl,
+    })),
+    cost: FANTASY_PHOTO_AI_COST,
+  });
+});
+
+function publicOrigin(req: { headers: Record<string, unknown>; protocol: string }): string {
+  const env = String(process.env.PUBLIC_BASE_URL || process.env.SITE_URL || '').trim();
+  if (env) return env.replace(/\/$/, '');
+  const proto = String(req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0];
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || 'petdate.ir').split(',')[0];
+  return `${proto}://${host}`;
+}
+
+/** Member AI restyle — 5 coins. Result can be attached to a review submission. */
+petLoverReviewsRouter.post('/ai-photo', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session?.user?.id) {
+    res.status(401).json({ error: 'برای ساخت عکس باید وارد حساب شوید' });
+    return;
+  }
+  const userId = session.user.id;
+  imageUpload.single('photo')(req, res, (uploadErr) => {
+    if (uploadErr) {
+      const tooLarge =
+        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+      res.status(tooLarge ? 413 : 400).json({
+        error: tooLarge ? 'حجم تصویر بیش از حد مجاز است (حداکثر ۸ مگابایت)' : 'آپلود تصویر ناموفق بود',
+      });
+      return;
+    }
+    const file = req.file;
+    if (!file?.buffer?.length) {
+      res.status(400).json({ error: 'عکس خودت را انتخاب کن' });
+      return;
+    }
+    const styleId = String(req.body?.styleId || '').trim();
+    void generateFantasyPhoto({
+      userId,
+      styleId,
+      buffer: file.buffer,
+      mimeType: file.mimetype,
+      originalName: file.originalname,
+      publicOrigin: publicOrigin(req),
+    })
+      .then((result) => {
+        res.status(201).json({
+          ...result,
+          message: 'عکس فانتزی آماده است. می‌توانی همان را در نظر منتشر کنی.',
+        });
+      })
+      .catch((err: Error & { status?: number }) => {
+        const status = Number(err.status) || 400;
+        res.status(status).json({ error: err.message || 'ساخت عکس ناموفق بود' });
+      });
+  });
 });
 
 petLoverReviewsRouter.get('/featured', (req, res) => {

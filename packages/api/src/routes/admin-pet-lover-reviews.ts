@@ -7,6 +7,7 @@ import {
   deletePetLoverReview,
   getPetLoverReviewById,
   listAdminPetLoverReviews,
+  petLoverReviewCounts,
   setPetLoverReviewStatus,
 } from '../pet-lover-reviews-service';
 import type { PetLoverReviewStatus } from '@petdate/shared';
@@ -29,7 +30,7 @@ petLoverReviewsAdminRouter.get('/', (req, res) => {
     limit: Number.isFinite(limit) ? limit : 50,
     offset: Number.isFinite(offset) ? offset : 0,
   });
-  res.json(data);
+  res.json({ ...data, counts: petLoverReviewCounts() });
 });
 
 petLoverReviewsAdminRouter.get('/:id', (req, res) => {
