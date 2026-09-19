@@ -1,7 +1,10 @@
 /**
- * Fantasy photo agent — studio fallback + coin debit.
+ * Fantasy photo — studio composite + coin debit. No ONNX download.
  * Run: cd packages/api && FANTASY_PHOTO_FORCE_STUDIO=1 npx tsx src/services/fantasy-photo-agent.selftest.ts
  */
+import fs from 'fs';
+import path from 'path';
+
 export {};
 process.env.DATABASE_URL = '';
 process.env.DATABASE_PATH = `/tmp/petdate-selftest-fantasy-${process.pid}.db`;
@@ -30,6 +33,11 @@ async function main() {
     .jpeg()
     .toBuffer();
 
+  const agentSrc = fs.readFileSync(path.join(__dirname, 'fantasy-photo-agent.ts'), 'utf8');
+  assert(!/pollinations/i.test(agentSrc), 'no generative restyle');
+  assert(agentSrc.includes('bg-cutout.mjs'), 'person and held pet stay via cutout');
+  assert(!agentSrc.includes('removeBackground'), 'cutout stays out of process');
+
   const made = await agent.generateFantasyPhoto({
     userId: user.id,
     styleId: 'yellow',
@@ -40,6 +48,17 @@ async function main() {
   assert(made.engine === 'studio', 'forced studio');
   assert(made.photoUrl.includes('/api/pet-lover-reviews/images/'), 'saved url');
   assert(made.cost === 5, 'cost 5');
+
+  const { resolvePetLoverReviewImagePath } = await import('./pet-lover-review-image-store');
+  const key = made.photoUrl.split('/images/')[1] || '';
+  const abs = resolvePetLoverReviewImagePath(key);
+  assert(abs && fs.existsSync(abs), 'saved file');
+  const meta = await sharp(abs).metadata();
+  assert(meta.width === 800 && meta.height === 800, `canvas ${meta.width}x${meta.height}`);
+  const raw = await sharp(abs).raw().toBuffer();
+  assert(raw[0]! > 210 && raw[1]! > 160 && raw[2]! < 50, `bg corner ${raw[0]},${raw[1]},${raw[2]}`);
+  const mid = (400 * 800 + 400) * 3;
+  assert(raw[mid]! > 150 && raw[mid]! > raw[mid + 1]! && raw[mid]! > raw[mid + 2]!, 'subject color kept');
   const after = dbService.getUserById(user.id);
   assert(Number(after?.coins) === 5, `coins left ${after?.coins}`);
 

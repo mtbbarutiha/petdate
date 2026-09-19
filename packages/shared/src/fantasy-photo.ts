@@ -1,4 +1,4 @@
-/** Studio styles for “ساخت عکس خودت با AI” — user photo restyled to match a sample. */
+/** Studio styles — the uploaded person and pet stay; only the background color changes. */
 
 export type FantasyPhotoStyle = {
   id: string;

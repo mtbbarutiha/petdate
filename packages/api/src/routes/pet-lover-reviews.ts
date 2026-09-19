@@ -61,7 +61,7 @@ function publicOrigin(req: { headers: Record<string, unknown>; protocol: string 
   return `${proto}://${host}`;
 }
 
-/** Member AI restyle — 5 coins. Result can be attached to a review submission. */
+/** Member studio background — 5 coins. Result can be attached to a review submission. */
 petLoverReviewsRouter.post('/ai-photo', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
   if (!session?.user?.id) {
@@ -95,7 +95,7 @@ petLoverReviewsRouter.post('/ai-photo', (req, res) => {
       .then((result) => {
         res.status(201).json({
           ...result,
-          message: 'عکس فانتزی آماده است. می‌توانی همان را در نظر منتشر کنی.',
+          message: 'پس‌زمینه عوض شد؛ شخص و پت همان هستند. می‌توانی همین عکس را در نظر منتشر کنی.',
         });
       })
       .catch((err: Error & { status?: number }) => {
